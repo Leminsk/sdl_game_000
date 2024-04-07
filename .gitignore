@@ -1,3 +1,13 @@
+# config
 /.vscode
+
+# build
 Makefile
+*Makefile
+*.bat
+
+# binaries
 *.exe
+
+# misc
+/pseudo_dumpster
