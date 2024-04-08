@@ -10,4 +10,5 @@ Makefile
 *.exe
 
 # misc
+/krita_files
 /pseudo_dumpster
