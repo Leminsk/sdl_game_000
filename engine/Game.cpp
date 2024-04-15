@@ -1,17 +1,15 @@
 #include "Game.hpp"
 #include "TextureManager.hpp"
-#include "GameObject.hpp"
 #include "Map.hpp"
+#include "ECS/Components.hpp"
+#include "Vector2D.hpp"
 
-#include "ECS.hpp"
-#include "Components.hpp"
-
-GameObject* player;
-SDL_Renderer *Game::renderer = nullptr;
 Map* map;
-
 Manager manager;
-auto& newPlayer(manager.addEntity());
+
+SDL_Renderer *Game::renderer = nullptr;
+SDL_Event Game::event;
+auto& player(manager.addEntity());
 
 Game::Game() {
 
@@ -49,9 +47,11 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
 
         this->isRunning = true;
 
-        player = new GameObject("assets/magenta_circle.png", 0, 0);
-
         map = new Map();
+
+        player.addComponent<TransformComponent>();
+        player.addComponent<SpriteComponent>("assets/green_circle.png");
+        player.addComponent<KeyboardController>();
 
     } else {
         this->isRunning = false;
@@ -59,7 +59,8 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
 }
 
 void Game::handleEvents() {
-    SDL_Event event;
+    
+
     SDL_PollEvent(&event);
 
     switch(event.type) {
@@ -73,14 +74,15 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    player->Update();
+    manager.refresh();
+    manager.update();
 }
 
 void Game::render() {
     SDL_RenderClear(this->renderer);
 
     map->DrawMap();
-    player->Render();
+    manager.draw();
 
     SDL_RenderPresent(this->renderer);
 }

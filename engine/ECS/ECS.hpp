@@ -20,6 +20,7 @@ inline size_t getNewComponentID() {
 
 // get an ID for a component type
 template <typename T> inline size_t getComponentTypeID() noexcept {
+    static_assert (std::is_base_of<Component, T>::value, "");
     static size_t typeID = getNewComponentID();
     return typeID;
 }
@@ -27,6 +28,7 @@ template <typename T> inline size_t getComponentTypeID() noexcept {
 constexpr size_t maxComponents = 32;
 
 
+// A Component is a functionality structure
 class Component {
     public: 
         Entity* entity;
@@ -38,49 +40,55 @@ class Component {
         virtual ~Component() {}
 };
 
+// An Entity holds many components together in a cohesive manner.
 class Entity {
     private:
         bool active = true;
         std::vector< std::unique_ptr<Component> > components;
 
-        std::bitset<maxComponents> componentArray;
-        std::array<Component*, maxComponents> componentBitSet;
+        std::array<Component*, maxComponents> componentArray;
+        std::bitset<maxComponents> componentBitSet;
+        
 
     public:
         void update() {
             for (auto& c : this->components) { c->update(); }
+        }
+        void draw() {
             for (auto& c : this->components) { c->draw(); }
         }
-        void draw() {}
         bool isActive() const { return this->active; }
         void destroy() { this->active = false; }
 
         template <typename T> bool hasComponent() const {
-            return this->componentBitSet[getComponentID<T>()];
+            return this->componentBitSet[getComponentTypeID<T>()];
         }
 
+        // add Component to Entity
         template <typename T, typename... TArgs> T& addComponent(TArgs&&... mArgs) {
             T* component(new T(std::forward<TArgs>(mArgs)...));
             component->entity = this;
             std::unique_ptr<Component> uPtr{ component };
             components.emplace_back(std::move(uPtr));
 
-            this->componentArray[getComponentTypeID<T>()] = c;
+            this->componentArray[getComponentTypeID<T>()] = component;
             this->componentBitSet[getComponentTypeID<T>()] = true;
 
             component->init();
             return *component;
         }
 
+        // access a Component belonging to this Entity
         template <typename T> T& getComponent() const {
             auto ptr(this->componentArray[getComponentTypeID<T>()]);
             return *static_cast<T*>(ptr);
         }
 };
 
+// A Manager holds many Entities... because reasons?
 class Manager {
     private:
-        std::vector<std::unique_ptr<Entity>> entities;
+        std::vector< std::unique_ptr<Entity> > entities;
 
     public:
         void update() {
