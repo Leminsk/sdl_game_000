@@ -16,12 +16,10 @@ class TransformComponent : public Component {
         int speed = 3;
 
         TransformComponent() {
-            this->position.x = 0.0f;
-            this->position.y = 0.0f;
+            this->position.Zero();
         }
         TransformComponent(int sc) {
-            this->position.x = 0.0f;
-            this->position.y = 0.0f;
+            this->position.Zero();
             this->scale = sc;
         }
         TransformComponent(float x, float y) {
@@ -37,8 +35,7 @@ class TransformComponent : public Component {
         }
 
         void init() override {
-            this->velocity.x = 0;
-            this->velocity.y = 0;
+            this->velocity.Zero();
         }
 
         void update() override {
