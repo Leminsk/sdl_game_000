@@ -16,9 +16,12 @@ class SpriteComponent : public Component {
         SpriteComponent(const char* path) {
             setTex(path);
         }
+        ~SpriteComponent() {
+            SDL_DestroyTexture(this->texture);
+        }
 
         void setTex(const char* path) {
-            texture = TextureManager::LoadTexture(path);
+            this->texture = TextureManager::LoadTexture(path);
         }
 
         void init() override {
@@ -26,15 +29,15 @@ class SpriteComponent : public Component {
 
             this->srcRect.x = 0;
             this->srcRect.y = 0;
-            this->srcRect.w = 32;
-            this->srcRect.h = 32;
-
-            this->destRect.w = this->srcRect.w * 2;
-            this->destRect.h = this->srcRect.h * 2;
+            this->srcRect.w = this->transform->width;
+            this->srcRect.h = this->transform->height;
         }
         void update() override {
             this->destRect.x = (int)this->transform->position.x;
             this->destRect.y = (int)this->transform->position.y;
+
+            this->destRect.w = this->transform->width * this->transform->scale;
+            this->destRect.h = this->transform->height * this->transform->scale;
         }
         void draw() override {
             TextureManager::Draw(this->texture, this->srcRect, this->destRect);
