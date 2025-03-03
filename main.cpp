@@ -13,7 +13,7 @@ int main() {
 
     game = new Game();
     
-    game->init("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, false);
+    game->init("Engine", 800, 600, false);
 
     while (game->running()) {
         frameStart = SDL_GetTicks64();
