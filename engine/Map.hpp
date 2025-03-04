@@ -6,16 +6,9 @@ class Map {
         Map();
         ~Map();
 
-        void LoadMap(int arr[20][25]);
-        void DrawMap();
+        void LoadMap(std::string path);
 
     private:
-        SDL_Rect src, dest;
-
-        SDL_Texture *water;
-        SDL_Texture *grass;
-        SDL_Texture *dirt;
-
-        int layout[20][25];
-
+        std::vector<std::vector<int>> layout;
+        int layout_width, layout_height;
 };
