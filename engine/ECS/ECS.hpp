@@ -116,7 +116,7 @@ class Manager {
         }
         void refresh() {
             for(auto i(0u); i < maxGroups; ++i) {
-                auto& v(groupedEntities[i]);
+                auto& v(this->groupedEntities[i]);
                 v.erase(
                     std::remove_if(
                         std::begin(v),
@@ -142,7 +142,7 @@ class Manager {
         }
 
         void AddToGroup(Entity* mEntity, Group mGroup) {
-            groupedEntities[mGroup].push_back(mEntity);
+            this->groupedEntities[mGroup].push_back(mEntity);
         }
 
         std::vector<Entity*>& getGroup(Group mGroup) {
@@ -152,7 +152,7 @@ class Manager {
         Entity& addEntity() {
             Entity *e = new Entity(*this);
             std::unique_ptr<Entity> uPtr{ e };
-            entities.push_back(std::move(uPtr));
+            this->entities.push_back(std::move(uPtr));
             return *e;
         }
 };
