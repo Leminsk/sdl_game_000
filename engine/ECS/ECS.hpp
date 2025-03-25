@@ -85,7 +85,7 @@ class Entity {
             T* component(new T(std::forward<TArgs>(mArgs)...));
             component->entity = this;
             std::unique_ptr<Component> uPtr{ component };
-            components.emplace_back(std::move(uPtr));
+            components.push_back(std::move(uPtr));
 
             this->componentArray[getComponentTypeID<T>()] = component;
             this->componentBitSet[getComponentTypeID<T>()] = true;
@@ -142,7 +142,7 @@ class Manager {
         }
 
         void AddToGroup(Entity* mEntity, Group mGroup) {
-            groupedEntities[mGroup].emplace_back(mEntity);
+            groupedEntities[mGroup].push_back(mEntity);
         }
 
         std::vector<Entity*>& getGroup(Group mGroup) {
@@ -152,7 +152,7 @@ class Manager {
         Entity& addEntity() {
             Entity *e = new Entity(*this);
             std::unique_ptr<Entity> uPtr{ e };
-            entities.emplace_back(std::move(uPtr));
+            entities.push_back(std::move(uPtr));
             return *e;
         }
 };

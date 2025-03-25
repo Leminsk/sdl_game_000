@@ -303,7 +303,7 @@ namespace olc
 			void push_back(const T& item)
 			{
 				std::scoped_lock lock(muxQueue);
-				deqQueue.emplace_back(std::move(item));
+				deqQueue.push_back(std::move(item));
 
 				std::unique_lock<std::mutex> ul(muxBlocking);
 				cvBlocking.notify_one();
