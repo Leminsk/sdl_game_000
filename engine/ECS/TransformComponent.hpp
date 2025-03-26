@@ -3,7 +3,7 @@
 #include "ECS.hpp"
 #include "../Vector2D.hpp"
 
-// Deals with geometric transformations: translation, rotation, etc
+// Deals with rendering transformations: translation, scaling
 class TransformComponent : public Component {
     public:
         Vector2D position;

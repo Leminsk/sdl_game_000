@@ -125,6 +125,9 @@ void Game::render() {
 void Game::clean() {
     SDL_DestroyWindow(this->window);
     SDL_DestroyRenderer(this->renderer);
+    this->window = NULL;
+    this->renderer = NULL;
+    IMG_Quit();
     SDL_Quit();
     std::cout << "Game cleaned\n";
 }

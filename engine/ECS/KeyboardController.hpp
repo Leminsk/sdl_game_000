@@ -7,9 +7,11 @@
 class KeyboardController : public Component {
     public:
         TransformComponent *transform;
+        SpriteComponent *sprite;
 
         void init() override {
             this->transform = &entity->getComponent<TransformComponent>();
+            this->sprite = &entity->getComponent<SpriteComponent>(); // gonna use this later to control sprite animations with this->sprite->play("some_animation")
         }
 
         void update() override {
@@ -26,6 +28,9 @@ class KeyboardController : public Component {
                         break;
                     case SDLK_d:
                         this->transform->velocity.x = 1;
+                        break;
+                    case SDLK_r:
+                        this->sprite->rotating = true;
                         break;
                     default:
                         break;
@@ -45,6 +50,9 @@ class KeyboardController : public Component {
                         break;
                     case SDLK_d:
                         this->transform->velocity.x = 0;
+                        break;
+                    case SDLK_r:
+                        this->sprite->rotating = false;
                         break;
                     default:
                         break;
