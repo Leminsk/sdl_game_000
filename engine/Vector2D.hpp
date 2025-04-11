@@ -20,7 +20,7 @@ class Vector2D {
         Vector2D& operator*=(const Vector2D& vec);
         Vector2D& operator/=(const Vector2D& vec);
 
-        Vector2D& Scale(const int& i);
+        Vector2D& Scale(const float& i);
         Vector2D& Zero();
 
         float ScProj(Vector2D& p);

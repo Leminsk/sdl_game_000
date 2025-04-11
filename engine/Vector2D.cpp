@@ -46,7 +46,7 @@ Vector2D& Vector2D::operator/=(const Vector2D& vec) {
     return this->Divide(vec);
 }
 
-Vector2D& Vector2D::Scale(const int& i) {
+Vector2D& Vector2D::Scale(const float& i) {
     this->x *= i;
     this->y *= i;
     return *this;

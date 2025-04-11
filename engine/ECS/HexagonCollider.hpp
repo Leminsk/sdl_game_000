@@ -23,14 +23,15 @@ class HexagonCollider : public Component {
 
         TransformComponent *transform;
         Vector2D prev_position;
-        Vector2D trans_pos_update;
+        // Vector2D trans_pos_update;
 
         void init() override {
             if(!entity->hasComponent<TransformComponent>()) {
                 entity->addComponent<TransformComponent>();
             }
             this->transform = &entity->getComponent<TransformComponent>();
-            this->prev_position = this->transform->position;
+            std::cout << "position:" << this->transform->position << '\n';
+            // this->prev_position = this->transform->position;
             
             float radius = this->transform->width/2;
             float lesser_height = radius/2;
@@ -39,25 +40,33 @@ class HexagonCollider : public Component {
             float right_x = this->transform->width - x_gap;
             float greater_height = this->transform->height - lesser_height;
 
-            this->center = AddVecs(Vector2D(radius, radius), this->transform->position);
-            this->hull[0] = AddVecs(Vector2D(right_x,          greater_height), this->transform->position);
-            this->hull[1] = AddVecs(Vector2D( radius, this->transform->height), this->transform->position);
-            this->hull[2] = AddVecs(Vector2D(  x_gap,          greater_height), this->transform->position);
-            this->hull[3] = AddVecs(Vector2D(  x_gap,           lesser_height), this->transform->position);
-            this->hull[4] = AddVecs(Vector2D( radius,                    0.0f), this->transform->position);
-            this->hull[5] = AddVecs(Vector2D(right_x,           lesser_height), this->transform->position);
+            Vector2D offset = this->transform->position;
+            offset.x /= 2;
+            offset.y /= 2;
+
+            this->center = AddVecs(Vector2D(radius, radius), offset).Scale(this->transform->scale);
+            this->hull[0] = AddVecs(Vector2D(right_x,          greater_height), offset).Scale(this->transform->scale);
+            this->hull[1] = AddVecs(Vector2D( radius, this->transform->height), offset).Scale(this->transform->scale);
+            this->hull[2] = AddVecs(Vector2D(  x_gap,          greater_height), offset).Scale(this->transform->scale);
+            this->hull[3] = AddVecs(Vector2D(  x_gap,           lesser_height), offset).Scale(this->transform->scale);
+            this->hull[4] = AddVecs(Vector2D( radius,                    0.0f), offset).Scale(this->transform->scale);
+            this->hull[5] = AddVecs(Vector2D(right_x,           lesser_height), offset).Scale(this->transform->scale);
         }
 
         void update() override {
-            this->trans_pos_update = SubVecs(this->transform->position, this->prev_position);
-            this->center += trans_pos_update;
-            this->hull[0] += trans_pos_update;
-            this->hull[1] += trans_pos_update;
-            this->hull[2] += trans_pos_update;
-            this->hull[3] += trans_pos_update;
-            this->hull[4] += trans_pos_update;
-            this->hull[5] += trans_pos_update;
-            this->prev_position = this->transform->position;
+            // this->trans_pos_update = SubVecs(this->transform->position, this->prev_position);
+            // std::cout << "this->trans_pos_update: " << this->trans_pos_update << '\n';
+            // this->trans_pos_update.Scale(this->transform->scale);
+            // std::cout << "this->trans_pos_update: " << this->trans_pos_update << '\n';
+            // std::cout << "this->transform->scale: " << this->transform->scale << '\n';
+            // this->center += trans_pos_update;
+            // this->hull[0] += trans_pos_update;
+            // this->hull[1] += trans_pos_update;
+            // this->hull[2] += trans_pos_update;
+            // this->hull[3] += trans_pos_update;
+            // this->hull[4] += trans_pos_update;
+            // this->hull[5] += trans_pos_update;
+            // this->prev_position = this->transform->position;
             // std::cout<<"              "<<this->center<<'\n';
         }
 };

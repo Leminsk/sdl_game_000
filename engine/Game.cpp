@@ -62,13 +62,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         map = new Map();
         map->LoadMap("assets/test.bmp");
 
-        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 1.0);
+        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
         // player.addComponent<ColliderComponent>("player");
         // player.addComponent<CircleCollider>();
         player.addComponent<HexagonCollider>();
-        // player.addComponent<Wireframe>();
+        player.addComponent<Wireframe>();
         
         player.addGroup(groupPlayers);
 
@@ -76,8 +76,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         wall.addComponent<TransformComponent>(300.0f, 300.0f, 200.0f, 200.0f, 1.0);
         wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
         // wall.addComponent<ColliderComponent>("wall");
-        wall.addComponent<HexagonCollider>();
-        wall.addComponent<Wireframe>();
+        // wall.addComponent<HexagonCollider>();
+        // wall.addComponent<Wireframe>();
         wall.addGroup(groupMap);
 
     } else {
