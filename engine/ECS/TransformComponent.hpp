@@ -11,9 +11,9 @@ class TransformComponent : public Component {
 
         float height = 32.0f;
         float width = 32.0f;
-        float scale = 1;
+        float scale = 1.0f;
 
-        float speed = 3;
+        float speed = 3.0f;
 
         TransformComponent() {
             this->position.Zero();

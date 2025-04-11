@@ -32,3 +32,6 @@ class Vector2D {
         friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
 
 };
+
+Vector2D AddVecs(const Vector2D& vl, const Vector2D& vr);
+Vector2D SubVecs(const Vector2D& vl, const Vector2D& vr);
