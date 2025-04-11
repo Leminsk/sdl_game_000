@@ -53,7 +53,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
         this->renderer = SDL_CreateRenderer(window, -1, 0);
         if (this->renderer) {
-            SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, 255);
+            SDL_SetRenderDrawColor(this->renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
             std::cout << "Renderer created\n";
         }
 
@@ -66,8 +66,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
         // player.addComponent<ColliderComponent>("player");
-        player.addComponent<CircleCollider>();
-        // player.addComponent<HexagonCollider>();
+        // player.addComponent<CircleCollider>();
+        player.addComponent<HexagonCollider>();
+        // player.addComponent<Wireframe>();
+        
         player.addGroup(groupPlayers);
 
 
@@ -75,6 +77,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
         // wall.addComponent<ColliderComponent>("wall");
         wall.addComponent<HexagonCollider>();
+        wall.addComponent<Wireframe>();
         wall.addGroup(groupMap);
 
     } else {
@@ -112,13 +115,13 @@ void Game::update() {
     //     std::cout << "WALL HIT!\n";
     // }
 
-    if(Collision::HexCircle(
-        wall.getComponent<HexagonCollider>(),
-        player.getComponent<CircleCollider>()
-    )) {
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "                           WALL HIT!\n";
-    }
+    // if(Collision::HexCircle(
+    //     wall.getComponent<HexagonCollider>(),
+    //     player.getComponent<CircleCollider>()
+    // )) {
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "                           WALL HIT!\n";
+    // }
 }
 
 auto& tiles(manager.getGroup(groupMap));

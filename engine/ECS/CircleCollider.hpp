@@ -26,6 +26,6 @@ class CircleCollider : public Component {
             this->trans_pos_update = SubVecs(this->transform->position, this->prev_position);
             this->center += trans_pos_update;
             this->prev_position = this->transform->position;
-            std::cout<<this->center<<'\n';
+            // std::cout<<this->center<<'\n';
         }
 };

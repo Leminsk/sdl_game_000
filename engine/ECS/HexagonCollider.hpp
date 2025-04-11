@@ -5,7 +5,7 @@
 class HexagonCollider : public Component {
     public:
         Vector2D center;
-        Vector2D hull[6];
+        std::vector<Vector2D> hull = std::vector<Vector2D>(6);
         /* the hexagon is inscribed in a circle which is inscribed in a rect (preferrably a square)
         not to scale
             4
@@ -58,6 +58,6 @@ class HexagonCollider : public Component {
             this->hull[4] += trans_pos_update;
             this->hull[5] += trans_pos_update;
             this->prev_position = this->transform->position;
-            std::cout<<"              "<<this->center<<'\n';
+            // std::cout<<"              "<<this->center<<'\n';
         }
 };

@@ -8,3 +8,4 @@
 #include "HexagonCollider.hpp"
 #include "CircleCollider.hpp"
 #include "TileComponent.hpp"
+#include "Wireframe.hpp"

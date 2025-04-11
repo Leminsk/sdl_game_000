@@ -5,8 +5,7 @@
 // Used to store things like position and velocity. 
 class Vector2D {
     public:
-        float x;
-        float y;
+        float x, y;
 
         Vector2D();
         Vector2D(float x, float y);
@@ -16,11 +15,6 @@ class Vector2D {
         Vector2D& Multiply(const Vector2D& vec);
         Vector2D& Divide(const Vector2D& vec);
 
-        friend Vector2D& operator+(Vector2D& v1, const Vector2D& v2);
-        friend Vector2D& operator-(Vector2D& v1, const Vector2D& v2);
-        friend Vector2D& operator*(Vector2D& v1, const Vector2D& v2);
-        friend Vector2D& operator/(Vector2D& v1, const Vector2D& v2);
-
         Vector2D& operator+=(const Vector2D& vec);
         Vector2D& operator-=(const Vector2D& vec);
         Vector2D& operator*=(const Vector2D& vec);
@@ -29,9 +23,19 @@ class Vector2D {
         Vector2D& Scale(const int& i);
         Vector2D& Zero();
 
+        float ScProj(Vector2D& p);
+        Vector2D VecProj(Vector2D& p);
+
+        float Magnitude();
+        float OriginAngle();
+
         friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
 
 };
 
-Vector2D AddVecs(const Vector2D& vl, const Vector2D& vr);
-Vector2D SubVecs(const Vector2D& vl, const Vector2D& vr);
+float AngleVecs(const Vector2D& a, const Vector2D& b);
+Vector2D AddVecs(const Vector2D& a, const Vector2D& b);
+Vector2D SubVecs(const Vector2D& a, const Vector2D& b);
+float DotProd(const Vector2D& a, const Vector2D& b);
+float DotProd(float magA, float magB, float angle);
+Vector2D VecProj(Vector2D& a, Vector2D& p);
