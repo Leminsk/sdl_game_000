@@ -10,13 +10,13 @@ class TileComponent : public Component {
         TransformComponent *transform;
         SpriteComponent *sprite;
 
-        SDL_Rect tileRect;
+        SDL_FRect tileRect;
         int tileID;
         const char *path;
 
         TileComponent() = default;
 
-        TileComponent(int x, int y, int w, int h, int id) {
+        TileComponent(float x, float y, float w, float h, float id) {
             this->tileRect.x = x;
             this->tileRect.y = y;
             this->tileRect.w = w;
@@ -41,7 +41,7 @@ class TileComponent : public Component {
 
         void init() override {
             entity->addComponent<TransformComponent>(
-                static_cast<float>(this->tileRect.x), static_cast<float>(this->tileRect.y),
+                this->tileRect.x, this->tileRect.y,
                 this->tileRect.w, this->tileRect.h,
                 1
             );

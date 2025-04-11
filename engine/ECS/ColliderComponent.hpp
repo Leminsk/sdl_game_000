@@ -5,7 +5,7 @@
 
 class ColliderComponent : public Component {
     public:
-        SDL_Rect collider;
+        SDL_FRect collider;
         std::string tag;
 
         TransformComponent* transform;
@@ -24,8 +24,8 @@ class ColliderComponent : public Component {
         }
 
         void update() override {
-            this->collider.x = static_cast<int>(transform->position.x);
-            this->collider.y = static_cast<int>(transform->position.y);
+            this->collider.x = transform->position.x;
+            this->collider.y = transform->position.y;
             this->collider.w = transform->width * transform->scale;
             this->collider.h = transform->height * transform->scale;
         }

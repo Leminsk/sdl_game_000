@@ -25,11 +25,11 @@ void Map::LoadMap(std::string path) {
     std::vector<char> header(HEADER_SIZE);
     mapFile.read(header.data(), HEADER_SIZE);
 
-    auto fileSize = *reinterpret_cast<uint32_t *>(&header[2]);
-    auto dataOffset = *reinterpret_cast<uint32_t *>(&header[10]);
-    this->layout_width = *reinterpret_cast<uint32_t *>(&header[18]);
+    auto fileSize       = *reinterpret_cast<uint32_t *>(&header[2]);
+    auto dataOffset     = *reinterpret_cast<uint32_t *>(&header[10]);
+    this->layout_width  = *reinterpret_cast<uint32_t *>(&header[18]);
     this->layout_height = *reinterpret_cast<uint32_t *>(&header[22]);
-    auto depth = *reinterpret_cast<uint16_t *>(&header[28]);
+    auto depth          = *reinterpret_cast<uint16_t *>(&header[28]);
 
     auto dataSize = ((this->layout_width * 3 + 3) & (~3)) * this->layout_height;
     std::vector<char> img(dataSize);
@@ -69,7 +69,7 @@ void Map::LoadMap(std::string path) {
             tile_type = 0;
         }
 
-        Game::AddTile(tile_type, line_index*32, current_line*32);
+        Game::AddTile(tile_type, static_cast<float>(line_index*32), static_cast<float>(current_line*32));
         this->layout[current_line][line_index] = tile_type;
         ++line_index;
     }

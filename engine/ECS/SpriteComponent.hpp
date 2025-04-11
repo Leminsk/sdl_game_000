@@ -13,7 +13,8 @@ class SpriteComponent : public Component {
     private:
         TransformComponent *transform;
         SDL_Texture *texture;
-        SDL_Rect srcRect, destRect;
+        SDL_Rect srcRect;
+        SDL_FRect destRect;
 
         bool animated = false;
         int frames = 0;
@@ -55,22 +56,22 @@ class SpriteComponent : public Component {
 
             this->srcRect.x = 0;
             this->srcRect.y = 0;
-            this->srcRect.w = this->transform->width;
-            this->srcRect.h = this->transform->height;
+            this->srcRect.w = static_cast<int>(this->transform->width);
+            this->srcRect.h = static_cast<int>(this->transform->height);
         }
         void update() override {
-            this->srcRect.y = this->animationIndex * this->transform->height;
+            this->srcRect.y = this->animationIndex * static_cast<int>(this->transform->height);
 
             if (this->animated) {
                 srcRect.x = srcRect.w * static_cast<int>( (SDL_GetTicks() / delay) % this->frames );
             }
 
             if (this->rotating) {
-                this->rotation = static_cast<int>(this->rotation + this->rotation_tick) % 360;
+                this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
             }
 
-            this->destRect.x = static_cast<int>(this->transform->position.x);
-            this->destRect.y = static_cast<int>(this->transform->position.y);
+            this->destRect.x = this->transform->position.x;
+            this->destRect.y = this->transform->position.y;
 
             this->destRect.w = this->transform->width * this->transform->scale;
             this->destRect.h = this->transform->height * this->transform->scale;
