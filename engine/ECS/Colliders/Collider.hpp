@@ -1,14 +1,14 @@
 #pragma once
 #include "../Components.hpp"
+#include "../../Vector2D.hpp"
+
+#include "ColliderTypes.hpp"
+
 #include "CircleCollider.hpp"
 #include "HexagonCollider.hpp"
 #include "RectangleCollider.hpp"
 
-enum collider_type {
-    COLLIDER_CIRCLE,
-    COLLIDER_HEXAGON,
-    COLLIDER_RECTANGLE,
-};
+
 
 class Collider : public Component {
     public:

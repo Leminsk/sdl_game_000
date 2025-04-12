@@ -1,6 +1,4 @@
 #pragma once
-#include "../Components.hpp"
-#include "../../Vector2D.hpp"
 
 class CircleCollider : public Component {
     public:

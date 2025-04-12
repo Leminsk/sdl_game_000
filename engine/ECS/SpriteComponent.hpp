@@ -1,13 +1,8 @@
 #pragma once
 
-#include "../TextureManager.hpp"
-
-#include "SpriteAnimation.hpp"
-#include "Components.hpp"
-
-#include <SDL2/SDL.h>
-
 #include <map>
+#include "SpriteAnimation.hpp"
+#include "../TextureManager.hpp"
 
 class SpriteComponent : public Component {
     private:

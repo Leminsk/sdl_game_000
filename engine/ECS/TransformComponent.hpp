@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ECS.hpp"
 #include "../Vector2D.hpp"
 
 // Deals with rendering transformations: translation, scaling

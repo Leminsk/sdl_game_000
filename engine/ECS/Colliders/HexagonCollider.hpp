@@ -1,6 +1,4 @@
 #pragma once
-#include "../Components.hpp"
-#include "../../Vector2D.hpp"
 
 class HexagonCollider : public Component {
     public:
@@ -13,8 +11,8 @@ class HexagonCollider : public Component {
           /  \
         3/    \5
         |     |
-        |  C  |
-        |     |
+        | c.  |
+        |  ^  |
         2\    /0
           \  /
            \/

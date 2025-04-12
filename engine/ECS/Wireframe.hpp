@@ -1,10 +1,7 @@
 #pragma once
-#include <SDL2/SDL.h>
-#include "ECS.hpp"
-#include "Components.hpp"
-#include "../Vector2D.hpp"
+#include "Colliders/ColliderTypes.hpp"
+#include "Colliders/Collider.hpp"
 #include "../TextureManager.hpp"
-
 
 // for debugging hitboxes/colliders
 class Wireframe : public Component {
@@ -25,13 +22,14 @@ class Wireframe : public Component {
         void init() override {
             this->transform = &entity->getComponent<TransformComponent>();
 
-            std::vector<Vector2D> list;
+            if(!entity->hasComponent<Collider>()) {
+                entity->addComponent<Collider>(COLLIDER_RECTANGLE);
+            }
 
-            // if(!entity->hasComponent<Collider>()) {
-            //     entity->addComponent<Collider>();
-            // }
+            // collider_type t = entity->getComponent<Collider>().type;
 
-            // list = entity->getComponent<Collider>().hull;
+
+            // std::vector<Vector2D> list;
 
             // this->amount = list.size();
             // this->points = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * (amount+1));
