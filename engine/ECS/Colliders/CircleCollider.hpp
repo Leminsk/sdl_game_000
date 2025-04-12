@@ -1,5 +1,9 @@
 #pragma once
 
+#include "../ECS.hpp"
+#include "../TransformComponent.hpp"
+#include "../../Vector2D.hpp"
+
 class CircleCollider : public Component {
     public:
         Vector2D center;

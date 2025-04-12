@@ -1,9 +1,9 @@
 #pragma once
-#include "../Components.hpp"
-#include "../../Vector2D.hpp"
 
+#include "../../Game.hpp"
+#include "../ECS.hpp"
+#include "../TransformComponent.hpp"
 #include "ColliderTypes.hpp"
-
 #include "CircleCollider.hpp"
 #include "HexagonCollider.hpp"
 #include "RectangleCollider.hpp"
@@ -16,8 +16,9 @@ class Collider : public Component {
 
         TransformComponent* transform;
 
-        Collider(collider_type t) {
+        Collider(collider_type t, std::vector<Collider*>& colliders) {
             this->type = t;
+            colliders.push_back(this);
         }
 
         void init() override {
@@ -32,8 +33,6 @@ class Collider : public Component {
                 case COLLIDER_RECTANGLE: entity->addComponent<RectangleCollider>(); break;
                 default: break;
             }
-
-            Game::colliders.push_back(this);
         }
 
         void update() override {

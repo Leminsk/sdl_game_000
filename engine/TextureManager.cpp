@@ -20,5 +20,5 @@ void TextureManager::Draw(SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double
 void TextureManager::DrawWireframe(const SDL_FPoint* points, int count, const Uint8* color) {
     SDL_SetRenderDrawColor(Game::renderer, color[0], color[1], color[2], SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLinesF(Game::renderer, points, count);
-    SDL_SetRenderDrawColor(Game::renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(Game::renderer, 220, 220, 220, SDL_ALPHA_OPAQUE);
 }

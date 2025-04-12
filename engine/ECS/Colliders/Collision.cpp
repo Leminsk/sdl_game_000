@@ -1,8 +1,8 @@
 #include <cmath>
 #include "Collision.hpp"
-#include "ECS/Colliders/Collider.hpp"
-#include "ECS/Colliders/HexagonCollider.hpp"
-#include "ECS/Colliders/CircleCollider.hpp"
+#include "Collider.hpp"
+#include "HexagonCollider.hpp"
+#include "CircleCollider.hpp"
 
 bool Collision::AABB(const SDL_FRect& recA, const SDL_FRect& recB) {
     if(

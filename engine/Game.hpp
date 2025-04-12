@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 
+#include "ECS/Colliders/Collider.hpp"
+
 class Collider;
 
 class Game {

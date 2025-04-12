@@ -1,5 +1,10 @@
 #pragma once
 
+#include "ECS.hpp"
+#include "TransformComponent.hpp"
+#include "SpriteComponent.hpp"
+
+
 class KeyboardController : public Component {
     public:
         TransformComponent *transform;

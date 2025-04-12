@@ -1,4 +1,9 @@
 #pragma once
+
+#include "ECS.hpp"
+#include "TransformComponent.hpp"
+#include "SpriteComponent.hpp"
+
 class TileComponent : public Component {
     public:
         TransformComponent *transform;

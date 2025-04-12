@@ -1,6 +1,12 @@
 #pragma once
 
+#include "../ECS.hpp"
+#include "../TransformComponent.hpp"
+#include "../../Vector2D.hpp"
+
 class RectangleCollider : public Component {
+    private:
+        float x, y, w, h, sc;
     public:
         SDL_FRect collider;
         Vector2D center;
@@ -22,25 +28,16 @@ class RectangleCollider : public Component {
             }
             transform = &entity->getComponent<TransformComponent>();
 
-            Vector2D offset = this->transform->position;
-
-            float x = this->transform->position.x;
-            float y = this->transform->position.y;
-            float w = this->transform->width;
-            float h = this->transform->height;
-            float sc = this->transform->scale;
+            x = this->transform->position.x;
+            y = this->transform->position.y;
+            w = this->transform->width;
+            h = this->transform->height;
+            sc = this->transform->scale;
             
-            this->center = AddVecs(Vector2D(x/2, y/2), offset).Scale(sc);
-            this->hull[0] = AddVecs(Vector2D(x+w, y+h), offset).Scale(sc);
-            this->hull[1] = AddVecs(Vector2D(  x, y+h), offset).Scale(sc);
-            this->hull[2] = AddVecs(Vector2D(  x,   y), offset).Scale(sc);
-            this->hull[3] = AddVecs(Vector2D(x+w,   y), offset).Scale(sc);
-        }
-
-        void update() override {
-            this->collider.x = transform->position.x;
-            this->collider.y = transform->position.y;
-            this->collider.w = transform->width * transform->scale;
-            this->collider.h = transform->height * transform->scale;
+            this->center = Vector2D(x/2, y/2);
+            this->hull[0] = Vector2D(x + (w*sc), y + (h*sc));
+            this->hull[1] = Vector2D(         x, y + (h*sc));
+            this->hull[2] = Vector2D(         x,          y);
+            this->hull[3] = Vector2D(x + (w*sc),          y);
         }
 };

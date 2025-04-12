@@ -1,6 +1,8 @@
 #pragma once
 
 #include <map>
+#include "ECS.hpp"
+#include "TransformComponent.hpp"
 #include "SpriteAnimation.hpp"
 #include "../TextureManager.hpp"
 

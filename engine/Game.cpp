@@ -1,10 +1,11 @@
 #include "Game.hpp"
-#include "TextureManager.hpp"
-#include "Map.hpp"
-#include "ECS/Components.hpp"
 #include "ECS/ECS.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Colliders/Collider.hpp"
+#include "ECS/Colliders/Collision.hpp"
+#include "Map.hpp"
 #include "Vector2D.hpp"
-#include "Collision.hpp"
+
 
 Map* map;
 Manager manager;
@@ -68,8 +69,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         // player.addComponent<ColliderComponent>("player");
         // player.addComponent<CircleCollider>();
         // player.addComponent<HexagonCollider>();
-        player.addComponent<Collider>(COLLIDER_RECTANGLE);
-        // player.addComponent<Wireframe>();
+        player.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
+        player.addComponent<Wireframe>();
+
         
         player.addGroup(groupPlayers);
 
@@ -79,7 +81,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         // wall.addComponent<ColliderComponent>("wall");
         // wall.addComponent<HexagonCollider>();
         // wall.addComponent<Wireframe>();
-        wall.addComponent<Collider>(COLLIDER_RECTANGLE);
+        // wall.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
         wall.addGroup(groupMap);
 
     } else {
@@ -109,13 +111,13 @@ void Game::update() {
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    if(Collision::AABB(
-        player.getComponent<Collider>(),
-        wall.getComponent<Collider>()
-    )) {
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "WALL HIT!\n";
-    }
+    // if(Collision::AABB(
+    //     player.getComponent<Collider>(),
+    //     wall.getComponent<Collider>()
+    // )) {
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "WALL HIT!\n";
+    // }
 
     // if(Collision::HexCircle(
     //     wall.getComponent<HexagonCollider>(),

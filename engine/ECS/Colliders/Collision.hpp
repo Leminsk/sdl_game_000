@@ -1,10 +1,8 @@
 #pragma once
 #include <SDL2/SDL.h>
-#include "Vector2D.hpp"
-
-class Collider;
-class HexagonCollider;
-class CircleCollider;
+#include "Collider.hpp"
+#include "HexagonCollider.hpp"
+#include "CircleCollider.hpp"
 
 class Collision {
     public:

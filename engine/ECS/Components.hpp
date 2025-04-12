@@ -5,7 +5,5 @@
 #include "SpriteComponent.hpp"
 #include "KeyboardController.hpp"
 #include "Colliders/Collider.hpp"
-// #include "HexagonCollider.hpp"
-// #include "CircleCollider.hpp"
 #include "TileComponent.hpp"
 #include "Wireframe.hpp"
