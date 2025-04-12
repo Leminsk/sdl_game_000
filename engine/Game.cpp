@@ -12,7 +12,7 @@ Manager manager;
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
 
-std::vector<ColliderComponent*> Game::colliders;
+std::vector<Collider*> Game::colliders;
 
 auto& player(manager.addEntity());
 auto& wall(manager.addEntity());
@@ -67,8 +67,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<KeyboardController>();
         // player.addComponent<ColliderComponent>("player");
         // player.addComponent<CircleCollider>();
-        player.addComponent<HexagonCollider>();
-        player.addComponent<Wireframe>();
+        // player.addComponent<HexagonCollider>();
+        player.addComponent<Collider>(COLLIDER_RECTANGLE);
+        // player.addComponent<Wireframe>();
         
         player.addGroup(groupPlayers);
 
@@ -78,6 +79,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         // wall.addComponent<ColliderComponent>("wall");
         // wall.addComponent<HexagonCollider>();
         // wall.addComponent<Wireframe>();
+        wall.addComponent<Collider>(COLLIDER_RECTANGLE);
         wall.addGroup(groupMap);
 
     } else {
@@ -107,13 +109,13 @@ void Game::update() {
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    // if(Collision::AABB(
-    //     player.getComponent<ColliderComponent>().collider,
-    //     wall.getComponent<ColliderComponent>().collider
-    // )) {
-    //     player.getComponent<TransformComponent>().position = prev_player_pos;
-    //     std::cout << "WALL HIT!\n";
-    // }
+    if(Collision::AABB(
+        player.getComponent<Collider>(),
+        wall.getComponent<Collider>()
+    )) {
+        player.getComponent<TransformComponent>().position = prev_player_pos;
+        std::cout << "WALL HIT!\n";
+    }
 
     // if(Collision::HexCircle(
     //     wall.getComponent<HexagonCollider>(),

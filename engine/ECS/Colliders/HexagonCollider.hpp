@@ -1,6 +1,6 @@
 #pragma once
-#include "Components.hpp"
-#include "../Vector2D.hpp"
+#include "../Components.hpp"
+#include "../../Vector2D.hpp"
 
 class HexagonCollider : public Component {
     public:

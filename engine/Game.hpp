@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-class ColliderComponent;
+class Collider;
 
 class Game {
     public:
@@ -23,7 +23,7 @@ class Game {
         static void AddTile(int id, float x, float y);
         static SDL_Renderer *renderer;
         static SDL_Event event;
-        static std::vector<ColliderComponent*> colliders;
+        static std::vector<Collider*> colliders;
 
     private:
         bool isRunning = false;
