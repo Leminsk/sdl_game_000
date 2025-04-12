@@ -28,9 +28,9 @@ class Collider : public Component {
             transform = &entity->getComponent<TransformComponent>();
 
             switch(this->type) {
-                case COLLIDER_CIRCLE:    entity->addComponent<   CircleCollider>(); break;
-                case COLLIDER_HEXAGON:   entity->addComponent<  HexagonCollider>(); break;
-                case COLLIDER_RECTANGLE: entity->addComponent<RectangleCollider>(); break;
+                case COLLIDER_CIRCLE:    entity->addComponent<   CircleCollider>(transform); break;
+                case COLLIDER_HEXAGON:   entity->addComponent<  HexagonCollider>(transform); break;
+                case COLLIDER_RECTANGLE: entity->addComponent<RectangleCollider>(transform); break;
                 default: break;
             }
         }

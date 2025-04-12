@@ -13,10 +13,11 @@ class CircleCollider : public Component {
         Vector2D prev_position;
         Vector2D trans_pos_update;
 
+        CircleCollider(TransformComponent* transf) {
+            this->transform = transf;
+        }
+
         void init() override {
-            if(!entity->hasComponent<TransformComponent>()) {
-                entity->addComponent<TransformComponent>();
-            }
             this->transform = &entity->getComponent<TransformComponent>();
             this->prev_position = this->transform->position;
             

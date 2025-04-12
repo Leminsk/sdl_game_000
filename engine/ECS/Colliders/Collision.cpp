@@ -4,7 +4,7 @@
 #include "HexagonCollider.hpp"
 #include "CircleCollider.hpp"
 
-bool Collision::AABB(const SDL_FRect& recA, const SDL_FRect& recB) {
+bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
     if(
         recA.x + recA.w >= recB.x &&
         recB.x + recB.w >= recA.x &&
@@ -19,8 +19,8 @@ bool Collision::AABB(const SDL_FRect& recA, const SDL_FRect& recB) {
 
 bool Collision::AABB(const Collider& colA, const Collider& colB) {
     return AABB(
-        colA.entity->getComponent<RectangleCollider>().collider, 
-        colB.entity->getComponent<RectangleCollider>().collider
+        colA.entity->getComponent<RectangleCollider>(), 
+        colB.entity->getComponent<RectangleCollider>()
     );
 }
 

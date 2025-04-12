@@ -66,9 +66,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        // player.addComponent<ColliderComponent>("player");
-        // player.addComponent<CircleCollider>();
-        // player.addComponent<HexagonCollider>();
         player.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
         player.addComponent<Wireframe>();
 
@@ -78,10 +75,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
         wall.addComponent<TransformComponent>(300.0f, 300.0f, 200.0f, 200.0f, 1.0);
         wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        // wall.addComponent<ColliderComponent>("wall");
-        // wall.addComponent<HexagonCollider>();
-        // wall.addComponent<Wireframe>();
-        // wall.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
+        wall.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
+        wall.addComponent<Wireframe>();
         wall.addGroup(groupMap);
 
     } else {
@@ -111,13 +106,14 @@ void Game::update() {
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    // if(Collision::AABB(
-    //     player.getComponent<Collider>(),
-    //     wall.getComponent<Collider>()
-    // )) {
-    //     player.getComponent<TransformComponent>().position = prev_player_pos;
-    //     std::cout << "WALL HIT!\n";
-    // }
+    if(Collision::AABB(
+        player.getComponent<Collider>(),
+        wall.getComponent<Collider>()
+    )) {
+        // Vector2D translation = SubVecs(prev_player_pos, player.getComponent<TransformComponent>().position);
+        player.getComponent<TransformComponent>().position = prev_player_pos;
+        std::cout << "WALL HIT!\n";
+    }
 
     // if(Collision::HexCircle(
     //     wall.getComponent<HexagonCollider>(),
