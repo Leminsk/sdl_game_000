@@ -21,6 +21,8 @@ class RectangleCollider : public Component {
 
         TransformComponent* transform;
 
+        RectangleCollider() {}
+
         RectangleCollider(TransformComponent* transf) {
             this->transform = transf;
         }

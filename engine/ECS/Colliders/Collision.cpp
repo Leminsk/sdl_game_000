@@ -1,8 +1,31 @@
 #include <cmath>
+#include <algorithm>
+#include "../../Vector2D.hpp"
 #include "Collision.hpp"
 #include "Collider.hpp"
 #include "HexagonCollider.hpp"
 #include "CircleCollider.hpp"
+
+// https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, const Vector2D& line_end) {
+    float distance_2 = Distance(line_start, line_end, false);
+    if(distance_2 == 0.0f) {
+        return Distance(cir.center, line_start) <= cir.radius;
+    }
+
+    Vector2D line_vec = SubVecs(line_end, line_start);
+    float t = std::max(
+        0.0f, 
+        std::min(
+            1.0f,
+            (DotProd(SubVecs(cir.center, line_start), line_vec) / distance_2)
+        )
+    );
+
+    Vector2D projection = AddVecs(line_start, (SubVecs(cir.center, line_start), line_vec).Scale(t));
+    float distance = Distance(cir.center, projection);
+    return distance <= cir.radius;
+}
 
 bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
     if(
@@ -18,30 +41,24 @@ bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& rec
 }
 
 bool Collision::AABB(const Collider& colA, const Collider& colB) {
-    return AABB(
-        colA.entity->getComponent<RectangleCollider>(), 
-        colB.entity->getComponent<RectangleCollider>()
+    if(colA.type == COLLIDER_RECTANGLE && colB.type == COLLIDER_RECTANGLE) {
+        return AABB(
+            colA.entity->getComponent<RectangleCollider>(), 
+            colB.entity->getComponent<RectangleCollider>()
+        );
+    }
+
+    return false;
+}
+
+bool Collision::HexCircle(const HexagonCollider& hex, const CircleCollider& cir) {
+    return (
+        lineIntersectCircle(cir, hex.hull[0], hex.hull[1]) ||
+        lineIntersectCircle(cir, hex.hull[1], hex.hull[2]) ||
+        lineIntersectCircle(cir, hex.hull[2], hex.hull[3]) ||
+        lineIntersectCircle(cir, hex.hull[3], hex.hull[4]) ||
+        lineIntersectCircle(cir, hex.hull[4], hex.hull[5]) ||
+        lineIntersectCircle(cir, hex.hull[5], hex.hull[0])
     );
 }
 
-bool Collision::HexCircle(HexagonCollider& hex, CircleCollider& cir) {
-    Vector2D hex_to_circle = Vector2D(hex.center.x - cir.center.x, hex.center.y - cir.center.y);
-    float magnitude = sqrt((hex_to_circle.x*hex_to_circle.x) + (hex_to_circle.y*hex_to_circle.y));
-    Vector2D hex_to_circle_normalized = Vector2D(hex_to_circle.x / magnitude, hex_to_circle.y / magnitude);
-
-    Vector2D curr_vec;
-    float max = -1;
-    float curr_proj;
-
-    for(int i=0; i<6; ++i) {
-        curr_vec.x = hex.hull[i].x - hex.center.x;
-        curr_vec.y = hex.hull[i].y - hex.center.y;
-        curr_proj = (hex_to_circle_normalized.x * curr_vec.x) + (hex_to_circle_normalized.y * curr_vec.y);
-        if(max < curr_proj) { max = curr_proj; }
-    }
-
-    if((magnitude - max - cir.radius) > 0 && magnitude > 0) {
-        return true;
-    }
-    return false;
-}

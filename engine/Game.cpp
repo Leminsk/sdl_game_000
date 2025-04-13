@@ -63,7 +63,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         map = new Map();
         map->LoadMap("assets/test.bmp");
 
-        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 20.0);
+        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
         player.addComponent<Collider>(COLLIDER_CIRCLE, Game::colliders);
@@ -75,7 +75,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
         wall.addComponent<TransformComponent>(300.0f, 300.0f, 200.0f, 200.0f, 1.0);
         wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        wall.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
+        wall.addComponent<Collider>(COLLIDER_HEXAGON, Game::colliders);
         wall.addComponent<Wireframe>();
         wall.addGroup(groupMap);
 
@@ -115,13 +115,13 @@ void Game::update() {
     //     std::cout << "WALL HIT!\n";
     // }
 
-    // if(Collision::HexCircle(
-    //     wall.getComponent<HexagonCollider>(),
-    //     player.getComponent<CircleCollider>()
-    // )) {
-    //     player.getComponent<TransformComponent>().position = prev_player_pos;
-    //     std::cout << "                           WALL HIT!\n";
-    // }
+    if(Collision::HexCircle(
+        wall.getComponent<HexagonCollider>(),
+        player.getComponent<CircleCollider>()
+    )) {
+        player.getComponent<TransformComponent>().position = prev_player_pos;
+        std::cout << "                           WALL HIT!\n";
+    }
 }
 
 auto& tiles(manager.getGroup(groupMap));

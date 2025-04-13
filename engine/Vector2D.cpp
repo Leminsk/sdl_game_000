@@ -73,6 +73,10 @@ Vector2D Vector2D::VecProj(Vector2D& p) {
 float Vector2D::Magnitude() {
     return sqrtf((this->x * this->x) + (this->y * this->y));
 }
+Vector2D& Vector2D::Normalize() {
+    return this->Scale( 1/this->Magnitude() );
+}
+
 float Vector2D::OriginAngle() {
     return atanf(this->y / this->x);
 }
@@ -107,4 +111,13 @@ Vector2D VecProj(Vector2D& a, Vector2D& p) {
     p.x *= sc_proj / p.Magnitude();
     p.y *= sc_proj / p.Magnitude();
     return p;
+}
+
+float Distance(const Vector2D& a, const Vector2D& b, bool square_root) {
+    float x = b.y - a.y;
+    float y = b.x - a.x;
+    if(square_root) {
+        return sqrtf((y*y) + (x*x));
+    }
+    return (y*y) + (x*x);
 }

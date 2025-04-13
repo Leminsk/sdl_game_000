@@ -27,6 +27,7 @@ class Vector2D {
         Vector2D VecProj(Vector2D& p);
 
         float Magnitude();
+        Vector2D& Normalize();
         float OriginAngle();
 
         friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
@@ -39,3 +40,4 @@ Vector2D SubVecs(const Vector2D& a, const Vector2D& b);
 float DotProd(const Vector2D& a, const Vector2D& b);
 float DotProd(float magA, float magB, float angle);
 Vector2D VecProj(Vector2D& a, Vector2D& p);
+float Distance(const Vector2D& a, const Vector2D& b, bool square_root=true);
