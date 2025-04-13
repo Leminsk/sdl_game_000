@@ -2,9 +2,7 @@
 /.vscode
 
 # build
-Makefile
-*Makefile
-*.bat
+legacyMakefile
 
 # binaries
 *.exe
