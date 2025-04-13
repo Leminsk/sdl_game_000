@@ -63,10 +63,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         map = new Map();
         map->LoadMap("assets/test.bmp");
 
-        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
+        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 20.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
+        player.addComponent<Collider>(COLLIDER_CIRCLE, Game::colliders);
         player.addComponent<Wireframe>();
 
         
@@ -106,14 +106,14 @@ void Game::update() {
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    if(Collision::AABB(
-        player.getComponent<Collider>(),
-        wall.getComponent<Collider>()
-    )) {
-        // Vector2D translation = SubVecs(prev_player_pos, player.getComponent<TransformComponent>().position);
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "WALL HIT!\n";
-    }
+    // if(Collision::AABB(
+    //     player.getComponent<Collider>(),
+    //     wall.getComponent<Collider>()
+    // )) {
+    //     // Vector2D translation = SubVecs(prev_player_pos, player.getComponent<TransformComponent>().position);
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "WALL HIT!\n";
+    // }
 
     // if(Collision::HexCircle(
     //     wall.getComponent<HexagonCollider>(),

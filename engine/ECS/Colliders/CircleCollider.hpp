@@ -1,34 +1,52 @@
 #pragma once
 
+#include <cmath>
 #include "../ECS.hpp"
 #include "../TransformComponent.hpp"
 #include "../../Vector2D.hpp"
 
 class CircleCollider : public Component {
+    private:
+        // TODO: make amount of points part of the constructor input
+        const int amount = 32;
+        const float fraction = 2*M_PI/this->amount;
+
+        // this hull uses the center as its reference
+        void setHull() {
+            this->center = Vector2D(
+                this->transform->position.x + this->radius, 
+                this->transform->position.y + this->radius
+            );
+            
+            for(int i=0; i<this->amount; ++i) {
+                this->hull[i] = 
+                    AddVecs(
+                        this->center,
+                        Vector2D(
+                            this->radius * cosf(this->fraction*i), 
+                            this->radius * sinf(this->fraction*i)
+                        )
+                    );
+            }
+        }
+
     public:
-        Vector2D center;
         float radius;
+        Vector2D center;
+        std::vector<Vector2D> hull = std::vector<Vector2D>(this->amount);
 
         TransformComponent *transform;
-        Vector2D prev_position;
-        Vector2D trans_pos_update;
 
         CircleCollider(TransformComponent* transf) {
             this->transform = transf;
         }
 
         void init() override {
-            this->transform = &entity->getComponent<TransformComponent>();
-            this->prev_position = this->transform->position;
-            
-            this->radius = this->transform->width/2;
-            this->center = AddVecs(Vector2D(this->radius, this->radius), this->transform->position);
+            this->radius = this->transform->width/2 * this->transform->scale;
+            setHull();
         }
 
         void update() override {
-            this->trans_pos_update = SubVecs(this->transform->position, this->prev_position);
-            this->center += trans_pos_update;
-            this->prev_position = this->transform->position;
-            // std::cout<<this->center<<'\n';
+            setHull();
         }
 };

@@ -20,6 +20,9 @@ class Wireframe : public Component {
                 case COLLIDER_RECTANGLE:
                     this->hull = entity->getComponent<RectangleCollider>().hull;
                     break;
+                case COLLIDER_CIRCLE:
+                    this->hull = entity->getComponent<CircleCollider>().hull;
+                    break;
                 default:
                     this->hull = {};
             }
@@ -63,7 +66,7 @@ class Wireframe : public Component {
             this->t = entity->getComponent<Collider>().type;
 
             refreshHull();
-            this->amount = hull.size();
+            this->amount = this->hull.size();
             this->draw_points = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * (amount+1));
             refreshDrawPoints();
         }

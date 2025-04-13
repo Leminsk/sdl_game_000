@@ -5,7 +5,29 @@
 #include "../../Vector2D.hpp"
 
 class HexagonCollider : public Component {
+    private:
+        // this hull uses the transform position as its reference
+        void setHull() {
+            float lesser_height = this->radius/2;
+            float cos_30_radius = this->radius * 0.8660254f;
+            float x_gap = this->radius - cos_30_radius;
+            float right_x = (this->transform->width * this->transform->scale) - x_gap;
+            float greater_height = (this->transform->height * this->transform->scale) - lesser_height;
+
+            this->center = Vector2D(
+                this->transform->position.x + this->radius, 
+                this->transform->position.y + this->radius
+            );
+            this->hull[0] = AddVecs(Vector2D( right_x,                                   greater_height), this->transform->position);
+            this->hull[1] = AddVecs(Vector2D(  radius, this->transform->height * this->transform->scale), this->transform->position);
+            this->hull[2] = AddVecs(Vector2D(   x_gap,                                   greater_height), this->transform->position);
+            this->hull[3] = AddVecs(Vector2D(   x_gap,                                    lesser_height), this->transform->position);
+            this->hull[4] = AddVecs(Vector2D(  radius,                                             0.0f), this->transform->position);
+            this->hull[5] = AddVecs(Vector2D( right_x,                                    lesser_height), this->transform->position);
+        }
+        
     public:
+        float radius;
         Vector2D center;
         std::vector<Vector2D> hull = std::vector<Vector2D>(6);
         /* the hexagon is inscribed in a circle which is inscribed in a rect (preferrably a square)
@@ -24,53 +46,17 @@ class HexagonCollider : public Component {
          */
 
         TransformComponent *transform;
-        Vector2D prev_position;
 
         HexagonCollider(TransformComponent* transf) {
             this->transform = transf;
         }
 
         void init() override {
-            this->transform = &entity->getComponent<TransformComponent>();
-            
-            float radius = this->transform->width/2;
-            float lesser_height = radius/2;
-            float cos_30_radius = radius * 0.8660254f;
-            float x_gap = radius - cos_30_radius;
-            float right_x = this->transform->width - x_gap;
-            float greater_height = this->transform->height - lesser_height;
-
-            Vector2D offset = this->transform->position;
-            offset.x /= 2;
-            offset.y /= 2;
-
-            this->center = AddVecs(Vector2D(radius, radius), offset).Scale(this->transform->scale);
-            this->hull[0] = AddVecs(Vector2D(right_x,          greater_height), offset).Scale(this->transform->scale);
-            this->hull[1] = AddVecs(Vector2D( radius, this->transform->height), offset).Scale(this->transform->scale);
-            this->hull[2] = AddVecs(Vector2D(  x_gap,          greater_height), offset).Scale(this->transform->scale);
-            this->hull[3] = AddVecs(Vector2D(  x_gap,           lesser_height), offset).Scale(this->transform->scale);
-            this->hull[4] = AddVecs(Vector2D( radius,                    0.0f), offset).Scale(this->transform->scale);
-            this->hull[5] = AddVecs(Vector2D(right_x,           lesser_height), offset).Scale(this->transform->scale);
+            this->radius = this->transform->width/2 * this->transform->scale;
+            setHull();
         }
 
         void update() override {
-            float radius = this->transform->width/2;
-            float lesser_height = radius/2;
-            float cos_30_radius = radius * 0.8660254f;
-            float x_gap = radius - cos_30_radius;
-            float right_x = this->transform->width - x_gap;
-            float greater_height = this->transform->height - lesser_height;
-
-            Vector2D offset = this->transform->position;
-            offset.x /= 2;
-            offset.y /= 2;
-
-            this->center = AddVecs(Vector2D(radius, radius), offset).Scale(this->transform->scale);
-            this->hull[0] = AddVecs(Vector2D(right_x,          greater_height), offset).Scale(this->transform->scale);
-            this->hull[1] = AddVecs(Vector2D( radius, this->transform->height), offset).Scale(this->transform->scale);
-            this->hull[2] = AddVecs(Vector2D(  x_gap,          greater_height), offset).Scale(this->transform->scale);
-            this->hull[3] = AddVecs(Vector2D(  x_gap,           lesser_height), offset).Scale(this->transform->scale);
-            this->hull[4] = AddVecs(Vector2D( radius,                    0.0f), offset).Scale(this->transform->scale);
-            this->hull[5] = AddVecs(Vector2D(right_x,           lesser_height), offset).Scale(this->transform->scale);
+            setHull();
         }
 };
