@@ -1,3 +1,3 @@
-### this is a readme file!
+### SDL "Game Engine"
 
-I'm just a dummy file :)
+Largely based on the Birch Engine from this [tutorial on YouTube](https://www.youtube.com/watch?v=QQzAHcojEKg&list=PLhfAbcv9cehhkG7ZQK0nfIGJC_C-wSLrx).
