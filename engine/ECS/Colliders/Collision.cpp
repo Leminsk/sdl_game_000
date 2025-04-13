@@ -8,9 +8,10 @@
 
 // https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
 bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, const Vector2D& line_end) {
+    float radius_2 = cir.radius * cir.radius;
     float distance_2 = Distance(line_start, line_end, false);
     if(distance_2 == 0.0f) {
-        return Distance(cir.center, line_start) <= cir.radius;
+        return Distance(cir.center, line_start, false) <= radius_2;
     }
 
     Vector2D line_vec = SubVecs(line_end, line_start);
@@ -23,8 +24,8 @@ bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, 
     );
 
     Vector2D projection = AddVecs(line_start, (SubVecs(cir.center, line_start), line_vec).Scale(t));
-    float distance = Distance(cir.center, projection);
-    return distance <= cir.radius;
+    float distance = Distance(cir.center, projection, false);
+    return distance <= radius_2;
 }
 
 bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
@@ -52,8 +53,8 @@ bool Collision::AABB(const Collider& colA, const Collider& colB) {
 }
 
 bool Collision::CircleCircle(const CircleCollider& cA, const CircleCollider& cB) {
-    float distance = Distance(cA.center, cB.center);
-    return distance <= (cA.radius + cB.radius);
+    float distance = Distance(cA.center, cB.center, false);
+    return distance <= (cA.radius + cB.radius) * (cA.radius + cB.radius);
 }
 
 bool Collision::CircleCircle(const Collider& colA, const Collider& colB) {

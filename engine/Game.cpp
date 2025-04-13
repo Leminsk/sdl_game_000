@@ -67,7 +67,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>(COLLIDER_CIRCLE, Game::colliders);
+        player.addComponent<Collider>(COLLIDER_RECTANGLE, Game::colliders);
         player.addComponent<Wireframe>();
         player.addGroup(groupPlayers);
 
@@ -111,17 +111,17 @@ void Game::update() {
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    if(Collision::HexCircle(
-        hexagon_wall.getComponent<HexagonCollider>(),
-        player.getComponent<CircleCollider>()
-    )) {
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "player HIT hexagon_wall\n";
-    }
+    // if(Collision::HexCircle(
+    //     hexagon_wall.getComponent<HexagonCollider>(),
+    //     player.getComponent<RectangleCollider>()
+    // )) {
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "player HIT hexagon_wall\n";
+    // }
 
-    if(Collision::CircleCircle(
-        circle_wall.getComponent<CircleCollider>(),
-        player.getComponent<CircleCollider>()
+    if(Collision::ConvexPolygonCircle(
+        player.getComponent<Collider>(),
+        circle_wall.getComponent<CircleCollider>()
     )) {
         player.getComponent<TransformComponent>().position = prev_player_pos;
         std::cout << "player HIT circle_wall\n";
