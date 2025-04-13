@@ -62,3 +62,21 @@ bool Collision::HexCircle(const HexagonCollider& hex, const CircleCollider& cir)
     );
 }
 
+bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
+    std::vector<Vector2D> hull;
+    switch(conv_pol.type) {
+        case COLLIDER_HEXAGON:   hull = conv_pol.entity->getComponent<  HexagonCollider>().hull; break;
+        case COLLIDER_RECTANGLE: hull = conv_pol.entity->getComponent<RectangleCollider>().hull; break;
+        default: return false;
+    }
+
+    bool collide = false;
+    int hull_size = hull.size();
+
+    int i;
+    for(i=0; i<hull_size-1; ++i) {
+        collide = collide || lineIntersectCircle(cir, hull[i], hull[i+1]);
+    }
+    collide = collide || lineIntersectCircle(cir, hull[i], hull[0]);
+    return collide;
+}
