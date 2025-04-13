@@ -51,6 +51,22 @@ bool Collision::AABB(const Collider& colA, const Collider& colB) {
     return false;
 }
 
+bool Collision::CircleCircle(const CircleCollider& cA, const CircleCollider& cB) {
+    float distance = Distance(cA.center, cB.center);
+    return distance <= (cA.radius + cB.radius);
+}
+
+bool Collision::CircleCircle(const Collider& colA, const Collider& colB) {
+    if(colA.type == COLLIDER_CIRCLE && colB.type == COLLIDER_CIRCLE) {
+        return CircleCircle(
+            colA.entity->getComponent<CircleCollider>(), 
+            colB.entity->getComponent<CircleCollider>()
+        );
+    }
+
+    return false;
+}
+
 bool Collision::HexCircle(const HexagonCollider& hex, const CircleCollider& cir) {
     return (
         lineIntersectCircle(cir, hex.hull[0], hex.hull[1]) ||
