@@ -55,6 +55,9 @@ class KeyboardController : public Component {
                     case SDLK_r:
                         this->sprite->rotating = false;
                         break;
+                    case SDLK_ESCAPE:
+                        Game::isRunning = false;
+                        break;
                     default:
                         break;
                 }

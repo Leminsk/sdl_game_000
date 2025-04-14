@@ -26,9 +26,9 @@ class Game {
         static SDL_Renderer *renderer;
         static SDL_Event event;
         static std::vector<Collider*> colliders;
+        static bool isRunning;
 
     private:
-        bool isRunning = false;
         int cnt = 0;
         SDL_Window *window;
 

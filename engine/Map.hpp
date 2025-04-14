@@ -7,8 +7,8 @@ class Map {
         ~Map();
 
         void LoadMap(std::string path);
+        std::vector<std::vector<int>> layout;
 
     private:
-        std::vector<std::vector<int>> layout;
         int layout_width, layout_height;
 };
