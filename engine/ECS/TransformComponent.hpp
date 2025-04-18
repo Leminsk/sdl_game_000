@@ -12,7 +12,8 @@ class TransformComponent : public Component {
         float width = 32.0f;
         float scale = 1.0f;
 
-        float speed = 3.0f;
+        float speed = 500.0f;
+        float acceleration = 0;
 
         TransformComponent() {
             this->position.Zero();
@@ -37,9 +38,17 @@ class TransformComponent : public Component {
             this->velocity.Zero();
         }
 
-        void update() override {
-            this->position.x += this->velocity.x * speed;
-            this->position.y += this->velocity.y * speed;
+        void update(const float& frame_delta) override {
+            if(frame_delta > 0) {
+                this->speed += this->acceleration * frame_delta * 0.5f;
+                this->position.x += this->velocity.x * speed * frame_delta;
+                this->position.y += this->velocity.y * speed * frame_delta;
+                this->speed += this->acceleration * frame_delta * 0.5f;
+            } else {
+                this->position.x += this->velocity.x * speed;
+                this->position.y += this->velocity.y * speed;
+            }
+                        
         }
 
         

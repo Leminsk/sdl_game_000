@@ -26,6 +26,7 @@ class Vector2D {
         float ScProj(Vector2D& p);
         Vector2D VecProj(Vector2D& p);
 
+        float Magnitude2();
         float Magnitude();
         Vector2D& Normalize();
         float OriginAngle();

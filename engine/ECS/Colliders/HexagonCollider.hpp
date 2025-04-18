@@ -56,7 +56,7 @@ class HexagonCollider : public Component {
             setHull();
         }
 
-        void update() override {
+        void update(const float& frame_delta) override {
             setHull();
         }
 };

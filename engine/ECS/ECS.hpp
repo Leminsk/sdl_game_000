@@ -37,7 +37,7 @@ class Component {
         Entity* entity;
 
         virtual void init() {}
-        virtual void update() {}
+        virtual void update(const float& frame_delta) {}
         virtual void draw() {}
 
         virtual ~Component() {}
@@ -58,8 +58,8 @@ class Entity {
     public:
         Entity(Manager& mManager) : manager(mManager) {}
 
-        void update() {
-            for (auto& c : this->components) { c->update(); }
+        void update(const float& frame_delta) {
+            for (auto& c : this->components) { c->update(frame_delta); }
         }
         void draw() {
             for (auto& c : this->components) { c->draw(); }
@@ -108,8 +108,8 @@ class Manager {
         std::array< std::vector<Entity*>, maxGroups > groupedEntities;
 
     public:
-        void update() {
-            for (auto& e : this->entities) { e->update(); }
+        void update(const float& frame_delta) {
+            for (auto& e : this->entities) { e->update(frame_delta); }
         }
         void draw() {
             for (auto& e : this->entities) { e->draw(); }

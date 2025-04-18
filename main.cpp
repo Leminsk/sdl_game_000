@@ -5,27 +5,28 @@
 Game *game = nullptr;
 
 int main() {
+    const bool FORCE_FRAMERATE = false;
     const int FPS = 60;
-    const int frameDelay = 1000 / FPS;
+    const float EXPECTED_DELAY = 1000 / FPS;
 
-    uint64_t frameStart;
-    int frameTime;
+    uint64_t frame_start, frame_delta;
+    float delta = FORCE_FRAMERATE ? -1 : 0.0001f;
 
     game = new Game();
-    
     game->init("Engine", 800, 600, false);
 
     while (game->running()) {
-        frameStart = SDL_GetTicks64();
+        frame_start = SDL_GetTicks64();
 
-        game->handleEvents();
-        game->update();
-        game->render();
+        game->handleEvents(delta);
+        game->update(delta);
+        game->render(delta);
 
-        frameTime = SDL_GetTicks64() - frameStart;
+        frame_delta = SDL_GetTicks64() - frame_start;
+        delta = static_cast<float>(frame_delta)/1000.0f;
 
-        if (frameDelay > frameTime) {
-            SDL_Delay(frameDelay - frameTime);
+        if (FORCE_FRAMERATE && (EXPECTED_DELAY > frame_delta)) {
+            SDL_Delay(EXPECTED_DELAY - frame_delta);
         }
     }
 

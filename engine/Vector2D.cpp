@@ -69,7 +69,9 @@ Vector2D Vector2D::VecProj(Vector2D& p) {
 }
 
 
-
+float Vector2D::Magnitude2() {
+    return (this->x * this->x) + (this->y * this->y);
+}
 float Vector2D::Magnitude() {
     return sqrtf((this->x * this->x) + (this->y * this->y));
 }

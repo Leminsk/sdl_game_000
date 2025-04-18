@@ -56,7 +56,7 @@ class SpriteComponent : public Component {
             this->srcRect.w = static_cast<int>(this->transform->width);
             this->srcRect.h = static_cast<int>(this->transform->height);
         }
-        void update() override {
+        void update(const float& frame_delta) override {
             this->srcRect.y = this->animationIndex * static_cast<int>(this->transform->height);
 
             if (this->animated) {

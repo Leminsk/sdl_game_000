@@ -15,9 +15,9 @@ class Game {
         ~Game();
         void init(const char* title, int width, int height, bool fullscreen);
 
-        void handleEvents();
-        void update();
-        void render();
+        void handleEvents(const float& frame_delta);
+        void update(const float& frame_delta);
+        void render(const float& frame_delta);
         void clean();
 
         bool running() { return this->isRunning; }

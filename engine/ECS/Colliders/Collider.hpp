@@ -35,11 +35,11 @@ class Collider : public Component {
             }
         }
 
-        void update() override {
+        void update(const float& frame_delta) override {
             switch(this->type) {
-                case COLLIDER_CIRCLE:    entity->getComponent<   CircleCollider>().update(); break;
-                case COLLIDER_HEXAGON:   entity->getComponent<  HexagonCollider>().update(); break;
-                case COLLIDER_RECTANGLE: entity->getComponent<RectangleCollider>().update(); break;
+                case COLLIDER_CIRCLE:    entity->getComponent<   CircleCollider>().update(frame_delta); break;
+                case COLLIDER_HEXAGON:   entity->getComponent<  HexagonCollider>().update(frame_delta); break;
+                case COLLIDER_RECTANGLE: entity->getComponent<RectangleCollider>().update(frame_delta); break;
                 default: break;
             }
         }

@@ -71,7 +71,7 @@ class Wireframe : public Component {
             refreshDrawPoints();
         }
 
-        void update() override {
+        void update(const float& frame_delta) override {
             refreshHull();
             refreshDrawPoints();
         }

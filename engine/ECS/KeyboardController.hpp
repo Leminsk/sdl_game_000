@@ -15,24 +15,14 @@ class KeyboardController : public Component {
             this->sprite = &entity->getComponent<SpriteComponent>(); // gonna use this later to control sprite animations with this->sprite->play("some_animation")
         }
 
-        void update() override {
+        void update(const float& frame_delta) override {
             if (Game::event.type == SDL_KEYDOWN) {
                 switch (Game::event.key.keysym.sym) {
-                    case SDLK_w:
-                        this->transform->velocity.y = -1;
-                        break;
-                    case SDLK_a:
-                        this->transform->velocity.x = -1;
-                        break;
-                    case SDLK_s:
-                        this->transform->velocity.y = 1;
-                        break;
-                    case SDLK_d:
-                        this->transform->velocity.x = 1;
-                        break;
-                    case SDLK_r:
-                        this->sprite->rotating = true;
-                        break;
+                    case SDLK_w: this->transform->velocity.y = -1.0f; break;
+                    case SDLK_a: this->transform->velocity.x = -1.0f; break;
+                    case SDLK_s: this->transform->velocity.y =  1.0f; break;
+                    case SDLK_d: this->transform->velocity.x =  1.0f; break;
+                    case SDLK_r: this->sprite->rotating = true; break;
                     default:
                         break;
                 }
@@ -40,24 +30,12 @@ class KeyboardController : public Component {
 
             if (Game::event.type == SDL_KEYUP) {
                 switch (Game::event.key.keysym.sym) {
-                    case SDLK_w:
-                        this->transform->velocity.y = 0;
-                        break;
-                    case SDLK_a:
-                        this->transform->velocity.x = 0;
-                        break;
-                    case SDLK_s:
-                        this->transform->velocity.y = 0;
-                        break;
-                    case SDLK_d:
-                        this->transform->velocity.x = 0;
-                        break;
-                    case SDLK_r:
-                        this->sprite->rotating = false;
-                        break;
-                    case SDLK_ESCAPE:
-                        Game::isRunning = false;
-                        break;
+                    case SDLK_w: this->transform->velocity.y = 0.0f; break;
+                    case SDLK_a: this->transform->velocity.x = 0.0f; break;
+                    case SDLK_s: this->transform->velocity.y = 0.0f; break;
+                    case SDLK_d: this->transform->velocity.x = 0.0f; break;
+                    case SDLK_r: this->sprite->rotating = false; break;
+                    case SDLK_ESCAPE: Game::isRunning = false; break;
                     default:
                         break;
                 }

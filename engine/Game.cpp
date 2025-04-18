@@ -92,7 +92,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     }
 }
 
-void Game::handleEvents() {
+void Game::handleEvents(const float& frame_delta) {
     
 
     SDL_PollEvent(&event);
@@ -107,10 +107,10 @@ void Game::handleEvents() {
     }
 }
 
-void Game::update() {
+void Game::update(const float& frame_delta) {
     Vector2D prev_player_pos = player.getComponent<TransformComponent>().position;
     manager.refresh();
-    manager.update();
+    manager.update(frame_delta);
 
     // TODO: iterate all colliders here in a "smart" manner
 
@@ -135,7 +135,7 @@ auto& tiles(manager.getGroup(groupMap));
 auto& players(manager.getGroup(groupPlayers));
 auto& enemies(manager.getGroup(groupEnemies));
 
-void Game::render() {
+void Game::render(const float& frame_delta) {
     SDL_RenderClear(this->renderer);
     for(auto& t : tiles) { t->draw(); }
     for(auto& p : players) { p->draw(); }
