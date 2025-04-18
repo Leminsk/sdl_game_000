@@ -69,14 +69,19 @@ bool Collision::CircleCircle(const Collider& colA, const Collider& colB) {
 }
 
 bool Collision::HexCircle(const HexagonCollider& hex, const CircleCollider& cir) {
-    return (
-        lineIntersectCircle(cir, hex.hull[0], hex.hull[1]) ||
-        lineIntersectCircle(cir, hex.hull[1], hex.hull[2]) ||
-        lineIntersectCircle(cir, hex.hull[2], hex.hull[3]) ||
-        lineIntersectCircle(cir, hex.hull[3], hex.hull[4]) ||
-        lineIntersectCircle(cir, hex.hull[4], hex.hull[5]) ||
-        lineIntersectCircle(cir, hex.hull[5], hex.hull[0])
-    );
+    if(hex.center.x < cir.center.x) {
+        return (
+            lineIntersectCircle(cir, hex.hull[0], hex.hull[1]) ||
+            lineIntersectCircle(cir, hex.hull[4], hex.hull[5]) ||
+            lineIntersectCircle(cir, hex.hull[5], hex.hull[0])
+        );
+    } else {
+        return (
+            lineIntersectCircle(cir, hex.hull[1], hex.hull[2]) ||
+            lineIntersectCircle(cir, hex.hull[2], hex.hull[3]) ||
+            lineIntersectCircle(cir, hex.hull[3], hex.hull[4])
+        );
+    }
 }
 
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {

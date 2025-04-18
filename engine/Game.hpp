@@ -27,6 +27,7 @@ class Game {
         static SDL_Event event;
         static std::vector<Collider*> colliders;
         static bool isRunning;
+        static SDL_FRect camera;
 
     private:
         int cnt = 0;
