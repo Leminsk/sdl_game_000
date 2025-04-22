@@ -30,12 +30,20 @@ class KeyboardController : public Component {
 
             if (Game::event.type == SDL_KEYUP) {
                 switch (Game::event.key.keysym.sym) {
-                    case SDLK_w: this->transform->velocity.y = 0.0f; break;
-                    case SDLK_a: this->transform->velocity.x = 0.0f; break;
-                    case SDLK_s: this->transform->velocity.y = 0.0f; break;
-                    case SDLK_d: this->transform->velocity.x = 0.0f; break;
-                    case SDLK_r: this->sprite->rotating = false; break;
-                    case SDLK_ESCAPE: Game::isRunning = false; break;
+                    case SDLK_w:
+                    case SDLK_s: 
+                        this->transform->velocity.y = 0.0f; 
+                        break;
+                    case SDLK_a:
+                    case SDLK_d: 
+                        this->transform->velocity.x = 0.0f; 
+                        break;
+                    case SDLK_r: 
+                        this->sprite->rotating = false; 
+                        break;
+                    case SDLK_ESCAPE: 
+                        Game::isRunning = false; 
+                        break;
                     default:
                         break;
                 }

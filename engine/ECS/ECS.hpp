@@ -57,6 +57,7 @@ class Entity {
 
     public:
         Entity(Manager& mManager) : manager(mManager) {}
+        ~Entity() {}
 
         void update(const float& frame_delta) {
             for (auto& c : this->components) { c->update(frame_delta); }
@@ -108,6 +109,11 @@ class Manager {
         std::array< std::vector<Entity*>, maxGroups > groupedEntities;
 
     public:
+        Manager() {}
+        ~Manager() {
+            for(auto& e : this->entities) { delete &e; }
+        }
+
         void update(const float& frame_delta) {
             for (auto& e : this->entities) { e->update(frame_delta); }
         }

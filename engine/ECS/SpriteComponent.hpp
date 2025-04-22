@@ -74,6 +74,11 @@ class SpriteComponent : public Component {
             this->destRect.h = this->transform->height * this->transform->scale;
         }
         void draw() override {
+            /*
+                I THINK that for our purposes, the destRect is the SCREEN coordinates
+                while whatever TransformComponent has as its position was the game WORLD coordinates.
+                So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
+            */ 
             TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip);
         }
         void play(const char* name) {

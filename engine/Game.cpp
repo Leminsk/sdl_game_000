@@ -8,7 +8,7 @@
 
 
 Map* map;
-Manager manager;
+Manager* manager = new Manager();
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -18,9 +18,9 @@ std::vector<Collider*> Game::colliders;
 
 bool Game::isRunning = false;
 
-auto& player(manager.addEntity());
-auto& hexagon_wall(manager.addEntity());
-auto& circle_wall(manager.addEntity());
+auto& player(manager->addEntity());
+auto& hexagon_wall(manager->addEntity());
+auto& circle_wall(manager->addEntity());
 
 enum groupLabels : size_t {
     groupMap,
@@ -109,31 +109,35 @@ void Game::handleEvents(const float& frame_delta) {
 
 void Game::update(const float& frame_delta) {
     Vector2D prev_player_pos = player.getComponent<TransformComponent>().position;
-    manager.refresh();
-    manager.update(frame_delta);
+    Vector2D prev_player_vel = player.getComponent<TransformComponent>().velocity;
+    manager->refresh();
+    manager->update(frame_delta);
 
     // TODO: iterate all colliders here in a "smart" manner
 
-    if(Collision::HexCircle(
-        hexagon_wall.getComponent<HexagonCollider>(),
-        player.getComponent<CircleCollider>()
-    )) {
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "player HIT hexagon_wall\n";
-    }
 
-    if(Collision::CircleCircle(
-        player.getComponent<Collider>(),
-        circle_wall.getComponent<Collider>()
-    )) {
-        player.getComponent<TransformComponent>().position = prev_player_pos;
-        std::cout << "player HIT circle_wall\n";
-    }
+    Vector2D potential_pos = AddVecs(prev_player_pos, prev_player_vel);
+
+    // if(Collision::HexCircle(
+    //     hexagon_wall.getComponent<HexagonCollider>(),
+    //     player.getComponent<CircleCollider>()
+    // )) {
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "player HIT hexagon_wall\n";
+    // }
+
+    // if(Collision::CircleCircle(
+    //     player.getComponent<Collider>(),
+    //     circle_wall.getComponent<Collider>()
+    // )) {
+    //     player.getComponent<TransformComponent>().position = prev_player_pos;
+    //     std::cout << "player HIT circle_wall\n";
+    // }
 }
 
-auto& tiles(manager.getGroup(groupMap));
-auto& players(manager.getGroup(groupPlayers));
-auto& enemies(manager.getGroup(groupEnemies));
+auto& tiles(manager->getGroup(groupMap));
+auto& players(manager->getGroup(groupPlayers));
+auto& enemies(manager->getGroup(groupEnemies));
 
 void Game::render(const float& frame_delta) {
     SDL_RenderClear(this->renderer);
@@ -144,6 +148,8 @@ void Game::render(const float& frame_delta) {
 }
 
 void Game::clean() {
+    delete manager;
+
     SDL_DestroyWindow(this->window);
     SDL_DestroyRenderer(this->renderer);
     this->window = NULL;
@@ -154,7 +160,7 @@ void Game::clean() {
 }
 
 void Game::AddTile(int id, float x, float y) {
-    auto& tile(manager.addEntity());
+    auto& tile(manager->addEntity());
     tile.addComponent<TileComponent>(x, y, 32.0f, 32.0f, id);
     tile.addGroup(groupMap);
 }
