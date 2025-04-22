@@ -70,20 +70,20 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>(COLLIDER_CIRCLE, Game::colliders);
+        player.addComponent<Collider>("player", COLLIDER_CIRCLE, Game::colliders);
         player.addComponent<Wireframe>();
         player.addGroup(groupPlayers);
 
 
         hexagon_wall.addComponent<TransformComponent>(300.0f, 300.0f, 200.0f, 200.0f, 1.0);
         hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
-        hexagon_wall.addComponent<Collider>(COLLIDER_HEXAGON, Game::colliders);
+        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON, Game::colliders);
         hexagon_wall.addComponent<Wireframe>();
         hexagon_wall.addGroup(groupMap);
 
         circle_wall.addComponent<TransformComponent>(500.0f, 30.0f, 100.0f, 100.0f, 1.0);
         circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        circle_wall.addComponent<Collider>(COLLIDER_CIRCLE, Game::colliders);
+        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE, Game::colliders);
         circle_wall.addComponent<Wireframe>();
         circle_wall.addGroup(groupMap);
 
@@ -114,6 +114,17 @@ void Game::update(const float& frame_delta) {
     manager->update(frame_delta);
 
     // TODO: iterate all colliders here in a "smart" manner
+
+    float distance_2;
+    for(auto& c : Game::colliders) {
+        if(c->identifier != "player") {
+            distance_2 = Distance(player.getComponent<TransformComponent>().position, c->getCenter());
+            if(distance_2 <= 1000000.0f && Collision::Collide(player.getComponent<Collider>(), *c)) {
+                std::cout << "collide!\n";
+                player.getComponent<TransformComponent>().position = prev_player_pos;
+            }
+        }
+    }
 
 
     Vector2D potential_pos = AddVecs(prev_player_pos, prev_player_vel);
@@ -149,6 +160,7 @@ void Game::render(const float& frame_delta) {
 
 void Game::clean() {
     delete manager;
+    delete map;
 
     SDL_DestroyWindow(this->window);
     SDL_DestroyRenderer(this->renderer);

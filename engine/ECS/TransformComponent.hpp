@@ -12,7 +12,7 @@ class TransformComponent : public Component {
         float width = 32.0f;
         float scale = 1.0f;
 
-        float speed = 3.0f;
+        float speed = 100.0f; // pixels per second
         float acceleration = 0;
 
         TransformComponent() {
@@ -40,17 +40,10 @@ class TransformComponent : public Component {
         }
 
         void update(const float& frame_delta) override {
-            if(frame_delta > 0) {
-                std::cout << "frame_delta: " << frame_delta << " s\n";
-                this->speed += this->acceleration * frame_delta * 0.5f;
-                this->position.x += this->velocity.x * speed * frame_delta;
-                this->position.y += this->velocity.y * speed * frame_delta;
-                this->speed += this->acceleration * frame_delta * 0.5f;
-            } else {
-                this->position.x += this->velocity.x * speed;
-                this->position.y += this->velocity.y * speed;
-            }
-                        
+            this->speed += this->acceleration * frame_delta * 0.5f;
+            this->position.x += this->velocity.x * speed * frame_delta;
+            this->position.y += this->velocity.y * speed * frame_delta;
+            this->speed += this->acceleration * frame_delta * 0.5f;                        
         }
 
         

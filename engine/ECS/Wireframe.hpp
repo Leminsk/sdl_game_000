@@ -14,15 +14,9 @@ class Wireframe : public Component {
 
         void refreshHull() {
             switch(t) {
-                case COLLIDER_HEXAGON:
-                    this->hull = entity->getComponent<HexagonCollider>().hull;
-                    break;
-                case COLLIDER_RECTANGLE:
-                    this->hull = entity->getComponent<RectangleCollider>().hull;
-                    break;
-                case COLLIDER_CIRCLE:
-                    this->hull = entity->getComponent<CircleCollider>().hull;
-                    break;
+                case COLLIDER_HEXAGON:   this->hull = entity->getComponent<  HexagonCollider>().hull; break;
+                case COLLIDER_RECTANGLE: this->hull = entity->getComponent<RectangleCollider>().hull; break;
+                case COLLIDER_CIRCLE:    this->hull = entity->getComponent<   CircleCollider>().screen_hull; break;
                 default:
                     this->hull = {};
             }
@@ -43,6 +37,7 @@ class Wireframe : public Component {
 
     public:
         collider_type t;
+        // purely screen coordinates
         std::vector<Vector2D> hull;
         int amount;
         Uint8 color[3] = { 255, 0, 0 };      
