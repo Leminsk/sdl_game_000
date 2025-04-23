@@ -1,22 +1,22 @@
 #include "Game.hpp"
+#include "Vector2D.hpp"
+#include "Map.hpp"
 #include "ECS/ECS.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"
-#include "Map.hpp"
-#include "Vector2D.hpp"
-
 
 Map* map;
 Manager* manager = new Manager();
 
+bool Game::isRunning = false;
+float Game::frame_delta = 0.0f;
+
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
-SDL_FRect Game::camera = { 0.0f, 0.0f, 800.0f, 600.0f };
+SDL_FRect Game::camera;
 
-std::vector<Collider*> Game::colliders;
 
-bool Game::isRunning = false;
 
 auto& player(manager->addEntity());
 auto& hexagon_wall(manager->addEntity());
@@ -64,35 +64,36 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
         this->isRunning = true;
 
-        map = new Map();
-        map->LoadMap("assets/test.bmp");
+        this->camera = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height) };
 
-        player.addComponent<TransformComponent>(10.0f, 10.0f, 32.0f, 32.0f, 2.0);
+        map = new Map("assets/test.bmp");
+
+        player.addComponent<TransformComponent>(0.0f, 0.0f, 32.0f, 32.0f, 5.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>("player", COLLIDER_CIRCLE, Game::colliders);
+        player.addComponent<Collider>("player", COLLIDER_CIRCLE);
         player.addComponent<Wireframe>();
         player.addGroup(groupPlayers);
 
 
-        hexagon_wall.addComponent<TransformComponent>(300.0f, 300.0f, 200.0f, 200.0f, 1.0);
+        hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
         hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
-        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON, Game::colliders);
+        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
         hexagon_wall.addComponent<Wireframe>();
-        hexagon_wall.addGroup(groupMap);
+        hexagon_wall.addGroup(groupColliders);
 
-        circle_wall.addComponent<TransformComponent>(500.0f, 30.0f, 100.0f, 100.0f, 1.0);
+        circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 100.0f, 100.0f, 1.0);
         circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE, Game::colliders);
+        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
         circle_wall.addComponent<Wireframe>();
-        circle_wall.addGroup(groupMap);
+        circle_wall.addGroup(groupColliders);
 
     } else {
         this->isRunning = false;
     }
 }
 
-void Game::handleEvents(const float& frame_delta) {
+void Game::handleEvents() {
     
 
     SDL_PollEvent(&event);
@@ -107,24 +108,24 @@ void Game::handleEvents(const float& frame_delta) {
     }
 }
 
-void Game::update(const float& frame_delta) {
+void Game::update() {
     Vector2D prev_player_pos = player.getComponent<TransformComponent>().position;
     Vector2D prev_player_vel = player.getComponent<TransformComponent>().velocity;
     manager->refresh();
-    manager->update(frame_delta);
+    manager->update();
 
     // TODO: iterate all colliders here in a "smart" manner
 
     float distance_2;
-    for(auto& c : Game::colliders) {
-        if(c->identifier != "player") {
-            distance_2 = Distance(player.getComponent<TransformComponent>().position, c->getCenter());
-            if(distance_2 <= 1000000.0f && Collision::Collide(player.getComponent<Collider>(), *c)) {
-                std::cout << "collide!\n";
-                player.getComponent<TransformComponent>().position = prev_player_pos;
-            }
-        }
-    }
+    // for(auto& c : Game::colliders) {
+    //     if(c->identifier != "player") {
+    //         distance_2 = Distance(player.getComponent<TransformComponent>().position, c->getCenter());
+    //         if(distance_2 <= 1000000.0f && Collision::Collide(player.getComponent<Collider>(), *c)) {
+    //             std::cout << "collide!\n";
+    //             player.getComponent<TransformComponent>().position = prev_player_pos;
+    //         }
+    //     }
+    // }
 
 
     Vector2D potential_pos = AddVecs(prev_player_pos, prev_player_vel);
@@ -146,13 +147,13 @@ void Game::update(const float& frame_delta) {
     // }
 }
 
-auto& tiles(manager->getGroup(groupMap));
+auto& map_assets(manager->getGroup(groupColliders));
 auto& players(manager->getGroup(groupPlayers));
 auto& enemies(manager->getGroup(groupEnemies));
 
-void Game::render(const float& frame_delta) {
+void Game::render() {
     SDL_RenderClear(this->renderer);
-    for(auto& t : tiles) { t->draw(); }
+    for(auto& t : map_assets) { t->draw(); }
     for(auto& p : players) { p->draw(); }
     for(auto& e : enemies) { e->draw(); }
     SDL_RenderPresent(this->renderer);
@@ -171,8 +172,8 @@ void Game::clean() {
     std::cout << "Game cleaned\n";
 }
 
-void Game::AddTile(int id, float x, float y) {
+void Game::AddTile(int id, float width, int map_x, int map_y) {
     auto& tile(manager->addEntity());
-    tile.addComponent<TileComponent>(x, y, 32.0f, 32.0f, id);
+    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id);
     tile.addGroup(groupMap);
 }

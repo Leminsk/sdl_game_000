@@ -14,14 +14,14 @@ int main() {
 
     while (true) {
         elapsed_time = SDL_GetTicks64();
-        frame_delta = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
+        game->frame_delta = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
         old_elapsed_time = elapsed_time;
 
-        game->handleEvents(frame_delta);
+        game->handleEvents();
         if(!game->running()) { break; }
 
-        game->update(frame_delta);
-        game->render(frame_delta);
+        game->update();
+        game->render();
     }
 
     game->clean();

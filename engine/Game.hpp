@@ -5,29 +5,27 @@
 #include <iostream>
 #include <vector>
 
-#include "ECS/Colliders/Collider.hpp"
-
-class Collider;
-
 class Game {
     public:
+        static float frame_delta;
+        static bool isRunning;
+        static SDL_FRect camera;
+        static SDL_Renderer *renderer;
+        static SDL_Event event;        
+
         Game();
         ~Game();
+
         void init(const char* title, int width, int height, bool fullscreen);
 
-        void handleEvents(const float& frame_delta);
-        void update(const float& frame_delta);
-        void render(const float& frame_delta);
+        void handleEvents();
+        void update();
+        void render();
         void clean();
 
         bool running() { return this->isRunning; }
 
-        static void AddTile(int id, float x, float y);
-        static SDL_Renderer *renderer;
-        static SDL_Event event;
-        static std::vector<Collider*> colliders;
-        static bool isRunning;
-        static SDL_FRect camera;
+        static void AddTile(int id, float width, int map_x, int map_y);
 
     private:
         int cnt = 0;

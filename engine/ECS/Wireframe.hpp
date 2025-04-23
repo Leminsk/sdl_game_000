@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Camera.hpp"
 #include "ECS.hpp"
 #include "Colliders/ColliderTypes.hpp"
 #include "Colliders/Collider.hpp"
@@ -16,7 +17,7 @@ class Wireframe : public Component {
             switch(t) {
                 case COLLIDER_HEXAGON:   this->hull = entity->getComponent<  HexagonCollider>().hull; break;
                 case COLLIDER_RECTANGLE: this->hull = entity->getComponent<RectangleCollider>().hull; break;
-                case COLLIDER_CIRCLE:    this->hull = entity->getComponent<   CircleCollider>().screen_hull; break;
+                case COLLIDER_CIRCLE:    this->hull = entity->getComponent<   CircleCollider>().hull; break;
                 default:
                     this->hull = {};
             }
@@ -24,15 +25,18 @@ class Wireframe : public Component {
 
         void refreshDrawPoints() {            
             SDL_FPoint p;
+            Vector2D screen_pos;
             int i;
             for(i=0; i<amount; ++i) {
-                p.x = this->hull[i].x;
-                p.y = this->hull[i].y;
+                screen_pos = convertWorldToScreen(Game::camera, this->hull[i]);
+                p.x = screen_pos.x;
+                p.y = screen_pos.y;
                 this->draw_points[i] = p;
             }
             // close the circuit
-            this->draw_points[i].x = this->hull[0].x;
-            this->draw_points[i].y = this->hull[0].y;
+            screen_pos = convertWorldToScreen(Game::camera, this->hull[0]);
+            this->draw_points[i].x = screen_pos.x;
+            this->draw_points[i].y = screen_pos.y;
         }
 
     public:
@@ -66,7 +70,7 @@ class Wireframe : public Component {
             refreshDrawPoints();
         }
 
-        void update(const float& frame_delta) override {
+        void update() override {
             refreshHull();
             refreshDrawPoints();
         }

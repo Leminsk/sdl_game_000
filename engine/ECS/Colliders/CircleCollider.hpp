@@ -12,9 +12,8 @@ class CircleCollider : public Component {
         const float fraction = 2*M_PI/this->amount;
 
         // this hull uses the center as its reference
-        void setHull(std::vector<Vector2D>& h, bool screen_coord=false, float sc=1.0f) {
-            float r = this->radius;
-            if(screen_coord) { r *= sc; }
+        void setHull(std::vector<Vector2D>& h, float sc=1.0f) {
+            float r = this->radius * sc;
 
             this->center = Vector2D(
                 this->transform->position.x + r, 
@@ -36,8 +35,7 @@ class CircleCollider : public Component {
     public:
         float radius;
         Vector2D center;
-        std::vector<Vector2D> world_hull = std::vector<Vector2D>(this->amount);
-        std::vector<Vector2D> screen_hull = std::vector<Vector2D>(this->amount);
+        std::vector<Vector2D> hull = std::vector<Vector2D>(this->amount);
 
         TransformComponent *transform;
 
@@ -47,12 +45,10 @@ class CircleCollider : public Component {
 
         void init() override {
             this->radius = this->transform->width/2;
-            setHull(this->world_hull);
-            setHull(this->screen_hull, true, this->transform->scale);
+            setHull(this->hull);
         }
 
-        void update(const float& frame_delta) override {
-            setHull(this->world_hull);
-            setHull(this->screen_hull, true, this->transform->scale);
+        void update() override {
+            setHull(this->hull);
         }
 };

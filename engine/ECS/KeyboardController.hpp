@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SDL2/SDL.h>
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
@@ -15,13 +16,19 @@ class KeyboardController : public Component {
             this->sprite = &entity->getComponent<SpriteComponent>(); // gonna use this later to control sprite animations with this->sprite->play("some_animation")
         }
 
-        void update(const float& frame_delta) override {
+        void update() override {
             if (Game::event.type == SDL_KEYDOWN) {
                 switch (Game::event.key.keysym.sym) {
                     case SDLK_w: this->transform->velocity.y = -1.0f; break;
                     case SDLK_s: this->transform->velocity.y =  1.0f; break;
                     case SDLK_a: this->transform->velocity.x = -1.0f; break;
                     case SDLK_d: this->transform->velocity.x =  1.0f; break;
+
+                    case SDLK_RIGHT: Game::camera.x += 10.0f; break;
+                    case  SDLK_LEFT: Game::camera.x -= 10.0f; break;
+                    case  SDLK_DOWN: Game::camera.y += 10.0f; break;
+                    case    SDLK_UP: Game::camera.y -= 10.0f; break;
+
                     case SDLK_r: this->sprite->rotating = true; break;
                     default:
                         break;
@@ -31,19 +38,13 @@ class KeyboardController : public Component {
             if (Game::event.type == SDL_KEYUP) {
                 switch (Game::event.key.keysym.sym) {
                     case SDLK_w:
-                    case SDLK_s: 
-                        this->transform->velocity.y = 0.0f; 
-                        break;
+                    case SDLK_s: this->transform->velocity.y = 0.0f; break;
                     case SDLK_a:
-                    case SDLK_d: 
-                        this->transform->velocity.x = 0.0f; 
-                        break;
-                    case SDLK_r: 
-                        this->sprite->rotating = false; 
-                        break;
-                    case SDLK_ESCAPE: 
-                        Game::isRunning = false; 
-                        break;
+                    case SDLK_d: this->transform->velocity.x = 0.0f; break;
+
+                    case SDLK_r: this->sprite->rotating = false; break;
+                    
+                    case SDLK_ESCAPE: Game::isRunning = false; break;
                     default:
                         break;
                 }

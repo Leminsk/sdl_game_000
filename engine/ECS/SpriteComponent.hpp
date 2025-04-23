@@ -1,10 +1,12 @@
 #pragma once
 
 #include <map>
+#include "../Camera.hpp"
+#include "../TextureManager.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteAnimation.hpp"
-#include "../TextureManager.hpp"
+
 
 class SpriteComponent : public Component {
     private:
@@ -20,7 +22,7 @@ class SpriteComponent : public Component {
     public:
         int animationIndex = 0;
         double rotation = 0;
-        int rotation_tick = 2;
+        int rotation_tick = 1;
         bool rotating = false;
 
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
@@ -56,7 +58,7 @@ class SpriteComponent : public Component {
             this->srcRect.w = static_cast<int>(this->transform->width);
             this->srcRect.h = static_cast<int>(this->transform->height);
         }
-        void update(const float& frame_delta) override {
+        void update() override {
             this->srcRect.y = this->animationIndex * static_cast<int>(this->transform->height);
 
             if (this->animated) {
@@ -67,11 +69,16 @@ class SpriteComponent : public Component {
                 this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
             }
 
-            this->destRect.x = this->transform->position.x;
-            this->destRect.y = this->transform->position.y;
+            // this->destRect.x = this->transform->position.x;
+            // this->destRect.y = this->transform->position.y;
 
-            this->destRect.w = this->transform->width * this->transform->scale;
-            this->destRect.h = this->transform->height * this->transform->scale;
+            // this->destRect.w = this->transform->width * this->transform->scale;
+            // this->destRect.h = this->transform->height * this->transform->scale;
+            Vector2D screen_pos = convertWorldToScreen(Game::camera, this->transform->position);
+            this->destRect.x = screen_pos.x;
+            this->destRect.y = screen_pos.y;
+            this->destRect.w = this->transform->width;
+            this->destRect.h = this->transform->height;
         }
         void draw() override {
             /*

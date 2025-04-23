@@ -19,10 +19,9 @@ class Collider : public Component {
 
         TransformComponent* transform;
 
-        Collider(const char* id, collider_type t, std::vector<Collider*>& colliders) {
+        Collider(const char* id, collider_type t) {
             this->identifier = id;
             this->type = t;
-            colliders.push_back(this);
         }
 
         Vector2D getCenter() {
@@ -48,11 +47,11 @@ class Collider : public Component {
             }
         }
 
-        void update(const float& frame_delta) override {
+        void update() override {
             switch(this->type) {
-                case COLLIDER_CIRCLE:    entity->getComponent<   CircleCollider>().update(frame_delta); break;
-                case COLLIDER_HEXAGON:   entity->getComponent<  HexagonCollider>().update(frame_delta); break;
-                case COLLIDER_RECTANGLE: entity->getComponent<RectangleCollider>().update(frame_delta); break;
+                case COLLIDER_CIRCLE:    entity->getComponent<   CircleCollider>().update(); break;
+                case COLLIDER_HEXAGON:   entity->getComponent<  HexagonCollider>().update(); break;
+                case COLLIDER_RECTANGLE: entity->getComponent<RectangleCollider>().update(); break;
                 default: break;
             }
         }

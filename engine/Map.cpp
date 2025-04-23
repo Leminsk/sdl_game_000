@@ -5,14 +5,8 @@ struct simple_pixel {
     Uint8 r, g, b;
 };
 
-Map::Map() {
-}
 
-Map::~Map() {
-    
-}
-
-void Map::LoadMap(std::string path) {
+void Map::LoadMapFile(std::string& path) {
     // https://stackoverflow.com/questions/9296059/read-pixel-value-in-bmp-file
     static constexpr size_t HEADER_SIZE = 54;
 
@@ -57,19 +51,33 @@ void Map::LoadMap(std::string path) {
             line_index = 0;
         }
         
-        if(current_pixel.r == 0x00 && current_pixel.g == 0x00 && current_pixel.b == 0x00) { // base spawn
+        if(
+            current_pixel.r == 0x00 && 
+            current_pixel.g == 0x00 && 
+            current_pixel.b == 0x00
+        ) { // base spawn
             tile_type = 4;
-        } else if(current_pixel.r == 0xA4 && current_pixel.g == 0xC2 && current_pixel.b == 0xF4) { // navigable terrain
+        } else if(
+            current_pixel.r == 0xA4 && 
+            current_pixel.g == 0xC2 && 
+            current_pixel.b == 0xF4
+        ) { // navigable terrain
             tile_type = 3;
-        } else if(current_pixel.r == 0xAC && current_pixel.g == 0xAC && current_pixel.b == 0xAC) { // impassable terrain
+        } else if(
+            current_pixel.r == 0xAC && 
+            current_pixel.g == 0xAC && 
+            current_pixel.b == 0xAC
+        ) { // impassable terrain
             tile_type = 2;
-        } else if(current_pixel.r == 0xF9 && current_pixel.g == 0xCB && current_pixel.b == 0x9C) { // rough terrain
+        } else if(
+            current_pixel.r == 0xF9 && 
+            current_pixel.g == 0xCB && 
+            current_pixel.b == 0x9C) { // rough terrain
             tile_type = 1;
         } else { // plain terrain
             tile_type = 0;
         }
 
-        Game::AddTile(tile_type, static_cast<float>(line_index*32), static_cast<float>(current_line*32));
         this->layout[current_line][line_index] = tile_type;
         ++line_index;
     }

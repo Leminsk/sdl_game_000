@@ -41,7 +41,7 @@ class RectangleCollider : public Component {
             this->hull[3] = Vector2D(x + (w*sc),          y);
         }
 
-        void update(const float& frame_delta) override {
+        void update() override {
             x = this->transform->position.x;
             y = this->transform->position.y;
             

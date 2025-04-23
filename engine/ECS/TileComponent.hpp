@@ -23,18 +23,10 @@ class TileComponent : public Component {
             this->tileID = id;
 
             switch(this->tileID) {
-                case 1:
-                    this->path = "assets/tiles/dirt.png";
-                    break;
-                case 2:
-                    this->path = "assets/tiles/mountain.png";
-                    break;
-                case 3:
-                    this->path = "assets/tiles/water.png";
-                    break;
-                default:
-                    this->path = "assets/tiles/grass.png";
-                    break;
+                case 1:  this->path = "assets/tiles/dirt.png";     break;
+                case 2:  this->path = "assets/tiles/mountain.png"; break;
+                case 3:  this->path = "assets/tiles/water.png";    break;
+                default: this->path = "assets/tiles/grass.png";    break;
             }
         }
 

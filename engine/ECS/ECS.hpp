@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <bitset>
 #include <array>
+#include <SDL2/SDL.h>
 
 class Component;
 class Entity;
@@ -37,7 +38,7 @@ class Component {
         Entity* entity;
 
         virtual void init() {}
-        virtual void update(const float& frame_delta) {}
+        virtual void update() {}
         virtual void draw() {}
 
         virtual ~Component() {}
@@ -59,8 +60,8 @@ class Entity {
         Entity(Manager& mManager) : manager(mManager) {}
         ~Entity() {}
 
-        void update(const float& frame_delta) {
-            for (auto& c : this->components) { c->update(frame_delta); }
+        void update() {
+            for (auto& c : this->components) { c->update(); }
         }
         void draw() {
             for (auto& c : this->components) { c->draw(); }
@@ -114,8 +115,8 @@ class Manager {
             for(auto& e : this->entities) { delete &e; }
         }
 
-        void update(const float& frame_delta) {
-            for (auto& e : this->entities) { e->update(frame_delta); }
+        void update() {
+            for (auto& e : this->entities) { e->update(); }
         }
         void draw() {
             for (auto& e : this->entities) { e->draw(); }
