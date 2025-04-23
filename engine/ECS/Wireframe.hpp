@@ -34,9 +34,7 @@ class Wireframe : public Component {
                 this->draw_points[i] = p;
             }
             // close the circuit
-            screen_pos = convertWorldToScreen(Game::camera, this->hull[0]);
-            this->draw_points[i].x = screen_pos.x;
-            this->draw_points[i].y = screen_pos.y;
+            this->draw_points[i] = this->draw_points[0];
         }
 
     public:
