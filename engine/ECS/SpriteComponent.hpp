@@ -69,12 +69,10 @@ class SpriteComponent : public Component {
                 this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
             }
 
-            // this->destRect.x = this->transform->position.x;
-            // this->destRect.y = this->transform->position.y;
-
-            // this->destRect.w = this->transform->width * this->transform->scale;
-            // this->destRect.h = this->transform->height * this->transform->scale;
-            Vector2D screen_pos = convertWorldToScreen(Game::camera, this->transform->position);
+            Vector2D screen_pos = convertWorldToScreen(
+                Game::camera.getComponent<TransformComponent>().position, 
+                this->transform->position
+            );
             this->destRect.x = screen_pos.x;
             this->destRect.y = screen_pos.y;
             this->destRect.w = this->transform->width;

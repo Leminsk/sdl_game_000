@@ -28,7 +28,10 @@ class Wireframe : public Component {
             Vector2D screen_pos;
             int i;
             for(i=0; i<amount; ++i) {
-                screen_pos = convertWorldToScreen(Game::camera, this->hull[i]);
+                screen_pos = convertWorldToScreen(
+                    Game::camera.getComponent<TransformComponent>().position, 
+                    this->hull[i]
+                );
                 p.x = screen_pos.x;
                 p.y = screen_pos.y;
                 this->draw_points[i] = p;

@@ -11,11 +11,10 @@ Manager* manager = new Manager();
 
 bool Game::isRunning = false;
 float Game::frame_delta = 0.0f;
-float Game::camera_zoom = 1.0f;
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
-SDL_FRect Game::camera;
+Entity& Game::camera(manager->addEntity());
 
 
 
@@ -64,28 +63,28 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         }
 
         this->isRunning = true;
-
-        this->camera = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height) };
+        
+        Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
 
         map = new Map("assets/test.bmp");
 
         player.addComponent<TransformComponent>(0.0f, 0.0f, 32.0f, 32.0f, 5.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>("player", COLLIDER_CIRCLE);
+        player.addComponent<Collider>("player", COLLIDER_RECTANGLE);
         player.addComponent<Wireframe>();
         player.addGroup(groupPlayers);
 
 
         hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
         hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
-        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
+        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_RECTANGLE);
         hexagon_wall.addComponent<Wireframe>();
         hexagon_wall.addGroup(groupColliders);
 
         circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 100.0f, 100.0f, 1.0);
         circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
+        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_RECTANGLE);
         circle_wall.addComponent<Wireframe>();
         circle_wall.addGroup(groupColliders);
 
@@ -100,6 +99,7 @@ void Game::handleEvents() {
     SDL_PollEvent(&Game::event);
     
     const SDL_Keycode key = Game::event.key.keysym.sym;
+    Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
 
     switch(Game::event.type) {
         case SDL_QUIT:
@@ -107,13 +107,15 @@ void Game::handleEvents() {
             break;
 
         case SDL_KEYDOWN:
-            if(key == SDLK_RIGHT) { Game::camera.x += 10.0f; }
-            if(key ==  SDLK_LEFT) { Game::camera.x -= 10.0f; }
-            if(key ==  SDLK_DOWN) { Game::camera.y += 10.0f; }
-            if(key ==    SDLK_UP) { Game::camera.y -= 10.0f; }
+            if(key ==    SDLK_UP) { camera_v->y = -1.0f; }
+            if(key ==  SDLK_DOWN) { camera_v->y =  1.0f; }
+            if(key ==  SDLK_LEFT) { camera_v->x = -1.0f; }
+            if(key == SDLK_RIGHT) { camera_v->x =  1.0f; }
             break;
 
         case SDL_KEYUP:
+            if(key ==    SDLK_UP || key ==  SDLK_DOWN) { camera_v->y = 0.0f; }
+            if(key ==  SDLK_LEFT || key == SDLK_RIGHT) { camera_v->x = 0.0f; }
             break;
 
         default:
