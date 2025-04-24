@@ -11,6 +11,7 @@ Manager* manager = new Manager();
 
 bool Game::isRunning = false;
 float Game::frame_delta = 0.0f;
+float Game::camera_zoom = 1.0f;
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -96,11 +97,23 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 void Game::handleEvents() {
     
 
-    SDL_PollEvent(&event);
+    SDL_PollEvent(&Game::event);
+    
+    const SDL_Keycode key = Game::event.key.keysym.sym;
 
-    switch(event.type) {
+    switch(Game::event.type) {
         case SDL_QUIT:
             this->isRunning = false;
+            break;
+
+        case SDL_KEYDOWN:
+            if(key == SDLK_RIGHT) { Game::camera.x += 10.0f; }
+            if(key ==  SDLK_LEFT) { Game::camera.x -= 10.0f; }
+            if(key ==  SDLK_DOWN) { Game::camera.y += 10.0f; }
+            if(key ==    SDLK_UP) { Game::camera.y -= 10.0f; }
+            break;
+
+        case SDL_KEYUP:
             break;
 
         default:

@@ -10,6 +10,7 @@ class Game {
         static float frame_delta;
         static bool isRunning;
         static SDL_FRect camera;
+        static float camera_zoom;
         static SDL_Renderer *renderer;
         static SDL_Event event;        
 

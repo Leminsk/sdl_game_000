@@ -24,11 +24,6 @@ class KeyboardController : public Component {
                     case SDLK_a: this->transform->velocity.x = -1.0f; break;
                     case SDLK_d: this->transform->velocity.x =  1.0f; break;
 
-                    case SDLK_RIGHT: Game::camera.x += 10.0f; break;
-                    case  SDLK_LEFT: Game::camera.x -= 10.0f; break;
-                    case  SDLK_DOWN: Game::camera.y += 10.0f; break;
-                    case    SDLK_UP: Game::camera.y -= 10.0f; break;
-
                     case SDLK_r: this->sprite->rotating = true; break;
                     default:
                         break;
