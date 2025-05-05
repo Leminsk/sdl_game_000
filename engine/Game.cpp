@@ -99,32 +99,28 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 void Game::handleEvents() {
     
-
-    SDL_PollEvent(&Game::event);
-    
-    const SDL_Keycode key = Game::event.key.keysym.sym;
-    Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
-
-    switch(Game::event.type) {
-        case SDL_QUIT:
+    while( SDL_PollEvent(&Game::event) ) {
+        if(Game::event.type == SDL_QUIT) {
             this->isRunning = false;
-            break;
-
-        case SDL_KEYDOWN:
-            if(key ==    SDLK_UP) { camera_v->y = -1.0f; }
-            if(key ==  SDLK_DOWN) { camera_v->y =  1.0f; }
-            if(key ==  SDLK_LEFT) { camera_v->x = -1.0f; }
-            if(key == SDLK_RIGHT) { camera_v->x =  1.0f; }
-            break;
-
-        case SDL_KEYUP:
-            if(key ==    SDLK_UP || key ==  SDLK_DOWN) { camera_v->y = 0.0f; }
-            if(key ==  SDLK_LEFT || key == SDLK_RIGHT) { camera_v->x = 0.0f; }
-            break;
-
-        default:
-            break;
+        }
     }
+
+
+    const uint8_t *keystates = SDL_GetKeyboardState(NULL);
+
+    if(keystates[SDL_SCANCODE_ESCAPE]) { 
+        this->isRunning = false; 
+    } else {
+        Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
+
+        if(keystates[   SDL_SCANCODE_UP]) { camera_v->y =  -1.0f; }
+        if(keystates[ SDL_SCANCODE_DOWN]) { camera_v->y =   1.0f; }
+        if(keystates[ SDL_SCANCODE_LEFT]) { camera_v->x =  -1.0f; }
+        if(keystates[SDL_SCANCODE_RIGHT]) { camera_v->x =   1.0f; }
+
+        if(!keystates[  SDL_SCANCODE_UP] && !keystates[ SDL_SCANCODE_DOWN]) { camera_v->y = 0.0f; }
+        if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
+    }    
 }
 
 void Game::update() {
