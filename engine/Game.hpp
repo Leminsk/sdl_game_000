@@ -8,6 +8,7 @@
 
 class Game {
     public:
+        static int SCREEN_WIDTH, SCREEN_HEIGHT;
         static float frame_delta;
         static bool isRunning;
         static SDL_Renderer *renderer;

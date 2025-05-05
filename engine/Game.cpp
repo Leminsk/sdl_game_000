@@ -9,6 +9,8 @@
 Map* map;
 Manager* manager = new Manager();
 
+int Game::SCREEN_HEIGHT;
+int Game::SCREEN_WIDTH;
 bool Game::isRunning = false;
 float Game::frame_delta = 0.0f;
 
@@ -45,6 +47,8 @@ Game::~Game() {
 void Game::init(const char* title, int width, int height, bool fullscreen) {
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
         std::cout << "Subsystems Initialized\n";
+        this->SCREEN_WIDTH = width;
+        this->SCREEN_HEIGHT = height;
 
         int flags = 0;
         if (fullscreen) {

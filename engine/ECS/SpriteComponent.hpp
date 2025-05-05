@@ -25,6 +25,8 @@ class SpriteComponent : public Component {
         int rotation_tick = 1;
         bool rotating = false;
 
+        const char* texture_path;
+
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
         std::map<const char*, SpriteAnimation> animations;
 
@@ -47,6 +49,7 @@ class SpriteComponent : public Component {
         }
 
         void setTex(const char* path) {
+            this->texture_path = path;
             this->texture = TextureManager::LoadTexture(path);
         }
 
@@ -79,12 +82,20 @@ class SpriteComponent : public Component {
             this->destRect.h = this->transform->height;
         }
         void draw() override {
-            /*
-                I THINK that for our purposes, the destRect is the SCREEN coordinates
-                while whatever TransformComponent has as its position was the game WORLD coordinates.
-                So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
-            */ 
-            TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip);
+            // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
+            if(
+                Game::SCREEN_WIDTH >= this->destRect.x &&
+                this->destRect.x + this->destRect.w >= 0.0f &&
+                Game::SCREEN_HEIGHT >= this->destRect.y &&
+                this->destRect.y + this->destRect.h >= 0.0f
+            ) {
+                /*
+                    I THINK that for our purposes, the destRect is the SCREEN coordinates
+                    while whatever TransformComponent has as its position was the game WORLD coordinates.
+                    So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
+                */
+                TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip);
+            }
         }
         void play(const char* name) {
             this->animationIndex = this->animations[name].index;
