@@ -5,6 +5,11 @@
 Game *game = nullptr;
 
 int main() {
+    const bool LIMIT_FPS = true;
+    const int MAX_FPS = 60;
+    const int MAX_FRAME_DELAY = 1000.0f / MAX_FPS;
+    
+    uint64_t time_spent_on_frame;
     uint64_t elapsed_time;
     uint64_t old_elapsed_time = 0;
     float frame_delta;
@@ -22,6 +27,14 @@ int main() {
 
         game->update();
         game->render();
+
+        if(LIMIT_FPS) {
+            time_spent_on_frame = SDL_GetTicks64() - elapsed_time;
+
+            if(time_spent_on_frame < MAX_FRAME_DELAY) {
+                SDL_Delay(MAX_FRAME_DELAY - time_spent_on_frame);
+            }
+        }
     }
 
     game->clean();
