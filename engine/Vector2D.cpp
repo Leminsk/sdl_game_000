@@ -116,10 +116,19 @@ Vector2D VecProj(Vector2D& a, Vector2D& p) {
 }
 
 float Distance(const Vector2D& a, const Vector2D& b, bool square_root) {
-    float x = b.y - a.y;
-    float y = b.x - a.x;
+    float x = b.x - a.x;
+    float y = b.y - a.y;
     if(square_root) {
         return sqrtf((y*y) + (x*x));
     }
     return (y*y) + (x*x);
+}
+
+float lerp(float a, float b, float f) {
+    if(a == b) { return a; }
+    return (a * (1.0f - f)) + (b*f);
+}
+
+Vector2D VecLerp(const Vector2D& a, const Vector2D& b, float f) {
+    return Vector2D(lerp(a.x, b.x, f), lerp(a.y, b.y, f));
 }

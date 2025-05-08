@@ -5,6 +5,7 @@
 #include "Vector2D.hpp"
 #include "ECS/TransformComponent.hpp"
 
+// https://gamedev.stackexchange.com/questions/121421/how-to-use-the-sdl-viewport-properly
 // camera_pos is the upper left point of the SDL_FRect
 
 // screen = world - camera

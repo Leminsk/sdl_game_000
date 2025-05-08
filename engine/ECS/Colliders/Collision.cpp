@@ -29,6 +29,24 @@ bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, 
     return Distance(cir.center, projection) <= radius_2;
 }
 
+Vector2D projectionLineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, const Vector2D& line_end) {
+    float radius_2 = cir.radius * cir.radius;
+    float distance_2 = Distance(line_start, line_end);
+    if(distance_2 == 0.0f) { return line_start; }
+
+    Vector2D line_vec = SubVecs(line_end, line_start);
+    float t = std::max(
+        0.0f, 
+        std::min(
+            1.0f,
+            (DotProd(SubVecs(cir.center, line_start), line_vec) / distance_2)
+        )
+    );
+
+    // projection on line
+    return AddVecs(line_start, (SubVecs(cir.center, line_start), line_vec).Scale(t));
+}
+
 bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
     if(
         recA.x + recA.w >= recB.x &&
@@ -53,44 +71,6 @@ bool Collision::AABB(const Collider& colA, const Collider& colB) {
     return false;
 }
 
-bool Collision::CircleCircle(const CircleCollider& cA, const CircleCollider& cB) {
-    float distance_2 = Distance(cA.center, cB.center);
-    return distance_2 <= (cA.radius + cB.radius) * (cA.radius + cB.radius);
-}
-
-bool Collision::CircleCircle(const Collider& colA, const Collider& colB) {
-    if(colA.type == COLLIDER_CIRCLE && colB.type == COLLIDER_CIRCLE) {
-        return Collision::CircleCircle(
-            colA.entity->getComponent<CircleCollider>(), 
-            colB.entity->getComponent<CircleCollider>()
-        );
-    }
-
-    return false;
-}
-
-bool Collision::HexCircle(const Collider& hex, const Collider& cir) {
-    CircleCollider c = cir.entity->getComponent<CircleCollider>();
-    Vector2D cir_center = cir.entity->getComponent<CircleCollider>().center;
-    Vector2D hex_center = hex.entity->getComponent<HexagonCollider>().center;
-    std::vector<Vector2D> hull = hex.entity->getComponent<HexagonCollider>().hull;
-    
-
-    if(hex_center.x < cir_center.x) {
-        return (
-            lineIntersectCircle(c, hull[0], hull[1]) ||
-            lineIntersectCircle(c, hull[4], hull[5]) ||
-            lineIntersectCircle(c, hull[5], hull[0])
-        );
-    } else {
-        return (
-            lineIntersectCircle(c, hull[1], hull[2]) ||
-            lineIntersectCircle(c, hull[2], hull[3]) ||
-            lineIntersectCircle(c, hull[3], hull[4])
-        );
-    }
-}
-
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
     std::vector<Vector2D> hull;
     switch(conv_pol.type) {
@@ -110,33 +90,124 @@ bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollid
     return collide;
 }
 
-bool Collision::Collide(const Collider& colA, const Collider& colB) {
+// push circle back if overlaping with nearest_point; otherwise return same position
+Vector2D resolveCircleOverlap(const Vector2D& nearest_point, const CircleCollider& cir) {
+    Vector2D ray_to_nearest = SubVecs(nearest_point, cir.center);
+    float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
+    if(overlap > 0) {
+        overlap = cir.radius - ray_to_nearest.Magnitude();
+        Vector2D new_pos = SubVecs(cir.center, ray_to_nearest.Normalize().Scale(overlap));
+        // offset from center to transform (x,y) pos
+        new_pos.x -= cir.transform->width/2;
+        new_pos.y -= cir.transform->height/2;
+        return new_pos;
+    }
+    return cir.transform->position;
+}
 
-    switch(colA.type) {
+Vector2D CircleRect(const CircleCollider& cir, const RectangleCollider& rect) {
+    // https://www.youtube.com/watch?v=D2a5fHX-Qrs
+    Vector2D nearest_point = Vector2D(
+        std::max( rect.x, std::min(cir.center.x, rect.x + rect.w) ),
+        std::max( rect.y, std::min(cir.center.y, rect.y + rect.h) )
+    );
+    return resolveCircleOverlap(nearest_point, cir);
+}
+
+
+Vector2D CircleCir(const CircleCollider& a, const CircleCollider& b) {
+    // https://gamedev.stackexchange.com/questions/71941/calculate-point-of-circle-circle-collision-between-frames
+    float distance_2 = Distance(a.center, b.center);
+    if(distance_2 <= (a.radius + b.radius) * (a.radius + b.radius)) {
+        Vector2D nearest_point = VecLerp(b.center, a.center, b.radius/(a.radius + b.radius));
+        return resolveCircleOverlap(nearest_point, a);
+    }
+    return a.transform->position;
+}
+
+Vector2D CircleHex(const CircleCollider& cir, const HexagonCollider& hex) {
+    std::vector<Vector2D> hull = hex.hull;
+    std::vector<Vector2D> nearest_points = std::vector<Vector2D>(3);
+
+    // hexagon colliders are aligned with the axis
+    if(hex.center.x < cir.center.x) {
+        nearest_points[0] = projectionLineIntersectCircle(cir, hull[4], hull[5]);
+        nearest_points[1] = projectionLineIntersectCircle(cir, hull[5], hull[0]);
+        nearest_points[2] = projectionLineIntersectCircle(cir, hull[0], hull[1]);
+    } else {
+        nearest_points[0] = projectionLineIntersectCircle(cir, hull[1], hull[2]);
+        nearest_points[1] = projectionLineIntersectCircle(cir, hull[2], hull[3]);
+        nearest_points[2] = projectionLineIntersectCircle(cir, hull[3], hull[4]);
+    }
+
+    int index = 0;
+    float min_distance = Distance(nearest_points[0], cir.center);
+    float temp_dist = Distance(nearest_points[1], cir.center);
+    if(min_distance > temp_dist) { min_distance = temp_dist; index = 1; }
+    temp_dist = Distance(nearest_points[2], cir.center);
+    if(min_distance > temp_dist) { min_distance = temp_dist; index = 2; }
+    
+    return resolveCircleOverlap(nearest_points[index], cir);
+}
+
+bool HexCircle(const Collider& hex, const Collider& cir) {
+    CircleCollider c = cir.entity->getComponent<CircleCollider>();
+    Vector2D cir_center = cir.entity->getComponent<CircleCollider>().center;
+    Vector2D hex_center = hex.entity->getComponent<HexagonCollider>().center;
+    std::vector<Vector2D> hull = hex.entity->getComponent<HexagonCollider>().hull;
+    
+
+    if(hex_center.x < cir_center.x) {
+        return (
+            lineIntersectCircle(c, hull[4], hull[5]) ||
+            lineIntersectCircle(c, hull[5], hull[0]) ||
+            lineIntersectCircle(c, hull[0], hull[1])
+        );
+    } else {
+        return (
+            lineIntersectCircle(c, hull[1], hull[2]) ||
+            lineIntersectCircle(c, hull[2], hull[3]) ||
+            lineIntersectCircle(c, hull[3], hull[4])
+        );
+    }
+}
+
+// returns the new position the moving object should be at
+Vector2D Collision::Collide(const Collider& moving_col, const Collider& col) {
+    switch(moving_col.type) {
         case COLLIDER_CIRCLE:
-            switch(colB.type) {
-                case COLLIDER_CIRCLE: return Collision::CircleCircle(colA, colB); break;
-                case COLLIDER_HEXAGON: return Collision::HexCircle(colB, colA); break;
-                // case COLLIDER_RECTANGLE: return Collision::RectCircle(colB, colA); break; <- TODO: IMPLEMENT
+            switch(col.type) {
+                case COLLIDER_CIRCLE: return CircleCir(
+                    moving_col.entity->getComponent<CircleCollider>(),
+                    col.entity->getComponent<CircleCollider>()
+                ); break;
+                case COLLIDER_HEXAGON: return CircleHex(
+                    moving_col.entity->getComponent<CircleCollider>(),
+                    col.entity->getComponent<HexagonCollider>()
+                ); break;
+                case COLLIDER_RECTANGLE: return CircleRect(
+                    moving_col.entity->getComponent<CircleCollider>(), 
+                    col.entity->getComponent<RectangleCollider>()
+                ); break;
             }
             break;
 
         case COLLIDER_HEXAGON:
-            switch(colB.type) {
-                case COLLIDER_CIRCLE: return Collision::CircleCircle(colA, colB); break;
-                case COLLIDER_HEXAGON: return Collision::HexCircle(colA, colB); break;
-                // case COLLIDER_RECTANGLE: return Collision::RectHex(colB, colA); break; <- TODO: IMPLEMENT
+            switch(col.type) {
+                // case COLLIDER_CIRCLE: return Collision::CircleCircle(moving_col, col); break;
+                // case COLLIDER_HEXAGON: return Collision::HexCircle(moving_col, col); break;
+                // case COLLIDER_RECTANGLE: return Collision::HexRect(moving_col, col); break; <- TODO: IMPLEMENT
             }
             break;
 
         case COLLIDER_RECTANGLE:
-            switch(colB.type) {
-                // case COLLIDER_CIRCLE: return Collision::RectCircle(colA, colB); break; <- TODO: IMPLEMENT
-                // case COLLIDER_HEXAGON: return Collision::RectHex(colA, colB); break; <- TODO: IMPLEMENT
-                case COLLIDER_RECTANGLE: return Collision::AABB(colA, colB); break;
+            switch(col.type) {
+                // case COLLIDER_CIRCLE: return Collision::RectCircle(moving_col, col); break; <- TODO: IMPLEMENT
+                // case COLLIDER_HEXAGON: return Collision::RectHex(moving_col, col); break; <- TODO: IMPLEMENT
+                // case COLLIDER_RECTANGLE: return Collision::AABB(moving_col, colB); break;
             }
             break;
     }
 
-    return false;
+    return moving_col.transform->position;
 }

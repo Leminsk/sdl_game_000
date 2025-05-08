@@ -42,3 +42,6 @@ float DotProd(const Vector2D& a, const Vector2D& b);
 float DotProd(float magA, float magB, float angle);
 Vector2D VecProj(Vector2D& a, Vector2D& p);
 float Distance(const Vector2D& a, const Vector2D& b, bool square_root=false);
+
+float lerp(float a, float b, float f);
+Vector2D VecLerp(const Vector2D& a, const Vector2D& b, float f);

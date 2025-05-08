@@ -23,7 +23,7 @@ class RectangleCollider : public Component {
         TransformComponent* transform;
 
         void setHull() {
-            this->center = Vector2D(x/2, y/2);
+            this->center = Vector2D(x + (w/2), y + (h/2));
             this->hull[0] = Vector2D(x + (w*sc), y + (h*sc));
             this->hull[1] = Vector2D(         x, y + (h*sc));
             this->hull[2] = Vector2D(         x,          y);

@@ -1,3 +1,4 @@
+#include <vector>
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "Map.hpp"
@@ -18,17 +19,17 @@ SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
 Entity& Game::camera(manager->addEntity());
 
-
-
 auto& player(manager->addEntity());
 auto& hexagon_wall(manager->addEntity());
 auto& circle_wall(manager->addEntity());
+
+auto& mountain_tile(manager->addEntity());
 
 enum groupLabels : size_t {
     groupMap,
     groupPlayers,
     groupEnemies,
-    groupColliders
+    groupStationaries
 };
 
 Game::Game() {
@@ -72,30 +73,41 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
         map = new Map("assets/test.bmp");
 
-        player.addComponent<TransformComponent>(0.0f, 0.0f, 32.0f, 32.0f, 5.0);
+        player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 5.0);
         player.addComponent<SpriteComponent>("assets/green_circle.png");
         player.addComponent<KeyboardController>();
-        player.addComponent<Collider>("player", COLLIDER_RECTANGLE);
+        player.addComponent<Collider>("player", COLLIDER_CIRCLE);
         player.addComponent<Wireframe>();
         player.addGroup(groupPlayers);
 
 
         hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
         hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
-        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_RECTANGLE);
+        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
         hexagon_wall.addComponent<Wireframe>();
-        hexagon_wall.addGroup(groupColliders);
+        hexagon_wall.addGroup(groupStationaries);
 
-        circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 100.0f, 100.0f, 1.0);
+        circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
         circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_RECTANGLE);
+        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
         circle_wall.addComponent<Wireframe>();
-        circle_wall.addGroup(groupColliders);
+        circle_wall.addGroup(groupStationaries);
+
+
+        mountain_tile.addComponent<TransformComponent>(100.0f, 100.0f, 10.0f, 10.0f, 1.0);
+        mountain_tile.addComponent<SpriteComponent>("assets/tiles/mountain.png");
+        mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
+        mountain_tile.addComponent<Wireframe>();
+        mountain_tile.addGroup(groupStationaries);
 
     } else {
         this->isRunning = false;
     }
 }
+
+auto& stationaries(manager->getGroup(groupStationaries));
+auto& players(manager->getGroup(groupPlayers));
+auto& enemies(manager->getGroup(groupEnemies));
 
 void Game::handleEvents() {
     
@@ -113,62 +125,39 @@ void Game::handleEvents() {
     } else {
         Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
 
-        if(keystates[   SDL_SCANCODE_UP]) { camera_v->y =  -1.0f; }
-        if(keystates[ SDL_SCANCODE_DOWN]) { camera_v->y =   1.0f; }
-        if(keystates[ SDL_SCANCODE_LEFT]) { camera_v->x =  -1.0f; }
+        if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -1.0f; }
+        if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   1.0f; }
+        if(keystates[SDL_SCANCODE_LEFT ]) { camera_v->x =  -1.0f; }
         if(keystates[SDL_SCANCODE_RIGHT]) { camera_v->x =   1.0f; }
 
-        if(!keystates[  SDL_SCANCODE_UP] && !keystates[ SDL_SCANCODE_DOWN]) { camera_v->y = 0.0f; }
+        if(!keystates[SDL_SCANCODE_UP  ] && !keystates[SDL_SCANCODE_DOWN ]) { camera_v->y = 0.0f; }
         if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
     }    
 }
 
 void Game::update() {
-    Vector2D prev_player_pos = player.getComponent<TransformComponent>().position;
-    Vector2D prev_player_vel = player.getComponent<TransformComponent>().velocity;
+    Collider *player_collider = &player.getComponent<Collider>();
     manager->refresh();
     manager->update();
 
-    // TODO: iterate all colliders here in a "smart" manner
+    // TODO: iterate all stationaries here in a "smart" manner
 
     float distance_2;
-    // for(auto& c : Game::colliders) {
-    //     if(c->identifier != "player") {
-    //         distance_2 = Distance(player.getComponent<TransformComponent>().position, c->getCenter());
-    //         if(distance_2 <= 1000000.0f && Collision::Collide(player.getComponent<Collider>(), *c)) {
-    //             std::cout << "collide!\n";
-    //             player.getComponent<TransformComponent>().position = prev_player_pos;
-    //         }
-    //     }
-    // }
-
-
-    Vector2D potential_pos = AddVecs(prev_player_pos, prev_player_vel);
-
-    // if(Collision::HexCircle(
-    //     hexagon_wall.getComponent<HexagonCollider>(),
-    //     player.getComponent<CircleCollider>()
-    // )) {
-    //     player.getComponent<TransformComponent>().position = prev_player_pos;
-    //     std::cout << "player HIT hexagon_wall\n";
-    // }
-
-    // if(Collision::CircleCircle(
-    //     player.getComponent<Collider>(),
-    //     circle_wall.getComponent<Collider>()
-    // )) {
-    //     player.getComponent<TransformComponent>().position = prev_player_pos;
-    //     std::cout << "player HIT circle_wall\n";
-    // }
+    Collider *s_col;
+    for(auto& s : stationaries) {
+        s_col = &s->getComponent<Collider>();
+        distance_2 = Distance(player_collider->getCenter(), s_col->getCenter());
+        if(distance_2 <= 100000.0f) {
+            player.getComponent<TransformComponent>().position = Collision::Collide(*player_collider, *s_col);
+        }
+    }
 }
 
-auto& map_assets(manager->getGroup(groupColliders));
-auto& players(manager->getGroup(groupPlayers));
-auto& enemies(manager->getGroup(groupEnemies));
+
 
 void Game::render() {
     SDL_RenderClear(this->renderer);
-    for(auto& t : map_assets) { t->draw(); }
+    for(auto& s : stationaries) { s->draw(); }
     for(auto& p : players) { p->draw(); }
     for(auto& e : enemies) { e->draw(); }
     SDL_RenderPresent(this->renderer);
