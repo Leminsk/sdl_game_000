@@ -24,11 +24,13 @@ auto& hexagon_wall(manager->addEntity());
 auto& circle_wall(manager->addEntity());
 
 auto& mountain_tile(manager->addEntity());
+auto& corner_tile(manager->addEntity());
+auto& center_tile(manager->addEntity());
 
 enum groupLabels : size_t {
     groupMap,
     groupMovables,
-    groupEnemies,
+    groupInerts,
     groupStationaries
 };
 
@@ -100,6 +102,21 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         mountain_tile.addComponent<Wireframe>();
         mountain_tile.addGroup(groupStationaries);
 
+        float side = 50.0f;
+        center_tile.addComponent<TransformComponent>(
+            static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
+            side, side, 1.0
+        );
+        center_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+        center_tile.addGroup(groupInerts);
+
+        corner_tile.addComponent<TransformComponent>(
+            static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
+            side, side, 1.0
+        );
+        corner_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+        corner_tile.addGroup(groupInerts);
+        
     } else {
         this->isRunning = false;
     }
@@ -107,7 +124,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 auto& stationaries(manager->getGroup(groupStationaries));
 auto& movables(manager->getGroup(groupMovables));
-auto& enemies(manager->getGroup(groupEnemies));
+auto& inerts(manager->getGroup(groupInerts));
 
 void Game::handleEvents() {
     
@@ -126,18 +143,18 @@ void Game::handleEvents() {
         Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
         float *zoom = &Game::camera.getComponent<TransformComponent>().scale;
 
-        if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -1.0f; }
-        if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   1.0f; }
-        if(keystates[SDL_SCANCODE_LEFT ]) { camera_v->x =  -1.0f; }
-        if(keystates[SDL_SCANCODE_RIGHT]) { camera_v->x =   1.0f; }
+        if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -2.0f / *zoom; }
+        if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   2.0f / *zoom; }
+        if(keystates[SDL_SCANCODE_LEFT ]) { camera_v->x =  -2.0f / *zoom; }
+        if(keystates[SDL_SCANCODE_RIGHT]) { camera_v->x =   2.0f / *zoom; }
 
         if(!keystates[SDL_SCANCODE_UP  ] && !keystates[SDL_SCANCODE_DOWN ]) { camera_v->y = 0.0f; }
         if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
 
-        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom += 0.01f; }
-        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom -= 0.01f; }
+        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.01f, 10.0f); }
+        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.01f, 0.01f); }
         
-    }    
+    }
 }
 
 void Game::update() {
@@ -164,7 +181,7 @@ void Game::render() {
     SDL_RenderClear(this->renderer);
     for(auto& s : stationaries) { s->draw(); }
     for(auto& m : movables) { m->draw(); }
-    for(auto& e : enemies) { e->draw(); }
+    for(auto& i : inerts) { i->draw(); }
     SDL_RenderPresent(this->renderer);
 }
 

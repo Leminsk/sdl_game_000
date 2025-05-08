@@ -26,7 +26,7 @@ class TransformComponent : public Component {
             this->position.x = x;
             this->position.y = y;
         }
-        TransformComponent(float x, float y, float h, float w, float sc) {
+        TransformComponent(float x, float y, float w, float h, float sc) {
             this->position.x = x;
             this->position.y = y;
             this->height = h;

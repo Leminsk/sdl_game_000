@@ -80,11 +80,6 @@ class SpriteComponent : public Component {
                 *camera_transform, 
                 convertWorldToScreen(camera_transform->position, this->transform->position)
             );
-            // convertWorldToScreen(
-            //     camera_transform->position,
-            //     this->transform->position
-            // );
-            // screen_pos = applyZoom(*camera_transform, screen_pos);
             this->destRect.x = screen_pos.x;
             this->destRect.y = screen_pos.y;
             this->destRect.w = this->transform->width * camera_transform->scale;
