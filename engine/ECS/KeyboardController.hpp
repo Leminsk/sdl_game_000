@@ -18,10 +18,10 @@ class KeyboardController : public Component {
 
         void update() override {
             const uint8_t *keystates = SDL_GetKeyboardState(NULL);
-            if(keystates[SDL_SCANCODE_W]) { this->transform->velocity.y = -1.0f; }
-            if(keystates[SDL_SCANCODE_S]) { this->transform->velocity.y =  1.0f; }
-            if(keystates[SDL_SCANCODE_A]) { this->transform->velocity.x = -1.0f; }
-            if(keystates[SDL_SCANCODE_D]) { this->transform->velocity.x =  1.0f; }
+            if(keystates[SDL_SCANCODE_W]) { this->transform->velocity.y = -2.0f; }
+            if(keystates[SDL_SCANCODE_S]) { this->transform->velocity.y =  2.0f; }
+            if(keystates[SDL_SCANCODE_A]) { this->transform->velocity.x = -2.0f; }
+            if(keystates[SDL_SCANCODE_D]) { this->transform->velocity.x =  2.0f; }
 
             if(keystates[SDL_SCANCODE_R]) { this->sprite->rotating = true; }
 

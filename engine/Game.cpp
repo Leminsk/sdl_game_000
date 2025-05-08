@@ -124,6 +124,7 @@ void Game::handleEvents() {
         this->isRunning = false; 
     } else {
         Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
+        float *zoom = &Game::camera.getComponent<TransformComponent>().scale;
 
         if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -1.0f; }
         if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   1.0f; }
@@ -132,6 +133,10 @@ void Game::handleEvents() {
 
         if(!keystates[SDL_SCANCODE_UP  ] && !keystates[SDL_SCANCODE_DOWN ]) { camera_v->y = 0.0f; }
         if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
+
+        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom += 0.01f; }
+        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom -= 0.01f; }
+        
     }    
 }
 

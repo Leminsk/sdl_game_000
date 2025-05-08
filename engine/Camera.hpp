@@ -25,7 +25,7 @@ Vector2D convertScreenToWorld(const Vector2D& camera_pos, const Vector2D& screen
 
 // should only be used after panning (i.e. after convertWorldToScreen() => Pan first, Zoom Second)
 // When going from screen to world, do the reverse (deZoom First, dePan second)
-Vector2D applyZoom(TransformComponent& camera_transform, const Vector2D& screen_pos) {
+Vector2D applyZoom(const TransformComponent& camera_transform, const Vector2D& screen_pos) {
     Vector2D focus_point = Vector2D(
         (camera_transform.position.x + (camera_transform.width/2.0f)), 
         (camera_transform.position.y + (camera_transform.height/2.0f))

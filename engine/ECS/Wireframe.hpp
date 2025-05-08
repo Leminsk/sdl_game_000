@@ -12,6 +12,7 @@
 class Wireframe : public Component {
     private:
         SDL_FPoint* draw_points;
+        TransformComponent *camera_transform;
 
         void refreshHull() {
             switch(t) {
@@ -26,11 +27,12 @@ class Wireframe : public Component {
         void refreshDrawPoints() {            
             SDL_FPoint p;
             Vector2D screen_pos;
+            camera_transform = &Game::camera.getComponent<TransformComponent>();
             int i;
             for(i=0; i<amount; ++i) {
-                screen_pos = convertWorldToScreen(
-                    Game::camera.getComponent<TransformComponent>().position, 
-                    this->hull[i]
+                screen_pos = applyZoom(
+                    *camera_transform,
+                    convertWorldToScreen(camera_transform->position, this->hull[i])
                 );
                 p.x = screen_pos.x;
                 p.y = screen_pos.y;

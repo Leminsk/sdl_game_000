@@ -11,6 +11,7 @@
 class SpriteComponent : public Component {
     private:
         TransformComponent *transform;
+        TransformComponent *camera_transform;
         SDL_Texture *texture;
         SDL_Rect srcRect;
         SDL_FRect destRect;
@@ -29,6 +30,7 @@ class SpriteComponent : public Component {
 
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
         std::map<const char*, SpriteAnimation> animations;
+        
 
         SpriteComponent() = default;
         SpriteComponent(const char* path) {
@@ -72,14 +74,21 @@ class SpriteComponent : public Component {
                 this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
             }
 
-            Vector2D screen_pos = convertWorldToScreen(
-                Game::camera.getComponent<TransformComponent>().position, 
-                this->transform->position
+            camera_transform = &Game::camera.getComponent<TransformComponent>();
+
+            Vector2D screen_pos = applyZoom(
+                *camera_transform, 
+                convertWorldToScreen(camera_transform->position, this->transform->position)
             );
+            // convertWorldToScreen(
+            //     camera_transform->position,
+            //     this->transform->position
+            // );
+            // screen_pos = applyZoom(*camera_transform, screen_pos);
             this->destRect.x = screen_pos.x;
             this->destRect.y = screen_pos.y;
-            this->destRect.w = this->transform->width;
-            this->destRect.h = this->transform->height;
+            this->destRect.w = this->transform->width * camera_transform->scale;
+            this->destRect.h = this->transform->height * camera_transform->scale;
         }
         void draw() override {
             // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
