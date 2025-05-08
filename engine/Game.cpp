@@ -27,7 +27,7 @@ auto& mountain_tile(manager->addEntity());
 
 enum groupLabels : size_t {
     groupMap,
-    groupPlayers,
+    groupMovables,
     groupEnemies,
     groupStationaries
 };
@@ -78,7 +78,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         player.addComponent<KeyboardController>();
         player.addComponent<Collider>("player", COLLIDER_CIRCLE);
         player.addComponent<Wireframe>();
-        player.addGroup(groupPlayers);
+        player.addGroup(groupMovables);
 
 
         hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
@@ -94,7 +94,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         circle_wall.addGroup(groupStationaries);
 
 
-        mountain_tile.addComponent<TransformComponent>(100.0f, 100.0f, 10.0f, 10.0f, 1.0);
+        mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
         mountain_tile.addComponent<SpriteComponent>("assets/tiles/mountain.png");
         mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
         mountain_tile.addComponent<Wireframe>();
@@ -106,7 +106,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 }
 
 auto& stationaries(manager->getGroup(groupStationaries));
-auto& players(manager->getGroup(groupPlayers));
+auto& movables(manager->getGroup(groupMovables));
 auto& enemies(manager->getGroup(groupEnemies));
 
 void Game::handleEvents() {
@@ -138,19 +138,19 @@ void Game::handleEvents() {
 void Game::update() {
     Collider *player_collider = &player.getComponent<Collider>();
     manager->refresh();
-    manager->update();
-
+    
     // TODO: iterate all stationaries here in a "smart" manner
-
     float distance_2;
     Collider *s_col;
     for(auto& s : stationaries) {
         s_col = &s->getComponent<Collider>();
         distance_2 = Distance(player_collider->getCenter(), s_col->getCenter());
         if(distance_2 <= 100000.0f) {
-            player.getComponent<TransformComponent>().position = Collision::Collide(*player_collider, *s_col);
+            player_collider->transform->position = Collision::Collide(*player_collider, *s_col);
         }
     }
+
+    manager->update();
 }
 
 
@@ -158,7 +158,7 @@ void Game::update() {
 void Game::render() {
     SDL_RenderClear(this->renderer);
     for(auto& s : stationaries) { s->draw(); }
-    for(auto& p : players) { p->draw(); }
+    for(auto& m : movables) { m->draw(); }
     for(auto& e : enemies) { e->draw(); }
     SDL_RenderPresent(this->renderer);
 }

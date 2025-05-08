@@ -76,7 +76,9 @@ float Vector2D::Magnitude() {
     return sqrtf((this->x * this->x) + (this->y * this->y));
 }
 Vector2D& Vector2D::Normalize() {
-    return this->Scale( 1/this->Magnitude() );
+    float mag = this->Magnitude();
+    if(mag == 0) { return this->Zero(); }
+    return this->Scale( 1/mag );
 }
 
 float Vector2D::OriginAngle() {
