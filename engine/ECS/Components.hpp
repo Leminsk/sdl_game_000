@@ -7,3 +7,4 @@
 #include "Colliders/Collider.hpp"
 #include "TileComponent.hpp"
 #include "Wireframe.hpp"
+#include "TextComponent.hpp"

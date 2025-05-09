@@ -33,6 +33,10 @@ class SpriteComponent : public Component {
         
 
         SpriteComponent() = default;
+        SpriteComponent(const char* path, SDL_Texture* sdl_texture) {
+            this->texture_path = path;
+            this->texture = sdl_texture;
+        }
         SpriteComponent(const char* path) {
             setTex(path);
         }
@@ -46,9 +50,7 @@ class SpriteComponent : public Component {
             play("idle");
             setTex(path);
         }
-        ~SpriteComponent() {
-            SDL_DestroyTexture(this->texture);
-        }
+        ~SpriteComponent() {}
 
         void setTex(const char* path) {
             this->texture_path = path;

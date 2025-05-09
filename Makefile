@@ -23,7 +23,7 @@ LIBRARY_PATHS = -LC:/msys64/mingw64/lib
 # NET = -lssl -lcrypto
 # MIXER = -lSDL2_mixer
 IMAGE = -lSDL2_image
-# TTF = -lSDL2_ttf
+TTF = -lSDL2_ttf
 MAIN_SDL = -lSDL2main -lSDL2
 
 # WIN_NET = -lws2_32 -lwsock32

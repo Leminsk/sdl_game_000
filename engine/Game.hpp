@@ -1,9 +1,10 @@
 #pragma once
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <vector>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include "ECS/ECS.hpp"
 
 class Game {
@@ -14,6 +15,8 @@ class Game {
         static SDL_Renderer *renderer;
         static SDL_Event event;
         static Entity& camera;
+        static TTF_Font* default_font;
+        static SDL_Color bg_color, default_text_color;
 
         Game();
         ~Game();

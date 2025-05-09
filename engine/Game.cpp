@@ -1,4 +1,7 @@
 #include <vector>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "Map.hpp"
@@ -14,6 +17,9 @@ int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 bool Game::isRunning = false;
 float Game::frame_delta = 0.0f;
+SDL_Color Game::bg_color{ 220, 220, 220, SDL_ALPHA_OPAQUE };
+TTF_Font *Game::default_font;
+SDL_Color Game::default_text_color{ 0, 0, 0, SDL_ALPHA_OPAQUE };
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -48,78 +54,93 @@ Game::~Game() {
  * fullscreen: force fullscreen (true fullscreen)
 */
 void Game::init(const char* title, int width, int height, bool fullscreen) {
-    if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-        std::cout << "Subsystems Initialized\n";
-        this->SCREEN_WIDTH = width;
-        this->SCREEN_HEIGHT = height;
-
-        int flags = 0;
-        if (fullscreen) {
-            flags = SDL_WINDOW_FULLSCREEN;
-        }
-        
-        this->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-        if (this->window) {
-            std::cout << "Window created\n";
-        }
-
-        this->renderer = SDL_CreateRenderer(window, -1, 0);
-        if (this->renderer) {
-            SDL_SetRenderDrawColor(this->renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-            std::cout << "Renderer created\n";
-        }
-
-        this->isRunning = true;
-        
-        Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
-
-        map = new Map("assets/test.bmp");
-
-        player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 5.0);
-        player.addComponent<SpriteComponent>("assets/green_circle.png");
-        player.addComponent<KeyboardController>();
-        player.addComponent<Collider>("player", COLLIDER_CIRCLE);
-        player.addComponent<Wireframe>();
-        player.addGroup(groupMovables);
-
-
-        hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
-        hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
-        hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
-        hexagon_wall.addComponent<Wireframe>();
-        hexagon_wall.addGroup(groupStationaries);
-
-        circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
-        circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
-        circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
-        circle_wall.addComponent<Wireframe>();
-        circle_wall.addGroup(groupStationaries);
-
-
-        mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
-        mountain_tile.addComponent<SpriteComponent>("assets/tiles/mountain.png");
-        mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
-        mountain_tile.addComponent<Wireframe>();
-        mountain_tile.addGroup(groupStationaries);
-
-        float side = 50.0f;
-        center_tile.addComponent<TransformComponent>(
-            static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
-            side, side, 1.0
-        );
-        center_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
-        center_tile.addGroup(groupInerts);
-
-        corner_tile.addComponent<TransformComponent>(
-            static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
-            side, side, 1.0
-        );
-        corner_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
-        corner_tile.addGroup(groupInerts);
-        
-    } else {
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        SDL_Log("SDL could not initialize. SDL Error: %s\n", SDL_GetError());
         this->isRunning = false;
+        return;
     }
+
+    if(TTF_Init() != 0) {
+        SDL_Log("SDL_ttf could not initialize. SDL_ttf Error: %s\n", SDL_GetError());
+        this->isRunning = false;
+        return;
+    }
+
+
+
+
+
+    std::cout << "Subsystems Initialized\n";
+    Game::default_font = TTF_OpenFont("assets/consola.ttf", 28);
+    this->SCREEN_WIDTH = width;
+    this->SCREEN_HEIGHT = height;
+
+    int flags = 0;
+    if (fullscreen) {
+        flags = SDL_WINDOW_FULLSCREEN;
+    }
+    
+    this->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
+    if (this->window) {
+        std::cout << "Window created\n";
+    }
+
+    this->renderer = SDL_CreateRenderer(window, -1, 0);
+    if (this->renderer) {
+        SDL_SetRenderDrawColor(this->renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+        std::cout << "Renderer created\n";
+    }
+
+    this->isRunning = true;
+    
+    Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
+    Game::camera.addComponent<TextComponent>("", true);
+
+    map = new Map("assets/test.bmp");
+
+    player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 5.0);
+    player.addComponent<SpriteComponent>("assets/green_circle.png");
+    player.addComponent<KeyboardController>();
+    player.addComponent<Collider>("player", COLLIDER_CIRCLE);
+    player.addComponent<Wireframe>();
+    player.addComponent<TextComponent>("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP");
+    player.addGroup(groupMovables);
+
+
+    hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
+    hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
+    hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
+    hexagon_wall.addComponent<Wireframe>();
+    hexagon_wall.addGroup(groupStationaries);
+
+    circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
+    circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
+    circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
+    circle_wall.addComponent<Wireframe>();
+    // circle_wall.addComponent<TextComponent>("circle_wall");
+    circle_wall.addGroup(groupStationaries);
+
+
+    mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
+    mountain_tile.addComponent<SpriteComponent>("assets/tiles/mountain.png");
+    mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
+    mountain_tile.addComponent<Wireframe>();
+    mountain_tile.addGroup(groupStationaries);
+
+    float side = 50.0f;
+    center_tile.addComponent<TransformComponent>(
+        static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
+        side, side, 1.0
+    );
+    center_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+    center_tile.addGroup(groupInerts);
+
+    corner_tile.addComponent<TransformComponent>(
+        static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
+        side, side, 1.0
+    );
+    corner_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+    corner_tile.addGroup(groupInerts);
 }
 
 auto& stationaries(manager->getGroup(groupStationaries));
@@ -140,8 +161,9 @@ void Game::handleEvents() {
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
         this->isRunning = false; 
     } else {
-        Vector2D *camera_v = &Game::camera.getComponent<TransformComponent>().velocity;
-        float *zoom = &Game::camera.getComponent<TransformComponent>().scale;
+        TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
+        Vector2D *camera_v = &camera_transform->velocity;
+        float *zoom = &camera_transform->scale;
 
         if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -2.0f / *zoom; }
         if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   2.0f / *zoom; }
@@ -172,6 +194,17 @@ void Game::update() {
         }
     }
 
+    Vector2D camera_pos = Game::camera.getComponent<TransformComponent>().position;
+    char buffer[30];
+    sprintf(buffer, "Camera: (%8.2f,%8.2f)", camera_pos.x, camera_pos.y);
+    Game::camera.getComponent<TextComponent>().setText(buffer);
+
+    Vector2D player_pos = player.getComponent<TransformComponent>().position;
+    sprintf(buffer, "(%8.2f,%8.2f)", player_pos.x, player_pos.y);
+    player.getComponent<TextComponent>().setText(buffer);
+
+
+
     manager->update();
 }
 
@@ -182,17 +215,21 @@ void Game::render() {
     for(auto& s : stationaries) { s->draw(); }
     for(auto& m : movables) { m->draw(); }
     for(auto& i : inerts) { i->draw(); }
+    Game::camera.draw();
     SDL_RenderPresent(this->renderer);
 }
 
 void Game::clean() {
     delete manager;
     delete map;
+    TTF_CloseFont(Game::default_font);
+    Game::default_font = NULL;
 
     SDL_DestroyWindow(this->window);
     SDL_DestroyRenderer(this->renderer);
     this->window = NULL;
     this->renderer = NULL;
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
     std::cout << "Game cleaned\n";
