@@ -1,5 +1,7 @@
 #include <cmath>
+#include "utils.hpp"
 #include "Vector2D.hpp"
+
 
 Vector2D::Vector2D() {
     this-> x = 0.0f;
@@ -11,40 +13,40 @@ Vector2D::Vector2D(float x, float y) {
     this->y = y;
 }
 
-Vector2D& Vector2D::Add(const Vector2D& vec) {
-    this->x += vec.x;
-    this->y += vec.y;
-    return *this;
-}
-Vector2D& Vector2D::Subtract(const Vector2D& vec) {
-    this->x -= vec.x;
-    this->y -= vec.y;
-    return *this;
-}
-Vector2D& Vector2D::Multiply(const Vector2D& vec) {
-    this->x *= vec.x;
-    this->y *= vec.y;
-    return *this;
-}
-Vector2D& Vector2D::Divide(const Vector2D& vec) {
-    this->x /= vec.x;
-    this->y /= vec.y;
-    return *this;
-}
+// Vector2D& Vector2D::Add(const Vector2D& vec) {
+//     this->x += vec.x;
+//     this->y += vec.y;
+//     return *this;
+// }
+// Vector2D& Vector2D::Subtract(const Vector2D& vec) {
+//     this->x -= vec.x;
+//     this->y -= vec.y;
+//     return *this;
+// }
+// Vector2D& Vector2D::Multiply(const Vector2D& vec) {
+//     this->x *= vec.x;
+//     this->y *= vec.y;
+//     return *this;
+// }
+// Vector2D& Vector2D::Divide(const Vector2D& vec) {
+//     this->x /= vec.x;
+//     this->y /= vec.y;
+//     return *this;
+// }
 
 
-Vector2D& Vector2D::operator+=(const Vector2D& vec) {
-    return this->Add(vec);
-}
-Vector2D& Vector2D::operator-=(const Vector2D& vec) {
-    return this->Subtract(vec);
-}
-Vector2D& Vector2D::operator*=(const Vector2D& vec) {
-    return this->Multiply(vec);
-}
-Vector2D& Vector2D::operator/=(const Vector2D& vec) {
-    return this->Divide(vec);
-}
+// Vector2D& Vector2D::operator+=(const Vector2D& vec) {
+//     return this->Add(vec);
+// }
+// Vector2D& Vector2D::operator-=(const Vector2D& vec) {
+//     return this->Subtract(vec);
+// }
+// Vector2D& Vector2D::operator*=(const Vector2D& vec) {
+//     return this->Multiply(vec);
+// }
+// Vector2D& Vector2D::operator/=(const Vector2D& vec) {
+//     return this->Divide(vec);
+// }
 
 Vector2D& Vector2D::Scale(const float& i) {
     this->x *= i;
@@ -84,6 +86,15 @@ Vector2D& Vector2D::Normalize() {
 float Vector2D::OriginAngle() {
     return atanf(this->y / this->x);
 }
+
+
+
+std::string Vector2D::FormatDecimal(int integer_precision, int decimal_precision) {
+    std::string x_str = format_decimal(this->x, integer_precision, decimal_precision);
+    std::string y_str = format_decimal(this->y, integer_precision, decimal_precision);
+    return '(' + x_str + ',' + y_str + ')';
+}
+
 
 std::ostream& operator<<(std::ostream& stream, const Vector2D& vec) {
     stream << "(" << vec.x << "," << vec.y << ")";

@@ -24,6 +24,8 @@ SDL_Texture* TextureManager::LoadTextTexture(const char* text, const SDL_Color& 
     } else {
         TTF_Font *font = TTF_OpenFont(font_path, 28);
         tempSurface = TTF_RenderUTF8_Solid(font, text, color);
+        TTF_CloseFont(font);
+        font = NULL;
     }
 
     if(tempSurface == NULL) {

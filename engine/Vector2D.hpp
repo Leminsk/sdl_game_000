@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 
 // Used to store things like position and velocity. 
 class Vector2D {
@@ -30,6 +31,8 @@ class Vector2D {
         float Magnitude();
         Vector2D& Normalize();
         float OriginAngle();
+
+        std::string FormatDecimal(int integer_precision, int decimal_precision);
 
         friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
 

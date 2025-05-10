@@ -1,7 +1,4 @@
 #include <vector>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "Map.hpp"
@@ -71,7 +68,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 
     std::cout << "Subsystems Initialized\n";
-    Game::default_font = TTF_OpenFont("assets/consola.ttf", 28);
+    Game::default_font = TTF_OpenFont("assets/fixedsys-2-monospaced.ttf", 12);
     this->SCREEN_WIDTH = width;
     this->SCREEN_HEIGHT = height;
 
@@ -103,7 +100,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
     player.addComponent<Wireframe>();
-    player.addComponent<TextComponent>("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP");
+    player.addComponent<TextComponent>("", 160.0f, 16.0f);
     player.addGroup(groupMovables);
 
 
@@ -173,8 +170,8 @@ void Game::handleEvents() {
         if(!keystates[SDL_SCANCODE_UP  ] && !keystates[SDL_SCANCODE_DOWN ]) { camera_v->y = 0.0f; }
         if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
 
-        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.01f, 10.0f); }
-        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.01f, 0.01f); }
+        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.02f, 10.0f); }
+        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.02f, 0.01f); }
         
     }
 }
@@ -195,15 +192,10 @@ void Game::update() {
     }
 
     Vector2D camera_pos = Game::camera.getComponent<TransformComponent>().position;
-    char buffer[30];
-    sprintf(buffer, "Camera: (%8.2f,%8.2f)", camera_pos.x, camera_pos.y);
-    Game::camera.getComponent<TextComponent>().setText(buffer);
+    Game::camera.getComponent<TextComponent>().setText(("Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
 
     Vector2D player_pos = player.getComponent<TransformComponent>().position;
-    sprintf(buffer, "(%8.2f,%8.2f)", player_pos.x, player_pos.y);
-    player.getComponent<TextComponent>().setText(buffer);
-
-
+    player.getComponent<TextComponent>().setText(player_pos.FormatDecimal(4,0).c_str());
 
     manager->update();
 }

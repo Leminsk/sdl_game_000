@@ -21,9 +21,10 @@ class TextComponent : public Component {
         bool fixed = false;
 
         const char* font_path;
-        const char* content;
+        std::string content;
         SDL_Color color = Game::default_text_color;
-        float w, h;
+        float w = 0.0f;
+        float h = 0.0f;
         Vector2D offset = Vector2D(0.0f, 0.0f);
         
         
@@ -33,14 +34,23 @@ class TextComponent : public Component {
             this->fixed = fixed_to_screen;
             setText(text);
         }
-        TextComponent(const char* text, Uint8 r, Uint8 g, Uint8 b, bool fixed_to_screen=false, const char* path=nullptr) {
+        TextComponent(
+            const char* text, float width, float height, SDL_Color color=Game::default_text_color, 
+            bool fixed_to_screen=false, const char* path=nullptr
+        ) {
+            this->w = width;
+            this->h = height;
             this->fixed = fixed_to_screen;
             this->font_path = path;
-            this->color.r = r; this->color.g = g; this->color.b = b; this->color.a = SDL_ALPHA_OPAQUE;
+            this->color.r = color.r; this->color.g = color.g; this->color.b = color.b; this->color.a = SDL_ALPHA_OPAQUE;
             setText(text, path);
         }
         ~TextComponent() {
             SDL_DestroyTexture(this->texture);
+        }
+
+        void setOffset(const Vector2D& v) {
+            this->offset = v;
         }
 
         void setOffset(float x_offset, float y_offset) {
@@ -48,12 +58,11 @@ class TextComponent : public Component {
             this->offset.y = y_offset;
         }
 
-        void setText(const char* text, const char* path=nullptr) {
+        void setText(const char* text="", const char* path=nullptr) {
+            if(text == "") { text = "PLACEHOLDER"; }
             this->content = text;
             int width, height;
             this->texture = TextureManager::LoadTextTexture(text, this->color, width, height, path);
-            w = static_cast<float>(width);
-            h = static_cast<float>(height);
         }
 
         void init() override {
@@ -64,15 +73,15 @@ class TextComponent : public Component {
             if(this->fixed) {
                 this->srcRect.w = Game::SCREEN_WIDTH;
                 this->srcRect.h = Game::SCREEN_HEIGHT;
+                // destRect doesn't have to be updated
                 this->destRect.x = 0;
                 this->destRect.y = 0;
-                this->destRect.w = Game::SCREEN_WIDTH/4;
+                this->destRect.w = Game::SCREEN_WIDTH/3;
                 this->destRect.h = Game::SCREEN_HEIGHT/16;
             } else {
                 this->srcRect.w = static_cast<int>(this->w);
                 this->srcRect.h = static_cast<int>(this->h);
-            }
-            
+            }            
         }
         void update() override {
             if (this->rotating) {
@@ -90,8 +99,8 @@ class TextComponent : public Component {
                 );
                 this->destRect.x = screen_pos.x;
                 this->destRect.y = screen_pos.y;
-                this->destRect.w = w * camera_transform->scale;
-                this->destRect.h = h * camera_transform->scale;
+                this->destRect.w = this->w * camera_transform->scale;
+                this->destRect.h = this->h * camera_transform->scale;
             }
         }
         void draw() override {
