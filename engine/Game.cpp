@@ -72,9 +72,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     this->SCREEN_WIDTH = width;
     this->SCREEN_HEIGHT = height;
 
-    int flags = 0;
+    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     if (fullscreen) {
-        flags = SDL_WINDOW_FULLSCREEN;
+        flags |= SDL_WINDOW_FULLSCREEN;
     }
     
     this->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
@@ -149,7 +149,18 @@ void Game::handleEvents() {
     while( SDL_PollEvent(&Game::event) ) {
         if(Game::event.type == SDL_QUIT) {
             this->isRunning = false;
+            return;
         }
+
+        if(Game::event.type == SDL_WINDOWEVENT) {
+            switch(Game::event.window.event) {
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    Game::SCREEN_WIDTH = Game::event.window.data1;
+                    Game::SCREEN_HEIGHT = Game::event.window.data2;
+                    break;
+            }
+        }
+        
     }
 
 
