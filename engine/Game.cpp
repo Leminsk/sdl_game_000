@@ -53,13 +53,13 @@ Game::~Game() {
 void Game::init(const char* title, int width, int height, bool fullscreen) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         SDL_Log("SDL could not initialize. SDL Error: %s\n", SDL_GetError());
-        this->isRunning = false;
+        Game::isRunning = false;
         return;
     }
 
     if(TTF_Init() != 0) {
         SDL_Log("SDL_ttf could not initialize. SDL_ttf Error: %s\n", SDL_GetError());
-        this->isRunning = false;
+        Game::isRunning = false;
         return;
     }
 
@@ -69,26 +69,26 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
     std::cout << "Subsystems Initialized\n";
     Game::default_font = TTF_OpenFont("assets/fonts/FSEX302-alt.ttf", 16); // ideal size is 16 for this font but multiples of 8 work alright
-    this->SCREEN_WIDTH = width;
-    this->SCREEN_HEIGHT = height;
+    Game::SCREEN_WIDTH = width;
+    Game::SCREEN_HEIGHT = height;
 
     uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     if (fullscreen) {
         flags |= SDL_WINDOW_FULLSCREEN;
     }
     
-    this->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-    if (this->window) {
+    Game::window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
+    if (Game::window) {
         std::cout << "Window created\n";
     }
 
-    this->renderer = SDL_CreateRenderer(window, -1, 0);
-    if (this->renderer) {
-        SDL_SetRenderDrawColor(this->renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+    Game::renderer = SDL_CreateRenderer(window, -1, 0);
+    if (Game::renderer) {
+        SDL_SetRenderDrawColor(Game::renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
         std::cout << "Renderer created\n";
     }
 
-    this->isRunning = true;
+    Game::isRunning = true;
     
     Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
     Game::camera.addComponent<TextComponent>("", true);
@@ -148,7 +148,7 @@ void Game::handleEvents() {
     
     while( SDL_PollEvent(&Game::event) ) {
         if(Game::event.type == SDL_QUIT) {
-            this->isRunning = false;
+            Game::isRunning = false;
             return;
         }
 
@@ -158,6 +158,10 @@ void Game::handleEvents() {
                     Game::SCREEN_WIDTH = Game::event.window.data1;
                     Game::SCREEN_HEIGHT = Game::event.window.data2;
                     break;
+                case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
+                case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
+                case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
+                case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
             }
         }
         
@@ -167,7 +171,7 @@ void Game::handleEvents() {
     const uint8_t *keystates = SDL_GetKeyboardState(NULL);
 
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
-        this->isRunning = false; 
+        Game::isRunning = false; 
     } else {
         TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
         Vector2D *camera_v = &camera_transform->velocity;
@@ -214,12 +218,12 @@ void Game::update() {
 
 
 void Game::render() {
-    SDL_RenderClear(this->renderer);
+    SDL_RenderClear(Game::renderer);
     for(auto& s : stationaries) { s->draw(); }
     for(auto& m : movables) { m->draw(); }
     for(auto& i : inerts) { i->draw(); }
     Game::camera.draw();
-    SDL_RenderPresent(this->renderer);
+    SDL_RenderPresent(Game::renderer);
 }
 
 void Game::clean() {
@@ -228,10 +232,10 @@ void Game::clean() {
     TTF_CloseFont(Game::default_font);
     Game::default_font = NULL;
 
-    SDL_DestroyWindow(this->window);
-    SDL_DestroyRenderer(this->renderer);
-    this->window = NULL;
-    this->renderer = NULL;
+    SDL_DestroyWindow(Game::window);
+    SDL_DestroyRenderer(Game::renderer);
+    Game::window = NULL;
+    Game::renderer = NULL;
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
