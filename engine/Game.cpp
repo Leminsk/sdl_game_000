@@ -68,7 +68,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 
     std::cout << "Subsystems Initialized\n";
-    Game::default_font = TTF_OpenFont("assets/fixedsys-2-monospaced.ttf", 12);
+    Game::default_font = TTF_OpenFont("assets/fonts/FSEX302-alt.ttf", 16); // ideal size is 16 for this font but multiples of 8 work alright
     this->SCREEN_WIDTH = width;
     this->SCREEN_HEIGHT = height;
 
@@ -203,7 +203,7 @@ void Game::update() {
     }
 
     Vector2D camera_pos = Game::camera.getComponent<TransformComponent>().position;
-    Game::camera.getComponent<TextComponent>().setText(("Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
+    Game::camera.getComponent<TextComponent>().setText(("<= <== Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
 
     Vector2D player_pos = player.getComponent<TransformComponent>().position;
     player.getComponent<TextComponent>().setText(player_pos.FormatDecimal(4,0).c_str());
