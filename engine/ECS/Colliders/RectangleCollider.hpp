@@ -41,7 +41,6 @@ class RectangleCollider : public Component {
             y = this->transform->position.y;
             w = this->transform->width;
             h = this->transform->height;
-            setHull();
         }
 
         void update() override {

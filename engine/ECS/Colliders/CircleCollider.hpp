@@ -21,11 +21,10 @@ class CircleCollider : public Component {
             );
             
             for(int i=0; i<this->amount; ++i) {
-                this->hull[i] = this->center +
-                        Vector2D(
-                            r * cosf(this->fraction*i), 
-                            r * sinf(this->fraction*i)
-                        );
+                this->hull[i] = this->center + Vector2D(
+                                                    r * cosf(this->fraction*i), 
+                                                    r * sinf(this->fraction*i)
+                                                );
             }
         }
 
@@ -42,7 +41,6 @@ class CircleCollider : public Component {
 
         void init() override {
             this->radius = this->transform->width/2;
-            setHull();
         }
 
         void update() override {
