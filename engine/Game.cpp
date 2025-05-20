@@ -2,6 +2,7 @@
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "Map.hpp"
+#include "TextureManager.hpp"
 #include "ECS/ECS.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
@@ -93,10 +94,20 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
     Game::camera.addComponent<TextComponent>("", true);
 
+    SDL_Texture* player_texture   = TextureManager::LoadTexture("assets/green_circle.png");
+    SDL_Texture* hexagon_texture  = TextureManager::LoadTexture("assets/green_circle2.png");
+    SDL_Texture* circle_texture   = TextureManager::LoadTexture("assets/magenta_circle.png");
+
+    // tiles textures
+    SDL_Texture* dirt_texture     = TextureManager::LoadTexture("assets/tiles/dirt.png");
+    SDL_Texture* mountain_texture = TextureManager::LoadTexture("assets/tiles/mountain.png");
+    SDL_Texture* water_texture    = TextureManager::LoadTexture("assets/tiles/water.png");
+    SDL_Texture* grass_texture    = TextureManager::LoadTexture("assets/tiles/grass.png");
+
     map = new Map("assets/test.bmp");
 
     player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 5.0);
-    player.addComponent<SpriteComponent>("assets/green_circle.png");
+    player.addComponent<SpriteComponent>(player_texture);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
     player.addComponent<Wireframe>();
@@ -105,13 +116,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 
     hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
-    hexagon_wall.addComponent<SpriteComponent>("assets/green_circle2.png");
+    hexagon_wall.addComponent<SpriteComponent>(hexagon_texture);
     hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
     hexagon_wall.addComponent<Wireframe>();
     hexagon_wall.addGroup(groupStationaries);
 
     circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
-    circle_wall.addComponent<SpriteComponent>("assets/magenta_circle.png");
+    circle_wall.addComponent<SpriteComponent>(circle_texture);
     circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
     circle_wall.addComponent<Wireframe>();
     // circle_wall.addComponent<TextComponent>("circle_wall");
@@ -119,7 +130,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 
     mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
-    mountain_tile.addComponent<SpriteComponent>("assets/tiles/mountain.png");
+    mountain_tile.addComponent<SpriteComponent>(mountain_texture);
     mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
     mountain_tile.addComponent<Wireframe>();
     mountain_tile.addGroup(groupStationaries);
@@ -129,14 +140,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
         side, side, 1.0
     );
-    center_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+    center_tile.addComponent<SpriteComponent>(water_texture);
     center_tile.addGroup(groupInerts);
 
     corner_tile.addComponent<TransformComponent>(
         static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
         side, side, 1.0
     );
-    corner_tile.addComponent<SpriteComponent>("assets/tiles/water.png");
+    corner_tile.addComponent<SpriteComponent>(water_texture);
     corner_tile.addGroup(groupInerts);
 }
 
@@ -243,8 +254,8 @@ void Game::clean() {
     std::cout << "Game cleaned\n";
 }
 
-void Game::AddTile(int id, float width, int map_x, int map_y) {
+void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y) {
     auto& tile(manager->addEntity());
-    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id);
+    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
     tile.addGroup(groupMap);
 }

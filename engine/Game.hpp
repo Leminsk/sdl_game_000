@@ -30,7 +30,7 @@ class Game {
 
         bool running() { return this->isRunning; }
 
-        static void AddTile(int id, float width, int map_x, int map_y);
+        static void AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y);
 
     private:
         int cnt = 0;

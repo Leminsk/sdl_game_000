@@ -8,26 +8,21 @@ class TileComponent : public Component {
     public:
         TransformComponent *transform;
         SpriteComponent *sprite;
-
+        
+        SDL_Texture* texture;
         SDL_FRect tileRect;
         int tileID;
         const char *path;
 
         TileComponent() = default;
 
-        TileComponent(float x, float y, float w, float h, float id) {
+        TileComponent(float x, float y, float w, float h, float id, SDL_Texture* t) {
             this->tileRect.x = x;
             this->tileRect.y = y;
             this->tileRect.w = w;
             this->tileRect.h = h;
             this->tileID = id;
-
-            switch(this->tileID) {
-                case 1:  this->path = "assets/tiles/dirt.png";     break;
-                case 2:  this->path = "assets/tiles/mountain.png"; break;
-                case 3:  this->path = "assets/tiles/water.png";    break;
-                default: this->path = "assets/tiles/grass.png";    break;
-            }
+            this->texture = t;
         }
 
         void init() override {
@@ -37,7 +32,7 @@ class TileComponent : public Component {
                 1
             );
             this->transform = &entity->getComponent<TransformComponent>();
-            entity->addComponent<SpriteComponent>(this->path);
+            entity->addComponent<SpriteComponent>(this->texture);
             this->sprite = &entity->getComponent<SpriteComponent>();
         }
 

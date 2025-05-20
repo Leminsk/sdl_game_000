@@ -26,21 +26,15 @@ class SpriteComponent : public Component {
         int rotation_tick = 1;
         bool rotating = false;
 
-        const char* texture_path;
-
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
         std::map<const char*, SpriteAnimation> animations;
         
 
         SpriteComponent() = default;
-        SpriteComponent(const char* path, SDL_Texture* sdl_texture) {
-            this->texture_path = path;
-            this->texture = sdl_texture;
+        SpriteComponent(SDL_Texture* t) {
+            this->texture = t;
         }
-        SpriteComponent(const char* path) {
-            setTex(path);
-        }
-        SpriteComponent(const char* path, bool isAnimated) {
+        SpriteComponent(SDL_Texture* t, bool isAnimated) {
             this->animated = isAnimated;
 
             SpriteAnimation idle = SpriteAnimation(0, 3, 100);
@@ -48,14 +42,9 @@ class SpriteComponent : public Component {
             animations.emplace("idle", idle);
 
             play("idle");
-            setTex(path);
+            this->texture = t;
         }
         ~SpriteComponent() {}
-
-        void setTex(const char* path) {
-            this->texture_path = path;
-            this->texture = TextureManager::LoadTexture(path);
-        }
 
         void init() override {
             this->transform = &entity->getComponent<TransformComponent>();

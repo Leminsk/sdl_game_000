@@ -59,9 +59,7 @@ class TextComponent : public Component {
         }
 
         void setText(const char* text="", const char* path=nullptr) {
-            if(this->texture != NULL) {
-                SDL_DestroyTexture(this->texture);
-            }
+            if(this->texture != NULL) { SDL_DestroyTexture(this->texture); }
             if(text == "") { text = "PLACEHOLDER"; }
             this->content = text;
             int width, height;
