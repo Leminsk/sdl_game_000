@@ -10,7 +10,7 @@ class TextComponent : public Component {
     private:
         TransformComponent *transform;
         TransformComponent *camera_transform;
-        SDL_Texture *texture;
+        SDL_Texture *texture = NULL;
         SDL_Rect srcRect;
         SDL_FRect destRect;
 
@@ -59,6 +59,9 @@ class TextComponent : public Component {
         }
 
         void setText(const char* text="", const char* path=nullptr) {
+            if(this->texture != NULL) {
+                SDL_DestroyTexture(this->texture);
+            }
             if(text == "") { text = "PLACEHOLDER"; }
             this->content = text;
             int width, height;

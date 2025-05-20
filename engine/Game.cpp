@@ -186,7 +186,7 @@ void Game::handleEvents() {
         if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
 
         if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.02f, 10.0f); }
-        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.02f, 0.01f); }
+        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.02f, 0.05f); }
         
     }
 }
@@ -207,11 +207,13 @@ void Game::update() {
         }
     }
 
-    Vector2D camera_pos = Game::camera.getComponent<TransformComponent>().position;
-    Game::camera.getComponent<TextComponent>().setText(("Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
+    Game::camera.getComponent<TextComponent>().setText((
+        "Camera: " + Game::camera.getComponent<TransformComponent>().position.FormatDecimal(4,0)
+    ).c_str());
 
-    Vector2D player_pos = player.getComponent<TransformComponent>().position;
-    player.getComponent<TextComponent>().setText(player_pos.FormatDecimal(4,0).c_str());
+    player.getComponent<TextComponent>().setText(
+        player.getComponent<TransformComponent>().position.FormatDecimal(4,0)
+    .c_str());
 }
 
 

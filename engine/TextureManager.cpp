@@ -40,6 +40,7 @@ SDL_Texture* TextureManager::LoadTextTexture(const char* text, const SDL_Color& 
     }
     output_w = tempSurface->w;
     output_h = tempSurface->h;
+    SDL_FreeSurface(tempSurface);
     return tex;
 }
 
