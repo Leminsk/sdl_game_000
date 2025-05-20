@@ -18,12 +18,12 @@ class HexagonCollider : public Component {
                 this->transform->position.x + this->radius, 
                 this->transform->position.y + this->radius
             );
-            this->hull[0] = AddVecs(Vector2D( right_x,                                   greater_height), this->transform->position);
-            this->hull[1] = AddVecs(Vector2D(  radius, this->transform->height * this->transform->scale), this->transform->position);
-            this->hull[2] = AddVecs(Vector2D(   x_gap,                                   greater_height), this->transform->position);
-            this->hull[3] = AddVecs(Vector2D(   x_gap,                                    lesser_height), this->transform->position);
-            this->hull[4] = AddVecs(Vector2D(  radius,                                             0.0f), this->transform->position);
-            this->hull[5] = AddVecs(Vector2D( right_x,                                    lesser_height), this->transform->position);
+            this->hull[0] = Vector2D( right_x,                                   greater_height) + this->transform->position;
+            this->hull[1] = Vector2D(  radius, this->transform->height * this->transform->scale) + this->transform->position;
+            this->hull[2] = Vector2D(   x_gap,                                   greater_height) + this->transform->position;
+            this->hull[3] = Vector2D(   x_gap,                                    lesser_height) + this->transform->position;
+            this->hull[4] = Vector2D(  radius,                                             0.0f) + this->transform->position;
+            this->hull[5] = Vector2D( right_x,                                    lesser_height) + this->transform->position;
         }
         
     public:

@@ -207,7 +207,7 @@ void Game::update() {
     }
 
     Vector2D camera_pos = Game::camera.getComponent<TransformComponent>().position;
-    Game::camera.getComponent<TextComponent>().setText(("<= <== Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
+    Game::camera.getComponent<TextComponent>().setText(("Camera: "+camera_pos.FormatDecimal(4,0)).c_str());
 
     Vector2D player_pos = player.getComponent<TransformComponent>().position;
     player.getComponent<TextComponent>().setText(player_pos.FormatDecimal(4,0).c_str());

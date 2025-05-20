@@ -13,46 +13,26 @@ Vector2D::Vector2D(float x, float y) {
     this->y = y;
 }
 
-// Vector2D& Vector2D::Add(const Vector2D& vec) {
-//     this->x += vec.x;
-//     this->y += vec.y;
-//     return *this;
-// }
-// Vector2D& Vector2D::Subtract(const Vector2D& vec) {
-//     this->x -= vec.x;
-//     this->y -= vec.y;
-//     return *this;
-// }
-// Vector2D& Vector2D::Multiply(const Vector2D& vec) {
-//     this->x *= vec.x;
-//     this->y *= vec.y;
-//     return *this;
-// }
-// Vector2D& Vector2D::Divide(const Vector2D& vec) {
-//     this->x /= vec.x;
-//     this->y /= vec.y;
-//     return *this;
-// }
-
-
-// Vector2D& Vector2D::operator+=(const Vector2D& vec) {
-//     return this->Add(vec);
-// }
-// Vector2D& Vector2D::operator-=(const Vector2D& vec) {
-//     return this->Subtract(vec);
-// }
-// Vector2D& Vector2D::operator*=(const Vector2D& vec) {
-//     return this->Multiply(vec);
-// }
-// Vector2D& Vector2D::operator/=(const Vector2D& vec) {
-//     return this->Divide(vec);
-// }
-
-Vector2D& Vector2D::Scale(const float& i) {
-    this->x *= i;
-    this->y *= i;
-    return *this;
+std::ostream& operator<<(std::ostream& stream, const Vector2D& vec) {
+    stream << "(" << vec.x << "," << vec.y << ")";
+    return stream;
 }
+Vector2D operator+(const Vector2D& a, const Vector2D& b) {
+    return AddVecs(a, b);
+}
+Vector2D operator-(const Vector2D& a, const Vector2D& b) {
+    return SubVecs(a, b);
+}
+Vector2D operator/(const Vector2D& v, const float& s) {
+    return Vector2D(v.x / s,  v.y / s);
+}
+Vector2D operator*(const Vector2D& v, const float& s) {
+    return Vector2D(v.x * s,  v.y * s);
+}
+float operator*(const Vector2D& a, const Vector2D& b) {
+    return DotProd(a, b);
+}
+
 
 Vector2D& Vector2D::Zero() {
     this->x = 0;
@@ -80,7 +60,8 @@ float Vector2D::Magnitude() {
 Vector2D& Vector2D::Normalize() {
     float mag = this->Magnitude();
     if(mag == 0) { return this->Zero(); }
-    return this->Scale( 1/mag );
+    *this = *this / mag;
+    return *this;
 }
 
 float Vector2D::OriginAngle() {
@@ -96,10 +77,6 @@ std::string Vector2D::FormatDecimal(int integer_precision, int decimal_precision
 }
 
 
-std::ostream& operator<<(std::ostream& stream, const Vector2D& vec) {
-    stream << "(" << vec.x << "," << vec.y << ")";
-    return stream;
-}
 
 
 

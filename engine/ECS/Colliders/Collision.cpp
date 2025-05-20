@@ -15,16 +15,16 @@ bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, 
         return Distance(cir.center, line_start) <= radius_2;
     }
 
-    Vector2D line_vec = SubVecs(line_end, line_start);
+    Vector2D line_vec = line_end - line_start;
     float t = std::max(
         0.0f, 
         std::min(
             1.0f,
-            (DotProd(SubVecs(cir.center, line_start), line_vec) / distance_2)
+            (DotProd((cir.center - line_start), line_vec) / distance_2)
         )
     );
 
-    Vector2D projection = AddVecs(line_start, (SubVecs(cir.center, line_start), line_vec).Scale(t));
+    Vector2D projection = line_start + (line_vec * t);
     
     return Distance(cir.center, projection) <= radius_2;
 }
@@ -34,17 +34,17 @@ Vector2D projectionLineIntersectCircle(const CircleCollider& cir, const Vector2D
     float distance_2 = Distance(line_start, line_end);
     if(distance_2 == 0.0f) { return line_start; }
 
-    Vector2D line_vec = SubVecs(line_end, line_start);
+    Vector2D line_vec = line_end - line_start;
     float t = std::max(
         0.0f, 
         std::min(
             1.0f,
-            (DotProd(SubVecs(cir.center, line_start), line_vec) / distance_2)
+            (DotProd((cir.center - line_start), line_vec) / distance_2)
         )
     );
 
     // projection on line
-    return AddVecs(line_start, (SubVecs(cir.center, line_start), line_vec).Scale(t));
+    return line_start + (line_vec * t);
 }
 
 bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
@@ -92,11 +92,11 @@ bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollid
 
 // push circle back if overlaping with nearest_point; otherwise return same position
 Vector2D resolveCircleOverlap(const Vector2D& nearest_point, const CircleCollider& cir) {
-    Vector2D ray_to_nearest = SubVecs(nearest_point, cir.center);
+    Vector2D ray_to_nearest = nearest_point - cir.center;
     float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
     if(overlap > 0) {
         overlap = cir.radius - ray_to_nearest.Magnitude();
-        Vector2D new_pos = SubVecs(cir.center, ray_to_nearest.Normalize().Scale(overlap));
+        Vector2D new_pos = cir.center - (ray_to_nearest.Normalize() * overlap);
         // offset from center to transform (x,y) pos
         new_pos.x -= cir.transform->width/2;
         new_pos.y -= cir.transform->height/2;

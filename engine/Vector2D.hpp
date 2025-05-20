@@ -11,17 +11,13 @@ class Vector2D {
         Vector2D();
         Vector2D(float x, float y);
 
-        Vector2D& Add(const Vector2D& vec);
-        Vector2D& Subtract(const Vector2D& vec);
-        Vector2D& Multiply(const Vector2D& vec);
-        Vector2D& Divide(const Vector2D& vec);
-
-        Vector2D& operator+=(const Vector2D& vec);
-        Vector2D& operator-=(const Vector2D& vec);
-        Vector2D& operator*=(const Vector2D& vec);
-        Vector2D& operator/=(const Vector2D& vec);
-
-        Vector2D& Scale(const float& i);
+        friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
+        friend Vector2D operator+(const Vector2D& a, const Vector2D& b);
+        friend Vector2D operator-(const Vector2D& a, const Vector2D& b);
+        friend Vector2D operator/(const Vector2D& v, const float& s);
+        friend Vector2D operator*(const Vector2D& v, const float& s);
+        friend float operator*(const Vector2D& a, const Vector2D& b);        
+        
         Vector2D& Zero();
 
         float ScProj(Vector2D& p);
@@ -33,9 +29,6 @@ class Vector2D {
         float OriginAngle();
 
         std::string FormatDecimal(int integer_precision, int decimal_precision);
-
-        friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
-
 };
 
 float AngleVecs(const Vector2D& a, const Vector2D& b);

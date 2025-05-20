@@ -21,14 +21,11 @@ class CircleCollider : public Component {
             );
             
             for(int i=0; i<this->amount; ++i) {
-                h[i] = 
-                    AddVecs(
-                        this->center,
+                h[i] = this->center +
                         Vector2D(
                             r * cosf(this->fraction*i), 
                             r * sinf(this->fraction*i)
-                        )
-                    );
+                        );
             }
         }
 

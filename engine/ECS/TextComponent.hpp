@@ -94,7 +94,7 @@ class TextComponent : public Component {
                     *camera_transform, 
                     convertWorldToScreen(
                         camera_transform->position, 
-                        AddVecs( this->transform->position, this->offset )
+                        this->transform->position + this->offset
                     )
                 );
                 this->destRect.x = screen_pos.x;
