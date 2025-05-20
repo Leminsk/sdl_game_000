@@ -70,15 +70,15 @@ class Wireframe : public Component {
             refreshHull();
             this->amount = this->hull.size();
             this->draw_points = (SDL_FPoint*)malloc(sizeof(SDL_FPoint) * (amount+1));
-            refreshDrawPoints();
         }
 
         void update() override {
-            refreshHull();
-            refreshDrawPoints();
+            
         }
 
         void draw() override {
+            refreshHull();
+            refreshDrawPoints();
             TextureManager::DrawWireframe(this->draw_points, this->amount+1, this->color);
         }
 };

@@ -59,4 +59,8 @@ class HexagonCollider : public Component {
         void update() override {
             setHull();
         }
+
+        void draw() override {
+            setHull();
+        }
 };

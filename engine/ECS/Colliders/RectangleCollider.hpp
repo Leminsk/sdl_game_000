@@ -49,4 +49,10 @@ class RectangleCollider : public Component {
             y = this->transform->position.y;
             setHull();
         }
+
+        void draw() override {
+            x = this->transform->position.x;
+            y = this->transform->position.y;
+            setHull();
+        }
 };

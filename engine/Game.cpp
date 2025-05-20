@@ -194,7 +194,8 @@ void Game::handleEvents() {
 void Game::update() {
     Collider *player_collider = &player.getComponent<Collider>();
     manager->refresh();
-    
+    manager->update();
+
     // TODO: iterate all stationaries here in a "smart" manner
     float distance_2;
     Collider *s_col;
@@ -211,8 +212,6 @@ void Game::update() {
 
     Vector2D player_pos = player.getComponent<TransformComponent>().position;
     player.getComponent<TextComponent>().setText(player_pos.FormatDecimal(4,0).c_str());
-
-    manager->update();
 }
 
 

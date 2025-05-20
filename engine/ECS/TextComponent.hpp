@@ -87,7 +87,8 @@ class TextComponent : public Component {
             if (this->rotating) {
                 this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
             }
-
+        }
+        void draw() override {
             if(!this->fixed) {
                 camera_transform = &Game::camera.getComponent<TransformComponent>();
                 Vector2D screen_pos = applyZoom(
@@ -102,8 +103,6 @@ class TextComponent : public Component {
                 this->destRect.w = this->w * camera_transform->scale;
                 this->destRect.h = this->h * camera_transform->scale;
             }
-        }
-        void draw() override {
             // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
             if(
                 Game::SCREEN_WIDTH >= this->destRect.x &&

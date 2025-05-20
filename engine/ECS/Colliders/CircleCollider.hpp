@@ -12,7 +12,7 @@ class CircleCollider : public Component {
         const float fraction = 2*M_PI/this->amount;
 
         // this hull uses the center as its reference
-        void setHull(std::vector<Vector2D>& h, float sc=1.0f) {
+        void setHull(float sc=1.0f) {
             float r = this->radius * sc;
 
             this->center = Vector2D(
@@ -21,7 +21,7 @@ class CircleCollider : public Component {
             );
             
             for(int i=0; i<this->amount; ++i) {
-                h[i] = this->center +
+                this->hull[i] = this->center +
                         Vector2D(
                             r * cosf(this->fraction*i), 
                             r * sinf(this->fraction*i)
@@ -42,10 +42,14 @@ class CircleCollider : public Component {
 
         void init() override {
             this->radius = this->transform->width/2;
-            setHull(this->hull);
+            setHull();
         }
 
         void update() override {
-            setHull(this->hull);
+            setHull();
+        }
+
+        void draw() override {
+            setHull();
         }
 };
