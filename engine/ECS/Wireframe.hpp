@@ -47,13 +47,13 @@ class Wireframe : public Component {
         // purely screen coordinates
         std::vector<Vector2D> hull;
         int amount;
-        Uint8 color[3] = { 255, 0, 0 };      
+        SDL_Color color = { 255, 0, 0, SDL_ALPHA_OPAQUE };
 
         Wireframe() {}
         Wireframe(Uint8 r, Uint8 g, Uint8 b) {
-            this->color[0] = r;
-            this->color[1] = g;
-            this->color[2] = b;
+            this->color.r = r;
+            this->color.g = g;
+            this->color.b = b;
         }
 
         ~Wireframe() {

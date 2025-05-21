@@ -108,10 +108,11 @@ Vector2D VecProj(Vector2D& a, Vector2D& p) {
 float Distance(const Vector2D& a, const Vector2D& b, bool square_root) {
     float x = b.x - a.x;
     float y = b.y - a.y;
+    float d2 = (y*y) + (x*x);
     if(square_root) {
-        return sqrtf((y*y) + (x*x));
+        return sqrtf(d2);
     }
-    return (y*y) + (x*x);
+    return d2;
 }
 
 float lerp(float a, float b, float f) {

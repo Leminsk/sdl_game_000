@@ -3,12 +3,10 @@
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
+#include "Wireframe.hpp"
 
 class TileComponent : public Component {
-    public:
-        TransformComponent *transform;
-        SpriteComponent *sprite;
-        
+    public:        
         SDL_Texture* texture;
         SDL_FRect tileRect;
         int tileID;
@@ -31,9 +29,16 @@ class TileComponent : public Component {
                 this->tileRect.w, this->tileRect.h,
                 1
             );
-            this->transform = &entity->getComponent<TransformComponent>();
             entity->addComponent<SpriteComponent>(this->texture);
-            this->sprite = &entity->getComponent<SpriteComponent>();
+            switch(this->tileID) {
+                case 1: break;
+                case 2: 
+                    entity->addComponent<Collider>("mountain_collider", COLLIDER_RECTANGLE);
+                    entity->addComponent<Wireframe>();
+                    break;
+                case 3: break;
+                default:break;
+            }
         }
 
 };

@@ -54,14 +54,20 @@ void TextureManager::Draw(SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double
     );
 }
 
-void TextureManager::DrawText(SDL_Color color, SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip) {
+void TextureManager::DrawText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip) {
     SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
     TextureManager::Draw(tex, src, dest, rotation_degrees, flip);
     SDL_SetRenderDrawColor(Game::renderer, Game::bg_color.r, Game::bg_color.g, Game::bg_color.b, Game::bg_color.a);
 }
 
-void TextureManager::DrawWireframe(const SDL_FPoint* points, int count, const Uint8* color) {
-    SDL_SetRenderDrawColor(Game::renderer, color[0], color[1], color[2], SDL_ALPHA_OPAQUE);
+void TextureManager::DrawWireframe(const SDL_FPoint* points, int count, const SDL_Color& color) {
+    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawLinesF(Game::renderer, points, count);
+    SDL_SetRenderDrawColor(Game::renderer, Game::bg_color.r, Game::bg_color.g, Game::bg_color.b, Game::bg_color.a);
+}
+
+void TextureManager::DrawLine(const Vector2D& start, const Vector2D& end, const SDL_Color& color) {
+    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderDrawLineF(Game::renderer, start.x, start.y, end.x, end.y);
     SDL_SetRenderDrawColor(Game::renderer, Game::bg_color.r, Game::bg_color.g, Game::bg_color.b, Game::bg_color.a);
 }

@@ -35,6 +35,13 @@ class TransformComponent : public Component {
         }
         ~TransformComponent() {}
 
+        Vector2D getCenter() {
+            return Vector2D(
+                this->position.x + this->width/2, 
+                this->position.y + this->height/2
+            );
+        }
+
         void init() override {
             this->velocity.Zero();
         }

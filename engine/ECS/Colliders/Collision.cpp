@@ -95,6 +95,7 @@ Vector2D resolveCircleOverlap(const Vector2D& nearest_point, const CircleCollide
     Vector2D ray_to_nearest = nearest_point - cir.center;
     float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
     if(overlap > 0) {
+        // std::cout << "nearest_point: " << Vector2D(nearest_point.x, nearest_point.y).FormatDecimal(4,0) << " overlap: " << overlap << '\n';
         overlap = cir.radius - ray_to_nearest.Magnitude();
         Vector2D new_pos = cir.center - (ray_to_nearest.Normalize() * overlap);
         // offset from center to transform (x,y) pos
@@ -172,7 +173,7 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
     }
 }
 
-// returns the new position the moving object should be at
+// TODO: returns a velocity vector to push back the moving object
 Vector2D Collision::Collide(const Collider& moving_col, const Collider& col) {
     switch(moving_col.type) {
         case COLLIDER_CIRCLE:

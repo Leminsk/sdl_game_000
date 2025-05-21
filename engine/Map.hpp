@@ -8,7 +8,7 @@
 
 class Map {
     public:
-        int tile_width;
+        int tile_width; // in pixels
         std::vector<std::vector<int>> layout;
 
         SDL_Texture* dirt_texture     = TextureManager::LoadTexture("assets/tiles/dirt.png");
@@ -26,23 +26,22 @@ class Map {
 
         void LoadMapRender(float tile_scale=1.0f) {
             uint64_t row, column;
-            SDL_Texture* tex = NULL;
+            SDL_Texture** tex = nullptr;
             for(row = 0; row < this->layout_height; ++row) {
                 for(column = 0; column < this->layout_width; ++column) {
                     switch(this->layout[row][column]) {
-                        case 1:  tex = dirt_texture;     break;
-                        case 2:  tex = mountain_texture; break;
-                        case 3:  tex = water_texture;    break;
-                        default: tex = grass_texture;    break;
+                        case 1:  tex = &dirt_texture;     break;
+                        case 2:  tex = &mountain_texture; break;
+                        case 3:  tex = &water_texture;    break;
+                        default: tex = &grass_texture;
                     }
                     Game::AddTile(
-                        tex, this->layout[row][column], 
+                        *tex, this->layout[row][column], 
                         this->tile_width * tile_scale,
                         column, row
                     );
                 }
             }
-            free(tex);
         }
         
         int getTileFromWorldPos(Vector2D world_pos) {

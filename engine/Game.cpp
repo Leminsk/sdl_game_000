@@ -32,7 +32,7 @@ auto& corner_tile(manager->addEntity());
 auto& center_tile(manager->addEntity());
 
 enum groupLabels : size_t {
-    groupMap,
+    groupTiles,
     groupMovables,
     groupInerts,
     groupStationaries
@@ -104,9 +104,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     SDL_Texture* water_texture    = TextureManager::LoadTexture("assets/tiles/water.png");
     SDL_Texture* grass_texture    = TextureManager::LoadTexture("assets/tiles/grass.png");
 
-    map = new Map("assets/test.bmp");
+    // map = new Map("assets/test.bmp", 64);
+    // map->LoadMapRender();
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 5.0);
+    player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 1.0);
     player.addComponent<SpriteComponent>(player_texture);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
@@ -154,6 +155,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 auto& stationaries(manager->getGroup(groupStationaries));
 auto& movables(manager->getGroup(groupMovables));
 auto& inerts(manager->getGroup(groupInerts));
+auto& tiles(manager->getGroup(groupTiles));
 
 void Game::handleEvents() {
     
@@ -199,6 +201,9 @@ void Game::handleEvents() {
         if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.02f, 10.0f); }
         if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.02f, 0.05f); }
         
+        if(keystates[SDL_SCANCODE_SPACE]) {
+            std::cout << "map{x , y}: " << map->layout.size() << ',' << map->layout[0].size() << "tile_width: " << map->tile_width << '\n';
+        }
     }
 }
 
@@ -209,17 +214,26 @@ void Game::update() {
 
     // TODO: iterate all stationaries here in a "smart" manner
     float distance_2;
-    Collider *s_col;
+    Collider *current_col;
     for(auto& s : stationaries) {
-        s_col = &s->getComponent<Collider>();
-        distance_2 = Distance(player_collider->getCenter(), s_col->getCenter());
+        current_col = &s->getComponent<Collider>();
+        distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
         if(distance_2 <= 100000.0f) {
-            player_collider->transform->position = Collision::Collide(*player_collider, *s_col);
+            player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
         }
     }
+    // for(auto& t : tiles) {
+    //     if(t->hasComponent<Collider>()) {
+    //         current_col = &t->getComponent<Collider>();
+    //         distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
+    //         if(distance_2 <= 100000.0f) {
+    //             player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
+    //         }
+    //     }        
+    // }
 
     Game::camera.getComponent<TextComponent>().setText((
-        "Camera: " + Game::camera.getComponent<TransformComponent>().position.FormatDecimal(4,0)
+        "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)
     ).c_str());
 
     player.getComponent<TextComponent>().setText(
@@ -231,10 +245,25 @@ void Game::update() {
 
 void Game::render() {
     SDL_RenderClear(Game::renderer);
+    for(auto& t : tiles) { t->draw(); }
     for(auto& s : stationaries) { s->draw(); }
     for(auto& m : movables) { m->draw(); }
     for(auto& i : inerts) { i->draw(); }
     Game::camera.draw();
+
+    // cross-hair
+    float line_length = 10;
+    Vector2D screen_center = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+    Vector2D line_left[2]   = { Vector2D(screen_center.x-1, screen_center.y), Vector2D(screen_center.x-1-line_length, screen_center.y) };
+    Vector2D line_right[2]  = { Vector2D(screen_center.x+1, screen_center.y), Vector2D(screen_center.x+1+line_length, screen_center.y) };
+    Vector2D line_top[2]    = { Vector2D(screen_center.x, screen_center.y-1), Vector2D(screen_center.x, screen_center.y-1-line_length) };
+    Vector2D line_bottom[2] = { Vector2D(screen_center.x, screen_center.y+1), Vector2D(screen_center.x, screen_center.y+1+line_length) };
+    SDL_Color cross_hair_color = {0xBA, 0x00, 0x03, SDL_ALPHA_OPAQUE};
+    TextureManager::DrawLine(  line_left[0],   line_left[1], cross_hair_color);
+    TextureManager::DrawLine( line_right[0],  line_right[1], cross_hair_color);
+    TextureManager::DrawLine(   line_top[0],    line_top[1], cross_hair_color);
+    TextureManager::DrawLine(line_bottom[0], line_bottom[1], cross_hair_color);
+
     SDL_RenderPresent(Game::renderer);
 }
 
@@ -257,5 +286,5 @@ void Game::clean() {
 void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y) {
     auto& tile(manager->addEntity());
     tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
-    tile.addGroup(groupMap);
+    tile.addGroup(groupTiles);
 }
