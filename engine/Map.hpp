@@ -9,6 +9,7 @@
 class Map {
     public:
         int tile_width; // in pixels
+        bool loaded;
         std::vector<std::vector<int>> layout;
 
         SDL_Texture* dirt_texture     = TextureManager::LoadTexture("assets/tiles/dirt.png");
@@ -18,11 +19,11 @@ class Map {
 
         Map(std::string path, int dimension=1) {
             this->tile_width = dimension;
-            LoadMapFile(path);
+            this->loaded = LoadMapFile(path);
         }
         ~Map() {}
 
-        void LoadMapFile(std::string& path);
+        bool LoadMapFile(std::string& path);
 
         void LoadMapRender(float tile_scale=1.0f) {
             uint64_t row, column;

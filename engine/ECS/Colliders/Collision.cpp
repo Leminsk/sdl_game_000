@@ -106,27 +106,21 @@ Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider&
 
     if(nearest_point == cir.center) {
         // circle center is inside the rect
-        std::vector<Vector2D> hull = rect.hull;
-        std::vector<Vector2D> nearest_points = std::vector<Vector2D>(4);
-        nearest_points[0] = projectionLineIntersectCircle(cir, hull[0], hull[1]);
-        nearest_points[1] = projectionLineIntersectCircle(cir, hull[1], hull[2]);
-        nearest_points[2] = projectionLineIntersectCircle(cir, hull[2], hull[3]);
-        nearest_points[3] = projectionLineIntersectCircle(cir, hull[3], hull[0]);
-        int index = 0;
-        float min_distance = Distance(nearest_points[0], cir.center);
-        float temp_dist = Distance(nearest_points[1], cir.center);
-        if(min_distance > temp_dist) { min_distance = temp_dist; index = 1; }
-        temp_dist = Distance(nearest_points[2], cir.center);
-        if(min_distance > temp_dist) { min_distance = temp_dist; index = 2; }
-        temp_dist = Distance(nearest_points[3], cir.center);
-        if(min_distance > temp_dist) { min_distance = temp_dist; index = 3; }
+        float x_before = cir.center.x - rect.x;
+        float x_after  = rect.x+rect.w - cir.center.x;
+        float y_before = cir.center.y - rect.y;
+        float y_after  = rect.y+rect.h - cir.center.y;
+        float min_distance = x_before; nearest_point = Vector2D(         rect.x,    cir.center.y);
+        if(x_after  < min_distance) {  nearest_point = Vector2D(rect.x + rect.w,    cir.center.y); min_distance = x_after; }
+        if(y_before < min_distance) {  nearest_point = Vector2D(   cir.center.x,          rect.y); min_distance = y_before; }
+        if(y_after  < min_distance) {  nearest_point = Vector2D(   cir.center.x, rect.y + rect.h); } // don't need min_distance anymore
 
-        Vector2D out_ray = nearest_points[index] - cir.center;
-        if(nearest_points[index] == cir.center) {
+        Vector2D out_ray = nearest_point - cir.center;
+        if(nearest_point == cir.center) {
             // circle is ON the edge, move it out by radius (away from the rectangle center)
             return (cir.center - rect.center).Normalize() * cir.radius;
         }
-        // move it out by how far away it is from the edge plus its radius (away from the rectangle center)
+        // move it out by how far away it is from the edge plus its radius (towards the rectangle edge)
         return out_ray + (out_ray.Normalize() * cir.radius);
     }
     
@@ -135,8 +129,10 @@ Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider&
     if(overlap > 0) {
         overlap = cir.radius - ray_to_nearest.Magnitude();
         // move it out by the amount of overlap (towards the circle center)
-        return cir.center - (ray_to_nearest.Normalize() * overlap);
+        return ray_to_nearest.Normalize() * -overlap;
     }
+    // no need to move it
+    return Vector2D(0,0);
 }
 
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
@@ -241,8 +237,8 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
     }
 }
 
-// TODO: returns a velocity vector to push back the moving object
-Vector2D Collision::Collide(const Collider& moving_col, const Collider& col) {
+// TODO: returns a 2D translation vector to move the moving_col transform
+Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2) {
     switch(moving_col.type) {
         case COLLIDER_CIRCLE:
             switch(col.type) {
@@ -254,9 +250,10 @@ Vector2D Collision::Collide(const Collider& moving_col, const Collider& col) {
                     moving_col.entity->getComponent<CircleCollider>(),
                     col.entity->getComponent<HexagonCollider>()
                 ); break;
-                case COLLIDER_RECTANGLE: return CircleRect(
+                case COLLIDER_RECTANGLE: return resolveCircleVSRect(
                     moving_col.entity->getComponent<CircleCollider>(), 
-                    col.entity->getComponent<RectangleCollider>()
+                    col.entity->getComponent<RectangleCollider>(),
+                    distance2
                 ); break;
             }
             break;
