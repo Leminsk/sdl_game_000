@@ -104,10 +104,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     SDL_Texture* water_texture    = TextureManager::LoadTexture("assets/tiles/water.png");
     SDL_Texture* grass_texture    = TextureManager::LoadTexture("assets/tiles/grass.png");
 
-    // map = new Map("assets/test.bmp", 64);
-    // map->LoadMapRender();
+    map = new Map("assets/test.bmp", 64);
+    map->LoadMapRender();
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, 64.0f, 64.0f, 1.0);
+    player.addComponent<TransformComponent>(0.0f, 0.0f, 32.0f, 32.0f, 1.0);
     player.addComponent<SpriteComponent>(player_texture);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
@@ -116,40 +116,40 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player.addGroup(groupMovables);
 
 
-    hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
-    hexagon_wall.addComponent<SpriteComponent>(hexagon_texture);
-    hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
-    hexagon_wall.addComponent<Wireframe>();
-    hexagon_wall.addGroup(groupStationaries);
+    // hexagon_wall.addComponent<TransformComponent>(0.0f, 400.0f, 200.0f, 200.0f, 1.0);
+    // hexagon_wall.addComponent<SpriteComponent>(hexagon_texture);
+    // hexagon_wall.addComponent<Collider>("hexagon_wall", COLLIDER_HEXAGON);
+    // hexagon_wall.addComponent<Wireframe>();
+    // hexagon_wall.addGroup(groupStationaries);
 
-    circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
-    circle_wall.addComponent<SpriteComponent>(circle_texture);
-    circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
-    circle_wall.addComponent<Wireframe>();
-    // circle_wall.addComponent<TextComponent>("circle_wall");
-    circle_wall.addGroup(groupStationaries);
+    // circle_wall.addComponent<TransformComponent>(600.0f, 0.0f, 200.0f, 200.0f, 1.0);
+    // circle_wall.addComponent<SpriteComponent>(circle_texture);
+    // circle_wall.addComponent<Collider>("circle_wall", COLLIDER_CIRCLE);
+    // circle_wall.addComponent<Wireframe>();
+    // // circle_wall.addComponent<TextComponent>("circle_wall");
+    // circle_wall.addGroup(groupStationaries);
 
 
-    mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
-    mountain_tile.addComponent<SpriteComponent>(mountain_texture);
-    mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
-    mountain_tile.addComponent<Wireframe>();
-    mountain_tile.addGroup(groupStationaries);
+    // mountain_tile.addComponent<TransformComponent>(150.0f, 150.0f, 100.0f, 100.0f, 1.0);
+    // mountain_tile.addComponent<SpriteComponent>(mountain_texture);
+    // mountain_tile.addComponent<Collider>("mountain_tile", COLLIDER_RECTANGLE);
+    // mountain_tile.addComponent<Wireframe>();
+    // mountain_tile.addGroup(groupStationaries);
 
-    float side = 50.0f;
-    center_tile.addComponent<TransformComponent>(
-        static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
-        side, side, 1.0
-    );
-    center_tile.addComponent<SpriteComponent>(water_texture);
-    center_tile.addGroup(groupInerts);
+    // float side = 50.0f;
+    // center_tile.addComponent<TransformComponent>(
+    //     static_cast<float>(width-side)/2, static_cast<float>(height-side)/2,
+    //     side, side, 1.0
+    // );
+    // center_tile.addComponent<SpriteComponent>(water_texture);
+    // center_tile.addGroup(groupInerts);
 
-    corner_tile.addComponent<TransformComponent>(
-        static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
-        side, side, 1.0
-    );
-    corner_tile.addComponent<SpriteComponent>(water_texture);
-    corner_tile.addGroup(groupInerts);
+    // corner_tile.addComponent<TransformComponent>(
+    //     static_cast<float>(width)-(side/2), static_cast<float>(height)-(side/2),
+    //     side, side, 1.0
+    // );
+    // corner_tile.addComponent<SpriteComponent>(water_texture);
+    // corner_tile.addGroup(groupInerts);
 }
 
 auto& stationaries(manager->getGroup(groupStationaries));
@@ -215,22 +215,40 @@ void Game::update() {
     // TODO: iterate all stationaries here in a "smart" manner
     float distance_2;
     Collider *current_col;
-    for(auto& s : stationaries) {
-        current_col = &s->getComponent<Collider>();
-        distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
-        if(distance_2 <= 100000.0f) {
-            player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
-        }
+
+    std::vector<std::pair<int, float>> entity_distances = {};
+    Entity *t, *s;
+    for(int i=0; i<tiles.size(); ++i) {
+        t = tiles[i];
+        if(t->hasComponent<Collider>()) {
+            current_col = &t->getComponent<Collider>();
+            distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
+            if(distance_2 <= 100000.0f) {
+                // player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
+                std::cout << "push_back broken\n";
+                entity_distances.push_back({i, distance_2});
+            }
+        }        
     }
-    // for(auto& t : tiles) {
-    //     if(t->hasComponent<Collider>()) {
-    //         current_col = &t->getComponent<Collider>();
-    //         distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
-    //         if(distance_2 <= 100000.0f) {
-    //             player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
-    //         }
-    //     }        
+    std::sort(entity_distances.begin(), entity_distances.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+        return a.second < b.second;
+    });
+    for(auto& p : entity_distances) {
+        player_collider->transform->position = Collision::Collide(*player_collider, tiles[p.first]->getComponent<Collider>());
+    }
+
+    // entity_distances = {};
+    // for(int i=0; i<stationaries.size(); ++i) {
+    //     current_col = &stationaries[i]->getComponent<Collider>();
+    //     distance_2 = Distance(player_collider->getCenter(), current_col->getCenter());
+    //     if(distance_2 <= 100000.0f) {
+    //         // player_collider->transform->position = Collision::Collide(*player_collider, *current_col);
+    //         entity_distances.push_back(std::make_pair(i, distance_2));
+    //     }
     // }
+    // std::sort(entity_distances.begin(), entity_distances.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+    //     return a.second < b.second;
+    // });
 
     Game::camera.getComponent<TextComponent>().setText((
         "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)

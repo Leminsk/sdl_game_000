@@ -12,6 +12,7 @@ class Vector2D {
         Vector2D(float x, float y);
 
         friend std::ostream& operator<<(std::ostream& stream, const Vector2D& vec);
+        friend bool operator==(const Vector2D& a, const Vector2D& b);
         friend Vector2D operator+(const Vector2D& a, const Vector2D& b);
         friend Vector2D operator-(const Vector2D& a, const Vector2D& b);
         friend Vector2D operator/(const Vector2D& v, const float& s);

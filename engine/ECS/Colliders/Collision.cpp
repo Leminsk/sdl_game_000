@@ -29,6 +29,7 @@ bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, 
     return Distance(cir.center, projection) <= radius_2;
 }
 
+// get the closest point on a line to a circle
 Vector2D projectionLineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, const Vector2D& line_end) {
     float radius_2 = cir.radius * cir.radius;
     float distance_2 = Distance(line_start, line_end);
@@ -69,6 +70,73 @@ bool Collision::AABB(const Collider& colA, const Collider& colB) {
     }
 
     return false;
+}
+
+// https://stackoverflow.com/questions/62432809/sat-polygon-circle-collision-resolve-the-intersection-in-the-direction-of-velo
+void foo() {
+
+}
+
+// https://youtu.be/eED4bSkYCB8?t=789
+// Overwrites velocities of BOTH colliders
+void resolveCircleVSCircle(const CircleCollider& a, const CircleCollider& b, const float& distance2) {
+    if(distance2 <= (a.radius + b.radius) * (a.radius + b.radius)) {
+        // TODO: mass momentum later maybe probably not
+        float ma = 1;
+        float mb = 1;
+        Vector2D va_minus_vb = a.transform->velocity - b.transform->velocity;
+        Vector2D vb_minus_va = b.transform->velocity - a.transform->velocity;
+        Vector2D ca_minus_cb = a.center - b.center;
+        Vector2D cb_minus_ca = b.center - a.center;
+        float mass_coef_va = 2*mb / (ma+mb);
+        float mass_coef_vb = 2*ma / (ma+mb);
+        a.transform->velocity = a.transform->velocity - ((ca_minus_cb) * (mass_coef_va * DotProd(va_minus_vb, ca_minus_cb) / distance2));
+        b.transform->velocity = b.transform->velocity - ((cb_minus_ca) * (mass_coef_vb * DotProd(vb_minus_va, cb_minus_ca) / distance2));
+    }
+}
+
+// assumes RectangleCollider is fixed/stationary
+// returns translation movement vector indicating the direction the Rectangle thinks the Circle should be moved
+// e.g. returns Vector(-1.0, 0.0) means "move the circle to the left by 1 unit".
+Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider& rect, const float& distance2) {
+    Vector2D nearest_point = Vector2D(
+        std::max( rect.x, std::min(cir.center.x, rect.x + rect.w) ),
+        std::max( rect.y, std::min(cir.center.y, rect.y + rect.h) )
+    );
+
+    if(nearest_point == cir.center) {
+        // circle center is inside the rect
+        std::vector<Vector2D> hull = rect.hull;
+        std::vector<Vector2D> nearest_points = std::vector<Vector2D>(4);
+        nearest_points[0] = projectionLineIntersectCircle(cir, hull[0], hull[1]);
+        nearest_points[1] = projectionLineIntersectCircle(cir, hull[1], hull[2]);
+        nearest_points[2] = projectionLineIntersectCircle(cir, hull[2], hull[3]);
+        nearest_points[3] = projectionLineIntersectCircle(cir, hull[3], hull[0]);
+        int index = 0;
+        float min_distance = Distance(nearest_points[0], cir.center);
+        float temp_dist = Distance(nearest_points[1], cir.center);
+        if(min_distance > temp_dist) { min_distance = temp_dist; index = 1; }
+        temp_dist = Distance(nearest_points[2], cir.center);
+        if(min_distance > temp_dist) { min_distance = temp_dist; index = 2; }
+        temp_dist = Distance(nearest_points[3], cir.center);
+        if(min_distance > temp_dist) { min_distance = temp_dist; index = 3; }
+
+        Vector2D out_ray = nearest_points[index] - cir.center;
+        if(nearest_points[index] == cir.center) {
+            // circle is ON the edge, move it out by radius (away from the rectangle center)
+            return (cir.center - rect.center).Normalize() * cir.radius;
+        }
+        // move it out by how far away it is from the edge plus its radius (away from the rectangle center)
+        return out_ray + (out_ray.Normalize() * cir.radius);
+    }
+    
+    Vector2D ray_to_nearest = nearest_point - cir.center;
+    float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
+    if(overlap > 0) {
+        overlap = cir.radius - ray_to_nearest.Magnitude();
+        // move it out by the amount of overlap (towards the circle center)
+        return cir.center - (ray_to_nearest.Normalize() * overlap);
+    }
 }
 
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
