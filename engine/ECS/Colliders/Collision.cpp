@@ -292,7 +292,7 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
 }
 
 // TODO: returns a 2D translation vector to move the moving_col transform
-Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos, const Vector2D& curr_pos) {
+Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos) {
     switch(moving_col.type) {
         case COLLIDER_CIRCLE:
             switch(col.type) {
