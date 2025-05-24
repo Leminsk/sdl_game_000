@@ -1,10 +1,19 @@
 #define SDL_MAIN_HANDLED // https://stackoverflow.com/questions/32342285/undefined-reference-to-winmain16-c-sdl-2
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_version.h>
 #include "engine/Game.hpp"
 
 Game *game = nullptr;
 
 int main() {
+    SDL_version compiled;
+    SDL_version linked;
+
+    SDL_VERSION(&compiled);
+    SDL_GetVersion(&linked);
+    SDL_Log("COMPILED against SDL version %u.%u.%u\n", compiled.major, compiled.minor, compiled.patch);
+    SDL_Log("  LINKED against SDL version %u.%u.%u\n", linked.major, linked.minor, linked.patch);
+
     const bool LIMIT_FPS = true;
     const int MAX_FPS = 60;
     const int MAX_FRAME_DELAY = 1000.0f / MAX_FPS;
