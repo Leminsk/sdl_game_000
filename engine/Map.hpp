@@ -39,7 +39,8 @@ class Map {
                     Game::AddTile(
                         *tex, this->layout[row][column], 
                         this->tile_width * tile_scale,
-                        column, row
+                        column, row,
+                        this->layout
                     );
                 }
             }

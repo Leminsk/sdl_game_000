@@ -95,38 +95,92 @@ void resolveCircleVSCircle(const CircleCollider& a, const CircleCollider& b, con
     }
 }
 
+/*
+OLC: https://youtu.be/8JJ-4JgR7Dg?t=3136
+given a point, and its direction vector, return true if it would collide with RectangleCollider. contact_point is the point of collision, contact_normal points outside the rectangle
+t_hit_near is the "time" "when" the ray would hit the contact point
+*/
+bool rayVSRect(const Vector2D& ray_origin, const Vector2D& ray_dir, const RectangleCollider& target, Vector2D& contact_point, Vector2D contact_normal, float& t_hit_near) {
+    contact_normal = Vector2D(0,0);
+    contact_point = Vector2D(0,0);
+
+    float invdir_x = 1.0f / ray_dir.x;
+    float invdir_y = 1.0f / ray_dir.y;
+
+    Vector2D t_near = (target.transform->position - ray_origin);
+    t_near.x *= invdir_x;
+    t_near.y *= invdir_y;
+    Vector2D t_far = (target.transform->position - ray_origin);
+    t_far.x *= invdir_x;
+    t_far.y *= invdir_y;
+
+    if(std::isnan(t_near.y) || std::isnan(t_near.x)) { return false; }
+    if(std::isnan(t_far.y ) || std::isnan(t_far.x )) { return false; }
+    
+    if(t_near.x > t_far.x) { std::swap(t_near.x, t_far.x); }
+    if(t_near.y > t_far.y) { std::swap(t_near.y, t_far.y); }
+    if(t_near.x > t_far.y || t_near.y > t_far.x) { return false; }
+
+    t_hit_near = std::max(t_near.x, t_near.y);
+    float t_hit_far = std::min(t_far.x, t_far.y);
+    if(t_hit_far < 0) { return false; }
+
+    contact_point = ray_origin + (ray_dir * t_hit_near);
+
+    if(t_near.x > t_near.y) {
+        if(invdir_x < 0) { contact_normal = Vector2D(  1.0f,  0.0f); }
+        else {             contact_normal = Vector2D( -1.0f,  0.0f); }
+    }
+    else if(t_near.x < t_near.y) {
+        if(invdir_y < 0) { contact_normal = Vector2D(  0.0f,  1.0f); }
+        else {             contact_normal = Vector2D(  0.0f, -1.0f); }
+    }
+
+    return true;
+}
+
 // assumes RectangleCollider is fixed/stationary
 // returns translation movement vector indicating the direction the Rectangle thinks the Circle should be moved
 // e.g. returns Vector(-1.0, 0.0) means "move the circle to the left by 1 unit".
-Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider& rect, const float& distance2) {
+Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider& rect, const float& distance2, const Vector2D& prev_pos) {
     Vector2D nearest_point = Vector2D(
         std::max( rect.x, std::min(cir.center.x, rect.x + rect.w) ),
         std::max( rect.y, std::min(cir.center.y, rect.y + rect.h) )
     );
 
-    if(nearest_point == cir.center) {
-        // circle center is inside the rect
-        float x_before = cir.center.x - rect.x;
-        float x_after  = rect.x+rect.w - cir.center.x;
-        float y_before = cir.center.y - rect.y;
-        float y_after  = rect.y+rect.h - cir.center.y;
-        float min_distance = x_before; nearest_point = Vector2D(         rect.x,    cir.center.y);
-        if(x_after  < min_distance) {  nearest_point = Vector2D(rect.x + rect.w,    cir.center.y); min_distance = x_after; }
-        if(y_before < min_distance) {  nearest_point = Vector2D(   cir.center.x,          rect.y); min_distance = y_before; }
-        if(y_after  < min_distance) {  nearest_point = Vector2D(   cir.center.x, rect.y + rect.h); } // don't need min_distance anymore
+    
 
+    if(nearest_point == cir.center) {
+        // circle center is inside the rect, use old position to see where it would have collided
+        nearest_point = Vector2D(
+            std::max( rect.x, std::min(prev_pos.x, rect.x + rect.w) ),
+            std::max( rect.y, std::min(prev_pos.y, rect.y + rect.h) )
+        );
         Vector2D out_ray = nearest_point - cir.center;
         if(nearest_point == cir.center) {
             // circle is ON the edge, move it out by radius (away from the rectangle center)
             return (cir.center - rect.center).Normalize() * cir.radius;
         }
-        // move it out by how far away it is from the edge plus its radius (towards the rectangle edge)
+        // move it out by how far away it is from the edge plus its radius (towards the its old position)
         return out_ray + (out_ray.Normalize() * cir.radius);
     }
     
     Vector2D ray_to_nearest = nearest_point - cir.center;
     float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
     if(overlap > 0) {
+        // check if rect has adjacent rects that would prevent direct collision
+        bool nearest_on_top    = (nearest_point.y ==            rect.y);
+        bool nearest_on_bottom = (nearest_point.y == (rect.y + rect.h));
+        bool nearest_on_left   = (nearest_point.x ==            rect.x);
+        bool nearest_on_right  = (nearest_point.x == (rect.x + rect.w));    
+        if(
+            (nearest_on_top && rect.adjacent_rectangles[1]) ||
+            (nearest_on_left && rect.adjacent_rectangles[3]) ||
+            (nearest_on_right && rect.adjacent_rectangles[4]) ||
+            (nearest_on_bottom && rect.adjacent_rectangles[6])
+        ) {
+            return Vector2D(0,0);
+        }
         overlap = cir.radius - ray_to_nearest.Magnitude();
         // move it out by the amount of overlap (towards the circle center)
         return ray_to_nearest.Normalize() * -overlap;
@@ -238,7 +292,7 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
 }
 
 // TODO: returns a 2D translation vector to move the moving_col transform
-Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2) {
+Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos, const Vector2D& curr_pos) {
     switch(moving_col.type) {
         case COLLIDER_CIRCLE:
             switch(col.type) {
@@ -253,7 +307,7 @@ Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, con
                 case COLLIDER_RECTANGLE: return resolveCircleVSRect(
                     moving_col.entity->getComponent<CircleCollider>(), 
                     col.entity->getComponent<RectangleCollider>(),
-                    distance2
+                    distance2, prev_pos
                 ); break;
             }
             break;

@@ -19,6 +19,12 @@ class RectangleCollider : public Component {
          +----+
         1      0
         */
+       // used if aligned in a grid to deal with corners in collisions
+        std::vector<bool> adjacent_rectangles = {
+            false, false, false,
+            false,        false,
+            false, false, false
+        };
 
         TransformComponent* transform;
 

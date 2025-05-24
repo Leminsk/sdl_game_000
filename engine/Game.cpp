@@ -110,7 +110,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         std::cout << "Map loaded.\n";
     }
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, 100.0f, 100.0f, 1.0);
+    player.addComponent<TransformComponent>(0.0f, 0.0f, 50.0f, 50.0f, 1.0);
     player.addComponent<SpriteComponent>(player_texture);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
@@ -212,8 +212,10 @@ void Game::handleEvents() {
 
 void Game::update() {
     Collider *player_collider = &player.getComponent<Collider>();
+    Vector2D prev_player_pos = player_collider->transform->position;
     manager->refresh();
     manager->update();
+    Vector2D curr_player_pos = player_collider->transform->position;
 
     // TODO: iterate all stationaries here in a "smart" manner
     float distance_2;
@@ -239,7 +241,7 @@ void Game::update() {
     Vector2D cum_mov_vec = Vector2D(0,0);
     Vector2D curr_vec;
     for(auto& p : entity_distances) {
-        curr_vec = Collision::Collide(*player_collider, tiles[p.first]->getComponent<Collider>(), p.second);
+        curr_vec = Collision::Collide(*player_collider, tiles[p.first]->getComponent<Collider>(), p.second, prev_player_pos, curr_player_pos);
         // if one vector needs to move by 2 in x and the other by 1 in x, then moving by 2 will suffice both
         // conversely, if one needs to move by -1 and the other by +1, do neither and assume that it'll resolve on the other axis
         if(cum_mov_vec.x >= 0) {
@@ -254,12 +256,12 @@ void Game::update() {
             else { cum_mov_vec.y += curr_vec.y; }
         } else {
             if(curr_vec.y < 0) { cum_mov_vec.y = std::min(cum_mov_vec.y, curr_vec.y); }
-            else { cum_mov_vec.y += curr_vec.x; }
+            else { cum_mov_vec.y += curr_vec.y; }
         }
     }
-    // std::cout << "cum_mov_vec: " << cum_mov_vec.FormatDecimal(4,0) << '\n';
+    
     player_collider->transform->position = player_collider->transform->position + cum_mov_vec;
-
+    
     // entity_distances = {};
     // for(int i=0; i<stationaries.size(); ++i) {
     //     current_col = &stationaries[i]->getComponent<Collider>();
@@ -324,8 +326,95 @@ void Game::clean() {
     std::cout << "Game cleaned\n";
 }
 
-void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y) {
+void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
     auto& tile(manager->addEntity());
     tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
+
+    if(id == 2) {
+        std::vector<bool>* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
+        int dec_map_x = map_x-1;
+        int inc_map_x = map_x+1;
+        int dec_map_y = map_y-1;
+        int inc_map_y = map_y+1;
+
+        bool top_left  = false;
+        bool top_mid   = false;
+        bool top_right = false;
+        bool left      = false;
+        bool right     = false;
+        bool bot_left  = false;
+        bool bot_mid   = false;
+        bool bot_right = false;
+
+        int layout_width = layout[0].size();
+        int layout_height = layout.size();
+
+        if(map_x == 0) {
+            if(map_y == 0) { // top left corner
+                right     = layout[    map_y][inc_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+                bot_right = layout[inc_map_y][inc_map_x] == 2;
+            } else if(map_y == layout_height-1) { // bottom left corner
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                top_right = layout[dec_map_y][inc_map_x] == 2;
+                right     = layout[    map_y][inc_map_x] == 2;
+            } else { // left column
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                top_right = layout[dec_map_y][inc_map_x] == 2;
+                right     = layout[    map_y][inc_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+                bot_right = layout[inc_map_y][inc_map_x] == 2;
+            }
+        } else if(map_x == layout_width-1) {
+            if(map_y == 0) { // top right corner
+                left      = layout[    map_y][dec_map_x] == 2;
+                bot_left  = layout[inc_map_y][dec_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+            } else if(map_y == layout_height-1) { // bottom right corner
+                top_left  = layout[dec_map_y][dec_map_x] == 2;
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                left      = layout[    map_y][dec_map_x] == 2;
+            } else { // right column
+                top_left  = layout[dec_map_y][dec_map_x] == 2;
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                left      = layout[    map_y][dec_map_x] == 2;
+                bot_left  = layout[inc_map_y][dec_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+            }
+        } else {
+            if(map_y == 0) { // top row
+                left      = layout[    map_y][dec_map_x] == 2;
+                right     = layout[    map_y][inc_map_x] == 2;
+                bot_left  = layout[inc_map_y][dec_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+                bot_right = layout[inc_map_y][inc_map_x] == 2;
+            } else if(map_y == layout_height-1) { // bottom row
+                top_left  = layout[dec_map_y][dec_map_x] == 2;
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                top_right = layout[dec_map_y][inc_map_x] == 2;
+                left      = layout[    map_y][dec_map_x] == 2;
+                right     = layout[    map_y][inc_map_x] == 2;
+            } else { // middle of the layout (most cases)
+                top_left  = layout[dec_map_y][dec_map_x] == 2;
+                top_mid   = layout[dec_map_y][    map_x] == 2;
+                top_right = layout[dec_map_y][inc_map_x] == 2;
+                left      = layout[    map_y][dec_map_x] == 2;
+                right     = layout[    map_y][inc_map_x] == 2;
+                bot_left  = layout[inc_map_y][dec_map_x] == 2;
+                bot_mid   = layout[inc_map_y][    map_x] == 2;
+                bot_right = layout[inc_map_y][inc_map_x] == 2;
+            }
+        }
+
+        (*neighbors)[0] = top_left;
+        (*neighbors)[1] = top_mid;
+        (*neighbors)[2] = top_right;
+        (*neighbors)[3] = left;
+        (*neighbors)[4] = right;
+        (*neighbors)[5] = bot_left;
+        (*neighbors)[6] = bot_mid;
+        (*neighbors)[7] = bot_right;
+    }
+    
     tile.addGroup(groupTiles);
 }
