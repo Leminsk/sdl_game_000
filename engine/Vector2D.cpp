@@ -1,7 +1,6 @@
 #include <cmath>
-#include "utils.hpp"
 #include "Vector2D.hpp"
-
+#include "utils.hpp"
 
 Vector2D::Vector2D() {
     this-> x = 0.0f;

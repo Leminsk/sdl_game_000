@@ -19,12 +19,15 @@ class RectangleCollider : public Component {
          +----+
         1      0
         */
-       // used if aligned in a grid to deal with corners in collisions
-        std::vector<bool> adjacent_rectangles = {
-            false, false, false,
-            false,        false,
-            false, false, false
-        };
+
+       /* used if aligned in a grid to deal with corners in collisions
+        bits correspond to this layout (7=MSB to 0=LSB)
+        0, 1, 2,
+        3, x  4,
+        5, 6, 7,
+        where x is this RectangleCollider, and the bits indices are its neighbors
+       */
+        uint8_t adjacent_rectangles = 0x00;
 
         TransformComponent* transform;
 

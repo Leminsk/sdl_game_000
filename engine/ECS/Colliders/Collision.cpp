@@ -1,6 +1,7 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include "../../utils.hpp"
 #include "../../Vector2D.hpp"
 #include "Collision.hpp"
 #include "Collider.hpp"
@@ -172,12 +173,12 @@ Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider&
         bool nearest_on_top    = (nearest_point.y ==            rect.y);
         bool nearest_on_bottom = (nearest_point.y == (rect.y + rect.h));
         bool nearest_on_left   = (nearest_point.x ==            rect.x);
-        bool nearest_on_right  = (nearest_point.x == (rect.x + rect.w));    
+        bool nearest_on_right  = (nearest_point.x == (rect.x + rect.w));
         if(
-            (nearest_on_top && rect.adjacent_rectangles[1]) ||
-            (nearest_on_left && rect.adjacent_rectangles[3]) ||
-            (nearest_on_right && rect.adjacent_rectangles[4]) ||
-            (nearest_on_bottom && rect.adjacent_rectangles[6])
+            (nearest_on_top && readBit(rect.adjacent_rectangles, 1)) ||
+            (nearest_on_left && readBit(rect.adjacent_rectangles, 3)) ||
+            (nearest_on_right && readBit(rect.adjacent_rectangles, 4)) ||
+            (nearest_on_bottom && readBit(rect.adjacent_rectangles, 6))
         ) {
             return Vector2D(0,0);
         }

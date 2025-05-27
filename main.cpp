@@ -12,7 +12,7 @@ int main() {
     SDL_VERSION(&compiled);
     SDL_GetVersion(&linked);
     SDL_Log("COMPILED against SDL version %u.%u.%u\n", compiled.major, compiled.minor, compiled.patch);
-    SDL_Log("  LINKED against SDL version %u.%u.%u\n", linked.major, linked.minor, linked.patch);
+    SDL_Log("  LINKED against SDL version %u.%u.%u\n",   linked.major,   linked.minor,   linked.patch);
 
     const bool LIMIT_FPS = true;
     const int MAX_FPS = 60;

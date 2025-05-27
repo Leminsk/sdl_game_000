@@ -1,6 +1,7 @@
 #include <vector>
 #include "Game.hpp"
 #include "Vector2D.hpp"
+#include "utils.hpp"
 #include "Map.hpp"
 #include "TextureManager.hpp"
 #include "ECS/ECS.hpp"
@@ -347,7 +348,7 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
     tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
 
     if(id == 2) {
-        std::vector<bool>* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
+        uint8_t* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
         int dec_map_x = map_x-1;
         int inc_map_x = map_x+1;
         int dec_map_y = map_y-1;
@@ -422,14 +423,14 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
             }
         }
 
-        (*neighbors)[0] = top_left;
-        (*neighbors)[1] = top_mid;
-        (*neighbors)[2] = top_right;
-        (*neighbors)[3] = left;
-        (*neighbors)[4] = right;
-        (*neighbors)[5] = bot_left;
-        (*neighbors)[6] = bot_mid;
-        (*neighbors)[7] = bot_right;
+        setBit(neighbors, 0, top_left);
+        setBit(neighbors, 1, top_mid);
+        setBit(neighbors, 2, top_right);
+        setBit(neighbors, 3, left);
+        setBit(neighbors, 4, right);
+        setBit(neighbors, 5, bot_left);
+        setBit(neighbors, 6, bot_mid);
+        setBit(neighbors, 7, bot_right);
     }
     
     tile.addGroup(groupTiles);
