@@ -164,12 +164,25 @@ auto& movables(manager->getGroup(groupMovables));
 auto& inerts(manager->getGroup(groupInerts));
 auto& tiles(manager->getGroup(groupTiles));
 
+void handleMouse(SDL_MouseButtonEvent& b) {
+    Vector2D world_pos = convertScreenToWorld(Game::camera.getComponent<TransformComponent>().position, Vector2D(b.x, b.y));
+    switch(b.button) {
+        case SDL_BUTTON_LEFT: std::cout << "MOUSE BUTTON LEFT\n"; break;
+        case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
+        case SDL_BUTTON_RIGHT: std::cout << "MOUSE BUTTON RIGHT\n"; break;
+    }
+}
+
 void Game::handleEvents() {
     
     while( SDL_PollEvent(&Game::event) ) {
         if(Game::event.type == SDL_QUIT) {
             Game::isRunning = false;
             return;
+        }
+
+        if(Game::event.type == SDL_MOUSEBUTTONDOWN) {
+            handleMouse(Game::event.button);
         }
 
         if(Game::event.type == SDL_WINDOWEVENT) {

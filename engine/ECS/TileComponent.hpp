@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TileTypes.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
@@ -31,12 +32,14 @@ class TileComponent : public Component {
             );
             entity->addComponent<SpriteComponent>(this->texture);
             switch(this->tileID) {
-                case 1: break;
-                case 2: 
+                case TILE_PLAIN: break;
+                case TILE_ROUGH: break;
+                case TILE_IMPASSABLE: 
                     entity->addComponent<Collider>("mountain_collider", COLLIDER_RECTANGLE);
                     entity->addComponent<Wireframe>();
                     break;
-                case 3: break;
+                case TILE_NAVIGABLE: break;
+                case TILE_BASE_SPAWN: break;
                 default:break;
             }
         }

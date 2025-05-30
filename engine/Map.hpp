@@ -5,6 +5,8 @@
 #include "Vector2D.hpp"
 #include "Game.hpp"
 #include "TextureManager.hpp"
+#include "ECS/TileTypes.hpp"
+
 
 class Map {
     public:
@@ -31,9 +33,9 @@ class Map {
             for(row = 0; row < this->layout_height; ++row) {
                 for(column = 0; column < this->layout_width; ++column) {
                     switch(this->layout[row][column]) {
-                        case 1:  tex = &dirt_texture;     break;
-                        case 2:  tex = &mountain_texture; break;
-                        case 3:  tex = &water_texture;    break;
+                        case TILE_ROUGH:  tex = &dirt_texture;     break;
+                        case TILE_IMPASSABLE:  tex = &mountain_texture; break;
+                        case TILE_NAVIGABLE:  tex = &water_texture;    break;
                         default: tex = &grass_texture;
                     }
                     Game::AddTile(

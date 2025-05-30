@@ -62,26 +62,27 @@ bool Map::LoadMapFile(std::string& path) {
             current_pixel.g == 0x00 && 
             current_pixel.b == 0x00
         ) { // base spawn
-            tile_type = 4;
+            tile_type = TILE_BASE_SPAWN;
         } else if(
             current_pixel.r == 0xA4 && 
             current_pixel.g == 0xC2 && 
             current_pixel.b == 0xF4
         ) { // navigable terrain
-            tile_type = 3;
+            tile_type = TILE_NAVIGABLE;
         } else if(
             current_pixel.r == 0xAC && 
             current_pixel.g == 0xAC && 
             current_pixel.b == 0xAC
         ) { // impassable terrain
-            tile_type = 2;
+            tile_type = TILE_IMPASSABLE;
         } else if(
             current_pixel.r == 0xF9 && 
             current_pixel.g == 0xCB && 
-            current_pixel.b == 0x9C) { // rough terrain
-            tile_type = 1;
+            current_pixel.b == 0x9C
+        ) { // rough terrain
+            tile_type = TILE_ROUGH;
         } else { // plain terrain
-            tile_type = 0;
+            tile_type = TILE_PLAIN;
         }
 
         this->layout[current_line][line_index] = tile_type;
