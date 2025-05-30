@@ -149,8 +149,6 @@ Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider&
         std::max( rect.y, std::min(cir.center.y, rect.y + rect.h) )
     );
 
-    
-
     if(nearest_point == cir.center) {
         // circle center is inside the rect, use old position to see where it would have collided
         nearest_point = Vector2D(
@@ -266,8 +264,16 @@ Vector2D CircleHex(const CircleCollider& cir, const HexagonCollider& hex) {
     if(min_distance > temp_dist) { min_distance = temp_dist; index = 1; }
     temp_dist = Distance(nearest_points[2], cir.center);
     if(min_distance > temp_dist) { min_distance = temp_dist; index = 2; }
-    
-    return resolveCircleOverlap(nearest_points[index], cir);
+
+    Vector2D ray_to_nearest = nearest_points[index] - cir.center;
+    float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
+    if(overlap > 0) {
+        overlap = cir.radius - ray_to_nearest.Magnitude();
+        // move it out by the amount of overlap (towards the circle center)
+        return ray_to_nearest.Normalize() * -overlap;
+    }
+    // no need to move it
+    return Vector2D(0,0);
 }
 
 bool HexCircle(const Collider& hex, const Collider& cir) {

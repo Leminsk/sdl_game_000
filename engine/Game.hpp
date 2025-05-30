@@ -17,6 +17,7 @@ class Game {
         static Entity& camera;
         static TTF_Font* default_font;
         static SDL_Color bg_color, default_text_color;
+        static SDL_Texture *unit_tex, *building_tex;
 
         Game();
         ~Game();

@@ -1,5 +1,6 @@
-#include "Map.hpp"
 #include <fstream>
+#include "Map.hpp"
+
 
 struct simple_pixel {
     Uint8 r, g, b;
