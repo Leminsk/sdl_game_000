@@ -23,12 +23,21 @@ Vector2D convertScreenToWorld(const Vector2D& camera_pos, const Vector2D& screen
     );
 }
 
-// should only be used after panning (i.e. after convertWorldToScreen() => Pan first, Zoom Second)
-// When going from screen to world, do the reverse (deZoom First, dePan second)
+// should only be used AFTER panning (i.e. after convertWorldToScreen() => Pan first, Zoom Second)
+// When going from screen to world, do the reverse (deZoom First, convertScreenToWorld() second)
 Vector2D applyZoom(const TransformComponent& camera_transform, const Vector2D& screen_pos) {
     Vector2D focus_point = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
     return Vector2D(
         camera_transform.scale * screen_pos.x - (focus_point.x * (camera_transform.scale - 1.0f)),
         camera_transform.scale * screen_pos.y - (focus_point.y * (camera_transform.scale - 1.0f))
+    );
+}
+
+// should only be used BEFORE panning (i.e. before convertScreenToWorld() => deZoom first, dePan Second)
+Vector2D deZoom(const TransformComponent& camera_transform, const Vector2D& zoomed_screen_pos) {
+    Vector2D focus_point = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+    return Vector2D(
+        (zoomed_screen_pos.x + (focus_point.x * (camera_transform.scale - 1.0f))) / camera_transform.scale,
+        (zoomed_screen_pos.y + (focus_point.y * (camera_transform.scale - 1.0f))) / camera_transform.scale
     );
 }

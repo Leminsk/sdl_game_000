@@ -19,6 +19,9 @@ std::ostream& operator<<(std::ostream& stream, const Vector2D& vec) {
 bool operator==(const Vector2D& a, const Vector2D& b) {
     return (a.x == b.x) && (a.y == b.y);
 }
+bool operator!=(const Vector2D& a, const Vector2D& b) {
+    return (a.x != b.x) || (a.y != b.y);
+}
 Vector2D operator+(const Vector2D& a, const Vector2D& b) {
     return AddVecs(a, b);
 }

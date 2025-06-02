@@ -1,9 +1,21 @@
 #pragma once
+#include <sstream>
+#include <unordered_map>
 #include <vector>
+#include <limits>
 #include "Vector2D.hpp"
 #include "ECS/ECS.hpp"
 #include "ECS/TileTypes.hpp"
 #include "ECS/Components.hpp"
+
+// https://en.wikipedia.org/wiki/Theta*
+// https://idm-lab.org/bib/abstracts/papers/jair10b.pdf
+
+void printVec(const std::vector<Vector2D>& v) {
+    std::cout << "{\n";
+    for(auto& n : v) { std::cout << n << ' '; }
+    std::cout << "\n}\n";
+}
 
 bool isBlocked(float x, float y, const std::vector<Entity*>& tiles) {
     int tileID;
@@ -25,81 +37,253 @@ bool isBlocked(float x, float y, const std::vector<Entity*>& tiles) {
     return false;
 }
 
-bool lineOfSight(const Vector2D& s, const Vector2D& s_prime, const std::vector<Entity*>& tiles) {
-    float x0 = s.x;
-    float y0 = s.y;
-    float x1 = s_prime.x;
-    float y1 = s_prime.y;
-    float dy = y1 - y0;
-    float dx = x1 - x0;
+bool lineOfSight(const Vector2D& a, const Vector2D& b, const std::vector<Entity*>& tiles) {
+    float x0 = a.x;
+    float y0 = a.y;
+    float x1 = b.x;
+    float y1 = b.y;
+    float dy = -std::fabs(y1 - y0);
+    float dx = std::fabs(x1 - x0);
     float f = 0.0f;
-    float sy, sx;
+    float sy = -1;
+    float sx = -1;
+    if(x0 < x1) { sx = 1; }
+    if(y0 < y1) { sy = 1; }
 
-    if(dy < 0.0f) {
-        dy = -dy;
-        sy = -1;
-    } else {
-        sy = 1;
-    }
-
-    if(dx < 0.0f) {
-        dx = -dx;
-        sx = -1;
-    } else {
-        sx = 1;
-    }
-
-    if(dx >= dy) {
-        while(x0 != x1) {
-            f += dy;
-            if(f >= dx) {
-                if(isBlocked(x0 + ((sx - 1)/2), y0 + ((sy - 1)/2), tiles)) { 
-                    return false; 
-                }
-                y0 += sy;
-                f -= dx;
-            }
-            if(
-                f != 0.0f && 
-                isBlocked(x0 + ((sx - 1)/2), y0 + ((sy - 1)/2), tiles)
-            ) { 
-                return false; 
-            }
-            if(
-                dy == 0.0f && 
-                isBlocked(x0 + ((sx - 1)/2), y0, tiles) && 
-                isBlocked(x0 + ((sx - 1)/2), y0 - 1, tiles)
-            ) { 
-                return false; 
-            }
+    float e = dx + dy;
+    float e2;
+    while(true) {
+        if(isBlocked(x0, y0, tiles)) { return false; }
+        if(x0 == x1 && y0 == y1) { return true; }
+        e2 = 2*e;
+        if(e2 >= dy) {
+            if(x0 == x1) { return true; }
+            e += dy;
             x0 += sx;
         }
-    } else {
-        while(y0 != y1) {
-            f += dx;
-            if(f >= dy) {
-                if(isBlocked(x0 + ((sx - 1)/2), y0 + ((sy - 1)/2), tiles)) { 
-                    return false; 
-                }
-                x0 += sx;
-                f -= dy;
-            }
-            if(
-                f != 0.0f && 
-                isBlocked(x0 + ((sx - 1)/2), y0 + ((sy - 1)/2), tiles)
-            ) { 
-                return false; 
-            }
-            if(
-                dy == 0.0f && 
-                isBlocked(x0, y0 + ((sy - 1)/2), tiles) && 
-                isBlocked(x0 - 1, y0 + ((sy - 1)/2), tiles)
-            ) { 
-                return false; 
-            }
+        if(e2 <= dx) {
+            if(y0 == y1) { return true; }
+            e += dx;
             y0 += sy;
         }
     }
+}
+
+float cost(const Vector2D& a, const Vector2D& b) {
+    return Distance(a, b);
+}
+
+// https://idm-lab.org/bib/abstracts/papers/jair10b.pdf -> page 26 Algorithm 5
+float heuristic(const Vector2D& p, const Vector2D& destination) {
+    return cost(p, destination);
+
+    float dx = std::fabs(p.x - destination.x);
+    float dy = std::fabs(p.y - destination.y);
+    float largest = std::max(dx, dy);
+    float smallest = std::min(dx, dy);
+    const float sqrt_of_2 = 1.4142135f;
+    return (sqrt_of_2 * smallest) + (largest - smallest);
+}
+
+std::string getStringV2(const Vector2D& v) {
+    std::stringstream ss;
+    ss << v.x << ',' << v.y;
+    return ss.str();
+}
+
+std::vector<Vector2D>::const_iterator iterInVec(const Vector2D& pos, const std::vector<Vector2D>& vec) {
+    return std::find_if(
+        vec.begin(), 
+        vec.end(), 
+        [&](const Vector2D& n) { 
+            return n == pos;
+        }
+    );
+}
+
+void update_vertex_theta(
+    const Vector2D& s, const Vector2D& neighbor, 
+    std::unordered_map<std::string, Vector2D>& parent, 
+    std::unordered_map<std::string, float>& gscore, 
+    std::unordered_map<std::string, float>& fscore, 
+    const std::vector<Entity*>& tiles, 
+    std::vector<Vector2D>& open, 
+    const Vector2D& destination
+) {
+    std::vector<Vector2D>::const_iterator it;
+    Vector2D s_parent = parent[getStringV2(s)];
+    std::string neighbor_str, p_or_s_str;
+
+    neighbor_str = getStringV2(neighbor);
+
+    if(lineOfSight(s_parent, neighbor, tiles)) {
+        p_or_s_str = getStringV2(s_parent);
+        if(gscore[p_or_s_str] + cost(s_parent, neighbor) < gscore[neighbor_str]) {
+            gscore[neighbor_str] = gscore[p_or_s_str] + cost(s_parent, neighbor);
+            parent[neighbor_str] = s_parent;
+            it = iterInVec(neighbor, open);
+            if(it != open.end()) {
+                Vector2D v_copy = neighbor;
+                open.erase(it);
+                fscore[neighbor_str] = gscore[neighbor_str] + heuristic(v_copy, destination);
+                open.push_back(v_copy);
+            } else {
+                fscore[neighbor_str] = gscore[neighbor_str] + heuristic(neighbor, destination);
+                open.push_back(neighbor);
+            }
+        }
+    } else {
+        p_or_s_str = getStringV2(s);
+        if(gscore[p_or_s_str] + cost(s, neighbor) < gscore[neighbor_str]) {
+            gscore[neighbor_str] = gscore[p_or_s_str] + cost(s, neighbor);
+            parent[neighbor_str] = s;
+            it = iterInVec(neighbor, open);
+            if(it != open.end()) {
+                Vector2D v_copy = neighbor;
+                open.erase(it);
+                fscore[neighbor_str] = gscore[neighbor_str] + heuristic(v_copy, destination);
+                open.push_back(v_copy);
+            } else {
+                fscore[neighbor_str] = gscore[neighbor_str] + heuristic(neighbor, destination);
+                open.push_back(neighbor);
+            }
+        }
+    }
+}
+
+void update_vertex_a(
+    const Vector2D& s, const Vector2D& neighbor, 
+    std::unordered_map<std::string, Vector2D>& parent, 
+    std::unordered_map<std::string, float>& gscore, 
+    std::unordered_map<std::string, float>& fscore, 
+    const std::vector<Entity*>& tiles, 
+    std::vector<Vector2D>& open, 
+    const Vector2D& destination
+) {
+    std::vector<Vector2D>::const_iterator it;
+    Vector2D s_parent = parent[getStringV2(s)];
+    std::string neighbor_str = getStringV2(neighbor);
+    std::string s_str = getStringV2(s);
+
+    if(gscore[s_str] + cost(s, neighbor) < gscore[neighbor_str]) {
+        gscore[neighbor_str] = gscore[s_str] + cost(s, neighbor);
+        parent[neighbor_str] = s;
+        it = iterInVec(neighbor, open);
+        if(it != open.end()) {
+            Vector2D v_copy = neighbor;
+            open.erase(it);
+            fscore[neighbor_str] = gscore[neighbor_str] + heuristic(v_copy, destination);
+            open.push_back(v_copy);
+        } else {
+            fscore[neighbor_str] = gscore[neighbor_str] + heuristic(neighbor, destination);
+            open.push_back(neighbor);
+        }
+    }
+}
+
+
+std::vector<Vector2D> reconstruct_path(const Vector2D& s, std::unordered_map<std::string, Vector2D>& parent) {
+    std::vector<Vector2D> total_path = { s };
+    Vector2D curr_point = s;
+    Vector2D curr_parent = parent[getStringV2(s)];
+    while(curr_parent != curr_point) {
+        total_path.push_back(curr_parent);
+        curr_point = curr_parent;
+        curr_parent = parent[getStringV2(curr_point)];
+    }
+    return total_path;
+}
+
+// https://idm-lab.org/bib/abstracts/papers/jair10b.pdf -> page 37 Branching factor 16
+std::vector<Vector2D> getNeighborsPos(const Vector2D& p, const int branching_factor=16, const float step=10.0f) {
+    float s = step;
+    switch(branching_factor) {
+        case 4: return {
+                                                                     Vector2D(p.x, p.y + s),
+                                         Vector2D(p.x - s, p.y),                             Vector2D(p.x + s, p.y),
+                                                                     Vector2D(p.x, p.y - s)
+        };
+        case 8: return {
+                                         Vector2D(p.x - s, p.y + s), Vector2D(p.x, p.y + s), Vector2D(p.x + s, p.y + s),
+                                         Vector2D(p.x - s, p.y),                             Vector2D(p.x + s, p.y),
+                                         Vector2D(p.x - s, p.y - s), Vector2D(p.x, p.y - s), Vector2D(p.x + s, p.y - s),
+        };
+        case 16: float s2 = 2*s; return {
+                                         Vector2D(p.x - s, p.y + s2),                        Vector2D(p.x + s, p.y + s2),
+            Vector2D(p.x - s2, p.y + s), Vector2D(p.x - s, p.y + s), Vector2D(p.x, p.y + s), Vector2D(p.x + s, p.y + s), Vector2D(p.x + s2, p.y + s),
+                                         Vector2D(p.x - s, p.y),                             Vector2D(p.x + s, p.y),
+            Vector2D(p.x - s2, p.y - s), Vector2D(p.x - s, p.y - s), Vector2D(p.x, p.y - s), Vector2D(p.x + s, p.y - s), Vector2D(p.x + s2, p.y - s),
+                                         Vector2D(p.x - s, p.y - s2),                        Vector2D(p.x + s, p.y - s2)
+        };
+    }
+    return {};
     
-    return true;
+}
+
+Vector2D getRemoveMinFScoreVertex(std::vector<Vector2D>& vec, std::unordered_map<std::string, float>& fscore) {
+    std::string s;
+    std::vector<Vector2D>::const_iterator min_it;
+    Vector2D min_v;
+    float min = __FLT_MAX__;
+    for(auto it = begin(vec); it != end(vec); ++it) {
+        s = getStringV2(*it);
+        if(fscore.find(s) != fscore.end()) {
+            if(fscore[s] < min) {
+                min = fscore[s];
+                min_v = vec[it - vec.begin()];
+                min_it = it;
+            }
+        }
+    }
+    vec.erase(min_it);
+    return min_v;
+}
+
+std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destination, const std::vector<Entity*>& tiles) {
+    std::unordered_map<std::string, Vector2D> parent;
+    std::unordered_map<std::string, float> gscore;
+    std::unordered_map<std::string, float> fscore;
+    std::string str_start = getStringV2(start);
+    parent[str_start] = start;
+    gscore[str_start] = 0.0f;
+    fscore[str_start] = heuristic(start, destination);
+
+    std::vector<Vector2D> open = { start };
+    std::vector<Vector2D> closed = {};
+
+    std::vector<Vector2D> curr_neighbors;
+
+    std::cout << "start: " << start << " destination: " << destination << '\n';
+    int i=0;
+    Vector2D s;
+    std::string str_node;
+    std::vector<Vector2D>::const_iterator it;
+
+    while(!open.empty()) {
+        s = getRemoveMinFScoreVertex(open, fscore);
+        
+        if(s == destination) {
+            std::cout << "PATH FOUND\n";
+            return reconstruct_path(s, parent);
+        }
+
+        closed.push_back(s);
+        curr_neighbors = getNeighborsPos(s, 16, 20.0f);
+
+        for(Vector2D& n : curr_neighbors) {
+            if(!isBlocked(n.x, n.y, tiles)) {
+                it = iterInVec(n, closed);
+                if(it == closed.end()) {
+                    it = iterInVec(n, open);
+                    if(it == open.end()) {
+                        gscore[getStringV2(n)] = std::numeric_limits<float>::infinity();
+                    }
+                    update_vertex_theta(s, n, parent, gscore, fscore, tiles, open, destination);
+                }
+            }
+        }
+        ++i;
+    }
+
+    return {};
 }
