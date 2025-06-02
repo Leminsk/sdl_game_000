@@ -50,6 +50,8 @@ auto& inerts(manager->getGroup(groupInerts));
 auto& tiles(manager->getGroup(groupTiles));
 
 std::vector<Vector2D> path;
+Vector2D source = Vector2D(0,0);
+Vector2D destination;
 
 Game::Game() {
 
@@ -165,8 +167,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player.addComponent<Wireframe>();
     player.addComponent<TextComponent>("", 160.0f, 16.0f);
     player.addGroup(groupMovables);
-
-    path = theta_star(Vector2D(0.0f, 0.0f), Vector2D(1000.0f, 300.0f), tiles);
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -174,11 +174,18 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         Game::camera.getComponent<TransformComponent>().position, 
         deZoom(Game::camera.getComponent<TransformComponent>(), Vector2D(b.x, b.y))
     );
-    std::cout << world_pos.FormatDecimal(4,2) << (isBlocked(world_pos.x, world_pos.y, tiles) ? " BLOCKED" : " walkable") << '\n';
+    // std::cout << world_pos.FormatDecimal(4,2) << (isBlocked(world_pos.x, world_pos.y, tiles) ? " BLOCKED" : " walkable") << '\n';
     switch(b.button) {
-        case SDL_BUTTON_LEFT: std::cout << "MOUSE BUTTON LEFT\n"; break;
+        case SDL_BUTTON_LEFT: 
+            std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
+            source = world_pos;
+            break;
         case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
-        case SDL_BUTTON_RIGHT: std::cout << "MOUSE BUTTON RIGHT\n"; break;
+        case SDL_BUTTON_RIGHT: 
+            std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
+            destination = world_pos;
+            path = theta_star(source, destination, tiles);
+            break;
     }
 }
 
@@ -297,19 +304,23 @@ void Game::render() {
     for(auto& i : inerts) { i->draw(); }
     Game::camera.draw();
 
-    for(int i=0; i<path.size()-1; ++i) {
-        TextureManager::DrawLine(
-            applyZoom(
-                Game::camera.getComponent<TransformComponent>(), 
-                convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i])
-            ), 
-            applyZoom(
-                Game::camera.getComponent<TransformComponent>(), 
-                convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i+1])
-            ), 
-            {0x00, (uint8_t)i, 0xFF, SDL_ALPHA_OPAQUE}
-        );
+    if(path.size() > 0) {
+        int limit = path.size()-1;
+        for(int i=0; i<limit; ++i) {
+            TextureManager::DrawLine(
+                applyZoom(
+                    Game::camera.getComponent<TransformComponent>(), 
+                    convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i])
+                ), 
+                applyZoom(
+                    Game::camera.getComponent<TransformComponent>(), 
+                    convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i+1])
+                ), 
+                {0x00, (uint8_t)i, 0xFF, SDL_ALPHA_OPAQUE}
+            );
+        }
     }
+    
 
     // cross-hair
     float line_length = 10;
