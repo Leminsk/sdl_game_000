@@ -4,7 +4,8 @@
 #include <vector>
 #include <limits>
 #include <chrono>
-
+#include <queue>
+#include <unordered_set>
 #include "Vector2D.hpp"
 #include "ECS/ECS.hpp"
 #include "ECS/TileTypes.hpp"
@@ -18,6 +19,20 @@ void printVec(const std::vector<Vector2D>& v) {
     for(auto& n : v) { std::cout << n << ' '; }
     std::cout << "\n}\n";
 }
+
+struct Vec2Hash {
+    std::size_t operator()(const Vector2D& v) const {
+        return std::hash<float>{}(v.x) ^ (std::hash<float>{}(v.y) << 1);
+    }
+};
+
+struct CompareByFScore {
+    const std::unordered_map<Vector2D, float, Vec2Hash>& fscore;
+    CompareByFScore(const std::unordered_map<Vector2D, float, Vec2Hash>& fs) : fscore(fs) {}
+    bool operator()(const Vector2D& a, const Vector2D& b) const {
+        return fscore.at(a) > fscore.at(b);
+    }
+};
 
 bool isBlocked(float x, float y, const std::vector<Entity*>& tiles) {
     int tileID;
@@ -155,43 +170,34 @@ void update_vertex_theta(
 
 void update_vertex_a(
     const Vector2D& s, const Vector2D& neighbor, 
-    std::unordered_map<std::string, Vector2D>& parent, 
-    std::unordered_map<std::string, float>& gscore, 
-    std::unordered_map<std::string, float>& fscore, 
+    std::unordered_map<Vector2D, Vector2D, Vec2Hash>& parent, 
+    std::unordered_map<Vector2D, float, Vec2Hash>& gscore, 
+    std::unordered_map<Vector2D, float, Vec2Hash>& fscore, 
     const std::vector<Entity*>& tiles, 
-    std::vector<Vector2D>& open, 
+    std::priority_queue<Vector2D, std::vector<Vector2D>, CompareByFScore>& open_queue,
+    std::unordered_set<Vector2D, Vec2Hash>& open_set, 
     const Vector2D& destination
 ) {
-    std::vector<Vector2D>::const_iterator it;
-    Vector2D s_parent = parent[getStringV2(s)];
-    std::string neighbor_str = getStringV2(neighbor);
-    std::string s_str = getStringV2(s);
-
-    if(gscore[s_str] + cost(s, neighbor) < gscore[neighbor_str]) {
-        gscore[neighbor_str] = gscore[s_str] + cost(s, neighbor);
-        parent[neighbor_str] = s;
-        it = iterInVec(neighbor, open);
-        if(it != open.end()) {
-            Vector2D v_copy = neighbor;
-            open.erase(it);
-            fscore[neighbor_str] = gscore[neighbor_str] + heuristic(v_copy, destination);
-            open.push_back(v_copy);
-        } else {
-            fscore[neighbor_str] = gscore[neighbor_str] + heuristic(neighbor, destination);
-            open.push_back(neighbor);
+    if(gscore[s] + cost(s, neighbor) < gscore[neighbor]) {
+        gscore[neighbor] = gscore[s] + cost(s, neighbor);
+        parent[neighbor] = s;
+        fscore[neighbor] = gscore[neighbor] + heuristic(neighbor, destination);
+        if(open_set.find(neighbor) == open_set.end()) {
+            open_set.insert(neighbor);
         }
+        open_queue.push(neighbor);
     }
 }
 
 
-std::vector<Vector2D> reconstruct_path(const Vector2D& s, std::unordered_map<std::string, Vector2D>& parent) {
+std::vector<Vector2D> reconstruct_path(const Vector2D& s, std::unordered_map<Vector2D, Vector2D, Vec2Hash>& parent) {
     std::vector<Vector2D> total_path = { s };
     Vector2D curr_point = s;
-    Vector2D curr_parent = parent[getStringV2(s)];
+    Vector2D curr_parent = parent[s];
     while(curr_parent != curr_point) {
         total_path.push_back(curr_parent);
         curr_point = curr_parent;
-        curr_parent = parent[getStringV2(curr_point)];
+        curr_parent = parent[curr_point];
     }
     return total_path;
 }
@@ -222,71 +228,52 @@ std::vector<Vector2D> getNeighborsPos(const Vector2D& p, const int branching_fac
     
 }
 
-Vector2D getRemoveMinFScoreVertex(std::vector<Vector2D>& vec, std::unordered_map<std::string, float>& fscore) {
-    std::string s;
-    std::vector<Vector2D>::const_iterator min_it;
-    Vector2D min_v;
-    float min = __FLT_MAX__;
-    for(auto it = begin(vec); it != end(vec); ++it) {
-        s = getStringV2(*it);
-        if(fscore.find(s) != fscore.end()) {
-            if(fscore[s] < min) {
-                min = fscore[s];
-                min_v = vec[it - vec.begin()];
-                min_it = it;
-            }
-        }
-    }
-    vec.erase(min_it);
-    return min_v;
-}
 
 std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destination, const std::vector<Entity*>& tiles) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    std::unordered_map<std::string, Vector2D> parent;
-    std::unordered_map<std::string, float> gscore;
-    std::unordered_map<std::string, float> fscore;
-    std::string str_start = getStringV2(start);
-    parent[str_start] = start;
-    gscore[str_start] = 0.0f;
-    fscore[str_start] = heuristic(start, destination);
+    std::unordered_map<Vector2D, Vector2D, Vec2Hash> parent;
+    std::unordered_map<Vector2D, float, Vec2Hash> gscore;
+    std::unordered_map<Vector2D, float, Vec2Hash> fscore;
+    parent[start] = start;
+    gscore[start] = 0.0f;
+    fscore[start] = heuristic(start, destination);
 
-    std::vector<Vector2D> open = { start };
-    std::vector<Vector2D> closed = {};
+    std::unordered_set<Vector2D, Vec2Hash> open_set;
+    CompareByFScore cmp(fscore);
+    std::priority_queue<Vector2D, std::vector<Vector2D>, CompareByFScore> open_queue(cmp);
+
+    open_queue.push(start);
+    open_set.insert(start);
+
+    std::unordered_map<Vector2D, uint8_t, Vec2Hash> closed;
 
     std::vector<Vector2D> curr_neighbors;
-
-    std::cout << "start: " << start << " destination: " << destination << '\n';
-    int i=0;
     Vector2D s;
-    std::string str_node;
-    std::vector<Vector2D>::const_iterator it;
 
-    while(!open.empty()) {
-        s = getRemoveMinFScoreVertex(open, fscore);
+    while(!open_queue.empty()) {
+        s = open_queue.top();
+        open_queue.pop();
+        open_set.erase(s);
         
         if(s == destination) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
+            std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
             return reconstruct_path(s, parent);
         }
 
-        closed.push_back(s);
+        closed[s] = 1;
         curr_neighbors = getNeighborsPos(s, 16, 50.0f);
 
         for(Vector2D& n : curr_neighbors) {
             if(!isBlocked(n.x, n.y, tiles)) {
-                it = iterInVec(n, closed);
-                if(it == closed.end()) {
-                    it = iterInVec(n, open);
-                    if(it == open.end()) {
-                        gscore[getStringV2(n)] = std::numeric_limits<float>::infinity();
+                if(closed.find(n) == closed.end()) {
+                    if(open_set.find(n) == open_set.end()) {
+                        gscore[n] = std::numeric_limits<float>::infinity();
                     }
-                    update_vertex_a(s, n, parent, gscore, fscore, tiles, open, destination);
+                    update_vertex_a(s, n, parent, gscore, fscore, tiles, open_queue, open_set, destination);
                 }
             }
         }
-        ++i;
     }
 
     return {};
