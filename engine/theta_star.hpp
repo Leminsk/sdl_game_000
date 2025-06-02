@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 #include <limits>
+#include <chrono>
+
 #include "Vector2D.hpp"
 #include "ECS/ECS.hpp"
 #include "ECS/TileTypes.hpp"
@@ -240,6 +242,7 @@ Vector2D getRemoveMinFScoreVertex(std::vector<Vector2D>& vec, std::unordered_map
 }
 
 std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destination, const std::vector<Entity*>& tiles) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::unordered_map<std::string, Vector2D> parent;
     std::unordered_map<std::string, float> gscore;
     std::unordered_map<std::string, float> fscore;
@@ -263,12 +266,13 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
         s = getRemoveMinFScoreVertex(open, fscore);
         
         if(s == destination) {
-            std::cout << "PATH FOUND\n";
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
             return reconstruct_path(s, parent);
         }
 
         closed.push_back(s);
-        curr_neighbors = getNeighborsPos(s, 16, 20.0f);
+        curr_neighbors = getNeighborsPos(s, 16, 50.0f);
 
         for(Vector2D& n : curr_neighbors) {
             if(!isBlocked(n.x, n.y, tiles)) {
@@ -278,7 +282,7 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
                     if(it == open.end()) {
                         gscore[getStringV2(n)] = std::numeric_limits<float>::infinity();
                     }
-                    update_vertex_theta(s, n, parent, gscore, fscore, tiles, open, destination);
+                    update_vertex_a(s, n, parent, gscore, fscore, tiles, open, destination);
                 }
             }
         }
