@@ -11,7 +11,6 @@
 class SpriteComponent : public Component {
     private:
         TransformComponent *transform;
-        TransformComponent *camera_transform;
         SDL_Texture *texture;
         SDL_Rect srcRect;
         SDL_FRect destRect;
@@ -66,16 +65,12 @@ class SpriteComponent : public Component {
             }
         }
         void draw() override {
-            camera_transform = &Game::camera.getComponent<TransformComponent>();
-
-            Vector2D screen_pos = applyZoom(
-                *camera_transform, 
-                convertWorldToScreen(camera_transform->position, this->transform->position)
-            );
+            TransformComponent& camera_transform = Game::camera.getComponent<TransformComponent>();
+            Vector2D screen_pos = convertWorldToScreen(this->transform->position);
             this->destRect.x = screen_pos.x;
             this->destRect.y = screen_pos.y;
-            this->destRect.w = this->transform->width * camera_transform->scale;
-            this->destRect.h = this->transform->height * camera_transform->scale;
+            this->destRect.w = this->transform->width * camera_transform.scale;
+            this->destRect.h = this->transform->height * camera_transform.scale;
             // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
             if(
                 Game::SCREEN_WIDTH >= this->destRect.x &&

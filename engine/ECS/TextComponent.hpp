@@ -9,7 +9,6 @@
 class TextComponent : public Component {
     private:
         TransformComponent *transform;
-        TransformComponent *camera_transform;
         SDL_Texture *texture = NULL;
         SDL_Rect srcRect;
         SDL_FRect destRect;
@@ -91,18 +90,12 @@ class TextComponent : public Component {
         }
         void draw() override {
             if(!this->fixed) {
-                camera_transform = &Game::camera.getComponent<TransformComponent>();
-                Vector2D screen_pos = applyZoom(
-                    *camera_transform, 
-                    convertWorldToScreen(
-                        camera_transform->position, 
-                        this->transform->position + this->offset
-                    )
-                );
+                TransformComponent& camera_transform = Game::camera.getComponent<TransformComponent>();
+                Vector2D screen_pos = convertWorldToScreen(this->transform->position + this->offset);
                 this->destRect.x = screen_pos.x;
                 this->destRect.y = screen_pos.y;
-                this->destRect.w = this->w * camera_transform->scale;
-                this->destRect.h = this->h * camera_transform->scale;
+                this->destRect.w = this->w * camera_transform.scale;
+                this->destRect.h = this->h * camera_transform.scale;
             }
             // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
             if(

@@ -9,6 +9,7 @@
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"
 #include "theta_star.hpp"
+#include "Camera.hpp"
 
 Map* map;
 Manager* manager = new Manager();
@@ -170,10 +171,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
-    Vector2D world_pos = convertScreenToWorld(
-        Game::camera.getComponent<TransformComponent>().position, 
-        deZoom(Game::camera.getComponent<TransformComponent>(), Vector2D(b.x, b.y))
-    );
+    Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
     // std::cout << world_pos.FormatDecimal(4,2) << (isBlocked(world_pos.x, world_pos.y, tiles) ? " BLOCKED" : " walkable") << '\n';
     switch(b.button) {
         case SDL_BUTTON_LEFT: 
@@ -308,14 +306,8 @@ void Game::render() {
         int limit = path.size()-1;
         for(int i=0; i<limit; ++i) {
             TextureManager::DrawLine(
-                applyZoom(
-                    Game::camera.getComponent<TransformComponent>(), 
-                    convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i])
-                ), 
-                applyZoom(
-                    Game::camera.getComponent<TransformComponent>(), 
-                    convertWorldToScreen(Game::camera.getComponent<TransformComponent>().position, path[i+1])
-                ), 
+                convertWorldToScreen(path[i]), 
+                convertWorldToScreen(path[i+1]), 
                 {0x00, (uint8_t)i, 0xFF, SDL_ALPHA_OPAQUE}
             );
         }
