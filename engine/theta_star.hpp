@@ -21,6 +21,7 @@ void printVec(const std::vector<Vector2D>& v) {
     std::cout << "\n}\n";
 }
 
+
 struct Vec2Hash {
     std::size_t operator()(const Vector2D& v) const {
         return std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1);
@@ -55,6 +56,12 @@ struct NodeCompareByFScore {
     }
 };
 
+void printNodes(const std::vector<MeshNode>& v) {
+    std::cout << "{\n";
+    for(auto& n : v) { std::cout << '{' << n.x << ',' << n.y << '}' << ' '; }
+    std::cout << "\n}\n";
+}
+
 float NodeDistance(const MeshNode& a, const MeshNode& b) {
     float x = b.x - a.x;
     float y = b.y - a.y;
@@ -78,18 +85,18 @@ MeshNode convertVector2DToMeshNode(const Vector2D& v, const int mesh_density) {
 }
 
 Vector2D convertMeshNodeToVector2D(const MeshNode& n, const int mesh_density) {
-    int offset;
+    int shift;
     switch(mesh_density) {
-        case 64: offset = Game::UNIT_SIZE>>3; break;
-        case 16: offset = Game::UNIT_SIZE>>2; break;
-        case 4: offset = Game::UNIT_SIZE>>1; break;
+        case 64: shift = 3; break;
+        case 16: shift = 2; break;
+        case 4:  shift = 1; break;
         case 1: 
-        default: offset = Game::UNIT_SIZE;
+        default: shift = 0;
     }
-    int tile_size = Game::UNIT_SIZE<<1;
+    int factor = (Game::UNIT_SIZE<<1) >> shift;
     return Vector2D(
-        static_cast<float>( (n.x * tile_size) + offset ),
-        static_cast<float>( (n.y * tile_size) + offset )
+        static_cast<float>((n.x * factor) + (factor>>1)),
+        static_cast<float>((n.y * factor) + (factor>>1))
     );
 }
 
@@ -294,7 +301,7 @@ std::vector<Vector2D> getNeighborsPos(const Vector2D& p, const int branching_fac
     return {};
 }
 
-std::vector<MeshNode> getMeshNeighbors(const int x, const int y, const int width_limit, const int height_limit, const std::vector<std::vector<bool>> mesh, const int branching_factor=8) {
+std::vector<MeshNode> getMeshNeighbors(const int x, const int y, const int width_limit, const int height_limit, const int branching_factor=8) {
     const int s = 1;
     switch(branching_factor) {
         case 4: {
@@ -533,23 +540,27 @@ bool diagonalOK(const Vector2D& s, std::vector<Vector2D>& neighbors, const std::
     return true;
 }
 
+bool walkableInMesh(int x, int y, const std::vector<std::vector<bool>>& mesh) {
+    // mesh is indexed HEIGHT first
+    return !mesh[y][x];
+}
 
 bool meshDiagonalOK(const MeshNode& s, const MeshNode& n, const std::vector<std::vector<bool>>& mesh) {
     // no diagonals
     if(s.y == n.y || s.x == n.x) { return true; }
 
     if(s.x < n.x) {
-        if(s.y < n.y) { // check top and right of s
-            return !mesh[s.x + 1][s.y] && !mesh[s.x][s.y + 1];
+        if(s.y < n.y) { // check right and top of s
+            return walkableInMesh(s.x + 1, s.y, mesh) || walkableInMesh(s.x, s.y + 1, mesh);
         }
-        // check bottom and right of s
-        return !mesh[s.x + 1][s.y] && !mesh[s.x][s.y - 1];
+        // check right and bottom of s
+        return walkableInMesh(s.x + 1, s.y, mesh) || walkableInMesh(s.x, s.y - 1, mesh);
     }
-    if(s.y < n.y) { // check top and left of s
-        return !mesh[s.x - 1][s.y] && !mesh[s.x][s.y + 1];
+    if(s.y < n.y) { // check left and top of s
+        return walkableInMesh(s.x - 1, s.y, mesh) || walkableInMesh(s.x, s.y + 1, mesh);
     }
-    // check bottom and left of s
-    return !mesh[s.x - 1][s.y] && !mesh[s.x][s.y - 1];
+    // check left bototm of s
+    return walkableInMesh(s.x - 1, s.y, mesh) || walkableInMesh(s.x, s.y - 1, mesh);
 }
 
 std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destination, const std::vector<Entity*>& tiles) {
@@ -614,7 +625,7 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
 
 
 
-// similar to theta_star but receives a mesh of nodes to use as reference for path finding
+// similar to theta_star() but receives a mesh of nodes to use as reference for path finding
 std::vector<Vector2D> theta_star_mesh(
     const MeshNode& start, const MeshNode& destination, 
     const std::vector<std::vector<bool>>& mesh, const int branching_factor,
@@ -648,18 +659,18 @@ std::vector<Vector2D> theta_star_mesh(
         open_queue.pop();
         open_set.erase(s);
         
-        if(s.x == destination.x && s.y == destination.y) {
+        if(s == destination) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cout << "theta_star_mesh() Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
             return reconstruct_path_mesh(s, parent, density);
         }
 
         closed[s] = 1;
-        curr_neighbors = getMeshNeighbors(s.x, s.y, mesh_width_limit, mesh_height_limit, mesh);
+        curr_neighbors = getMeshNeighbors(s.x, s.y, mesh_width_limit, mesh_height_limit, branching_factor);
         limit = curr_neighbors.size();
         for(i=0; i<limit; ++i) {
             n = curr_neighbors[i];
-            if(!mesh[n.x][n.y]) {
+            if(walkableInMesh(n.x, n.y, mesh)) {
                 if(meshDiagonalOK(s, n, mesh)) {
                     if(closed.find(n) == closed.end()) {
                         if(open_set.find(n) == open_set.end()) {
@@ -704,7 +715,5 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
     }
     start_node = convertVector2DToMeshNode(start, density);
     dest_node = convertVector2DToMeshNode(destination, density);
-    std::cout << "start_node: " << start_node.x << ',' << start_node.y << '\n';
-    std::cout << "dest_node: " << dest_node.x << ',' << dest_node.y << '\n';
     return theta_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density);
 }

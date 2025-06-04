@@ -186,21 +186,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
     map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
     map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
-    // int row, column;
-    // std::cout << "{\n";
-    // for(row=0; row<mesh_height; ++row) {
-    //     std::cout << "{ ";
-    //     for(column=0; column<mesh_width; ++column) {
-    //         std::cout << (mesh[row][column] ? 'X' : '.') << ' ';
-    //     }
-    //     std::cout << "}\n";
-    // }
-    // std::cout << "}\n";
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
-    // std::cout << world_pos.FormatDecimal(4,2) << (isBlocked(world_pos.x, world_pos.y, tiles) ? " BLOCKED" : " walkable") << '\n';
     switch(b.button) {
         case SDL_BUTTON_LEFT: 
             std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
@@ -210,7 +199,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         case SDL_BUTTON_RIGHT: 
             std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
             destination = world_pos;
-            path = theta_star(source, destination, tiles);
+            path = find_path(source, destination);
             break;
     }
 }

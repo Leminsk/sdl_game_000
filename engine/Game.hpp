@@ -23,11 +23,12 @@ class Game {
         static int collision_mesh_1_height;
         static int collision_mesh_1_width;        
         static int collision_mesh_4_height;
-        static int collision_mesh_4_width;        
+        static int collision_mesh_4_width;
         static int collision_mesh_16_height;
         static int collision_mesh_16_width;
         static int collision_mesh_64_height;
         static int collision_mesh_64_width;
+        // All meshes are indexed Y first, then X
         static std::vector<std::vector<bool>> collision_mesh_64;
         static std::vector<std::vector<bool>> collision_mesh_16;
         static std::vector<std::vector<bool>> collision_mesh_4;
