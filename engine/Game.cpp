@@ -28,6 +28,19 @@ Entity& Game::camera(manager->addEntity());
 
 SDL_Texture *Game::unit_tex, *Game::building_tex;
 
+int Game::collision_mesh_1_height;
+int Game::collision_mesh_1_width;        
+int Game::collision_mesh_4_height;
+int Game::collision_mesh_4_width;        
+int Game::collision_mesh_16_height;
+int Game::collision_mesh_16_width;
+int Game::collision_mesh_64_height;
+int Game::collision_mesh_64_width;
+std::vector<std::vector<bool>> Game::collision_mesh_64;
+std::vector<std::vector<bool>> Game::collision_mesh_16;
+std::vector<std::vector<bool>> Game::collision_mesh_4;
+std::vector<std::vector<bool>> Game::collision_mesh_1;
+
 auto& player(manager->addEntity());
 auto& hexagon_wall(manager->addEntity());
 auto& circle_wall(manager->addEntity());
@@ -155,13 +168,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::unit_tex     = TextureManager::LoadTexture("assets/green_circle.png");
     Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
 
-    map = new Map("assets/test3.bmp", Game::UNIT_SIZE*2);
+    map = new Map("assets/test3.bmp", Game::UNIT_SIZE<<1);
     map->LoadMapRender();
     if(map->loaded) {
         std::cout << "Map loaded.\n";
     }
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, Game::UNIT_SIZE, Game::UNIT_SIZE, 1.0);
+    player.addComponent<TransformComponent>(0.0f, 0.0f, Game::UNIT_SIZE, Game::UNIT_SIZE, 1.0f);
     player.addComponent<SpriteComponent>(this->unit_tex);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
@@ -169,19 +182,20 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     player.addComponent<TextComponent>("", 160.0f, 16.0f);
     player.addGroup(groupMovables);
 
-    std::vector<std::vector<bool>> mesh;
-    int mesh_height, mesh_width;
-    map->generateCollisionMesh(16, mesh, mesh_width, mesh_height);
-    int row, column;
-    std::cout << "{\n";
-    for(row=0; row<mesh_height; ++row) {
-        std::cout << "{ ";
-        for(column=0; column<mesh_width; ++column) {
-            std::cout << (mesh[row][column] ? 'X' : '.') << ' ';
-        }
-        std::cout << "}\n";
-    }
-    std::cout << "}\n";
+    map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
+    map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
+    map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
+    map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
+    // int row, column;
+    // std::cout << "{\n";
+    // for(row=0; row<mesh_height; ++row) {
+    //     std::cout << "{ ";
+    //     for(column=0; column<mesh_width; ++column) {
+    //         std::cout << (mesh[row][column] ? 'X' : '.') << ' ';
+    //     }
+    //     std::cout << "}\n";
+    // }
+    // std::cout << "}\n";
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -315,7 +329,7 @@ void Game::render() {
     for(auto& m : movables) { m->draw(); }
     for(auto& i : inerts) { i->draw(); }
     Game::camera.draw();
-
+    
     if(path.size() > 0) {
         int limit = path.size()-1;
         for(int i=0; i<limit; ++i) {
