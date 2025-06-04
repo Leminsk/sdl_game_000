@@ -13,7 +13,7 @@
 
 Map* map;
 Manager* manager = new Manager();
-
+const int Game::UNIT_SIZE = 32;
 int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 bool Game::isRunning = false;
@@ -155,19 +155,33 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::unit_tex     = TextureManager::LoadTexture("assets/green_circle.png");
     Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
 
-    map = new Map("assets/test3.bmp", 64);
+    map = new Map("assets/test3.bmp", Game::UNIT_SIZE*2);
     map->LoadMapRender();
     if(map->loaded) {
         std::cout << "Map loaded.\n";
     }
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, 32.0f, 32.0f, 1.0);
+    player.addComponent<TransformComponent>(0.0f, 0.0f, Game::UNIT_SIZE, Game::UNIT_SIZE, 1.0);
     player.addComponent<SpriteComponent>(this->unit_tex);
     player.addComponent<KeyboardController>();
     player.addComponent<Collider>("player", COLLIDER_CIRCLE);
     player.addComponent<Wireframe>();
     player.addComponent<TextComponent>("", 160.0f, 16.0f);
     player.addGroup(groupMovables);
+
+    std::vector<std::vector<bool>> mesh;
+    int mesh_height, mesh_width;
+    map->generateCollisionMesh(16, mesh, mesh_width, mesh_height);
+    int row, column;
+    std::cout << "{\n";
+    for(row=0; row<mesh_height; ++row) {
+        std::cout << "{ ";
+        for(column=0; column<mesh_width; ++column) {
+            std::cout << (mesh[row][column] ? 'X' : '.') << ' ';
+        }
+        std::cout << "}\n";
+    }
+    std::cout << "}\n";
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {

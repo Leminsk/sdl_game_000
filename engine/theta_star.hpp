@@ -263,9 +263,26 @@ bool diagonalOK(const Vector2D& s, const Vector2D& n, std::vector<Vector2D>& nei
 
 std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destination, const std::vector<Entity*>& tiles) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
+    const float one_by_one = 8192.0f; // 1x1 tile area
+    const float four_by_four = 131072.0f; // 4x4 tile area
+    const float threetwo_by_threetwo = 8388608.0f; // 32x32 tile area
+    const float distance = Distance(start, destination);
     const int bf = 8;
-    const float step = 30.0f;
+    float step;
+    if(distance <= one_by_one) { // use very granular mesh (tile -> 64 nodes)
+        
+
+    } else if(distance <= four_by_four) { // use granular mesh (tile -> 16 nodes)
+        // step = 16.0f;
+        
+    } else if(distance <= threetwo_by_threetwo) { // use standard mesh (tile -> 4 nodes)
+        // step = 32.0f;
+        
+    } else { // use big tile mesh (tile -> 1 node)
+        // step = 64.0f; 
+        
+    }
+
 
     std::unordered_map<Vector2D, Vector2D, Vec2Hash> parent;
     std::unordered_map<Vector2D, float, Vec2Hash> gscore;
@@ -292,7 +309,7 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
         open_queue.pop();
         open_set.erase(s);
         
-        if(Distance(s, destination) <= 1024) {
+        if(Distance(s, destination) <= 10000) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
             return reconstruct_path(s, parent);

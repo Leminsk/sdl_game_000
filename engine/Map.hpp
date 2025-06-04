@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -52,6 +53,37 @@ class Map {
             float x = floorf(world_pos.x / tile_width);
             float y = floorf(world_pos.y / tile_width);
             return this->layout[x][y];
+        }
+
+        // generate collision mesh for path finding where true values are IMPASSABLE tiles.
+        // out_mesh will be overwritten entirely with the new mesh
+        void generateCollisionMesh(const int subdivisions, std::vector<std::vector<bool>>& out_mesh, int& out_width, int& out_height) {
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            int row, column, shifted_row;
+            int factor;
+            switch(subdivisions) {
+                case 64: factor = 3; break;
+                case 16: factor = 2; break;
+                case 4:  factor = 1; break;
+                case 1: 
+                default: factor = 0; break;
+            }
+            out_height = this->layout_height << factor;
+            out_width = this->layout_width << factor;
+            std::cout << "out_height: " << out_height << '\n';
+            std::cout << "out_width: " << out_width << '\n';
+
+            out_mesh.clear();
+            out_mesh.resize(out_height, {});
+            for(row=0; row<out_height; ++row) {
+                out_mesh[row].reserve(out_width);
+                shifted_row = row>>factor;
+                for(column=0; column<out_width; ++column) {
+                    out_mesh[row].push_back( this->layout[ shifted_row ][ column>>factor ] == TILE_IMPASSABLE );
+                }
+            }
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cout << "Collision Mesh Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         }
 
     private:
