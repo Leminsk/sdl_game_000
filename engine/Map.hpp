@@ -70,8 +70,6 @@ class Map {
             }
             out_height = this->layout_height << factor;
             out_width = this->layout_width << factor;
-            std::cout << "out_height: " << out_height << '\n';
-            std::cout << "out_width: " << out_width << '\n';
 
             out_mesh.clear();
             out_mesh.resize(out_height, {});
