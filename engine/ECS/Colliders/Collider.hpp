@@ -19,7 +19,9 @@ class Collider : public Component {
 
         TransformComponent* transform;
 
-        Collider(const char* id, collider_type t) {
+        Collider() {}
+
+        Collider(const std::string id, collider_type t) {
             this->identifier = id;
             this->type = t;
         }

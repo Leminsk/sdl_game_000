@@ -19,6 +19,7 @@ class Game {
         static SDL_Color bg_color, default_text_color;
         static SDL_Texture *unit_tex, *building_tex;
         static const int UNIT_SIZE;
+        static int UNIT_COUNTER;
 
         static int collision_mesh_1_height;
         static int collision_mesh_1_width;        

@@ -8,3 +8,4 @@
 #include "TileComponent.hpp"
 #include "Wireframe.hpp"
 #include "TextComponent.hpp"
+#include "DroneComponent.hpp"

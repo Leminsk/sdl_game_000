@@ -38,6 +38,7 @@ class Component {
         Entity* entity;
 
         virtual void init() {}
+        virtual void preUpdate() {}
         virtual void update() {}
         virtual void draw() {}
 
@@ -60,6 +61,9 @@ class Entity {
         Entity(Manager& mManager) : manager(mManager) {}
         ~Entity() {}
 
+        void preUpdate() {
+            for (auto& c : this->components) { c->preUpdate(); }
+        }
         void update() {
             for (auto& c : this->components) { c->update(); }
         }
@@ -114,7 +118,9 @@ class Manager {
         ~Manager() {
             for(auto& e : this->entities) { delete &e; }
         }
-
+        void preUpdate() {
+            for (auto& e : this->entities) { e->preUpdate(); }
+        }
         void update() {
             for (auto& e : this->entities) { e->update(); }
         }

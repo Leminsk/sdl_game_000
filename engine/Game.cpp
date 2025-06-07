@@ -18,6 +18,8 @@ int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 bool Game::isRunning = false;
 float Game::frame_delta = 0.0f;
+int Game::UNIT_COUNTER = 0;
+
 SDL_Color Game::bg_color{ 220, 220, 220, SDL_ALPHA_OPAQUE };
 TTF_Font *Game::default_font;
 SDL_Color Game::default_text_color{ 0, 0, 0, SDL_ALPHA_OPAQUE };
@@ -64,8 +66,6 @@ auto& inerts(manager->getGroup(groupInerts));
 auto& tiles(manager->getGroup(groupTiles));
 
 std::vector<Vector2D> path;
-Vector2D source = Vector2D(0,0);
-Vector2D destination;
 
 Game::Game() {
 
@@ -174,10 +174,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         std::cout << "Map loaded.\n";
     }
 
-    player.addComponent<TransformComponent>(0.0f, 0.0f, Game::UNIT_SIZE, Game::UNIT_SIZE, 1.0f);
-    player.addComponent<SpriteComponent>(this->unit_tex);
-    player.addComponent<KeyboardController>();
-    player.addComponent<Collider>("player", COLLIDER_CIRCLE);
+    player.addComponent<DroneComponent>(Vector2D(0,0), Game::UNIT_SIZE, this->unit_tex);
+    // player.addComponent<KeyboardController>();
     player.addComponent<Wireframe>();
     player.addComponent<TextComponent>("", 160.0f, 16.0f);
     player.addGroup(groupMovables);
@@ -190,17 +188,31 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
 void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
+    Vector2D player_pos = player.getComponent<DroneComponent>().getPosition();
     switch(b.button) {
-        case SDL_BUTTON_LEFT: 
+        case SDL_BUTTON_LEFT: {
             std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
-            source = world_pos;
+            float r = player.getComponent<CircleCollider>().radius;
+            if(Distance(player_pos, world_pos) <= r*r) {
+                printf("Player selected\n");
+                player.getComponent<DroneComponent>().selected = true;
+            } else {
+                printf("Player deselected\n");
+                player.getComponent<DroneComponent>().selected = false;
+            }
             break;
+        }
+            
         case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
-        case SDL_BUTTON_RIGHT: 
+
+        case SDL_BUTTON_RIGHT: {
             std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
-            destination = world_pos;
-            path = find_path(source, destination);
+            if(player.getComponent<DroneComponent>().selected) {
+                player.getComponent<DroneComponent>().moveToPoint(world_pos);
+                path = player.getComponent<DroneComponent>().path;
+            }
             break;
+        }
     }
 }
 
@@ -261,7 +273,9 @@ void Game::handleEvents() {
 void Game::update() {
     Collider *player_collider = &player.getComponent<Collider>();
     Vector2D prev_player_pos = player_collider->transform->position;
+
     manager->refresh();
+    manager->preUpdate();
     manager->update();
 
     // get the closest objects to the player
@@ -317,8 +331,9 @@ void Game::render() {
     for(auto& b : buildings) { b->draw(); }
     for(auto& m : movables) { m->draw(); }
     for(auto& i : inerts) { i->draw(); }
-    Game::camera.draw();
-    
+    Game::camera.draw();    
+
+    // draw the path trajectory for debugging
     if(path.size() > 0) {
         int limit = path.size()-1;
         for(int i=0; i<limit; ++i) {
@@ -329,7 +344,6 @@ void Game::render() {
             );
         }
     }
-    
 
     // cross-hair
     float line_length = 10;
