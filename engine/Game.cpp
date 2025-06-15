@@ -43,11 +43,11 @@ std::vector<std::vector<bool>> Game::collision_mesh_16;
 std::vector<std::vector<bool>> Game::collision_mesh_4;
 std::vector<std::vector<bool>> Game::collision_mesh_1;
 
-std::unordered_map<int, Vector2D> previous_movables_positions;
+std::unordered_map<int, Vector2D> previous_drones_positions;
 
 enum groupLabels : size_t {
     groupTiles,
-    groupMovables,
+    groupDrones,
     groupInerts,
     groupStationaries,
     groupBuildings
@@ -55,7 +55,7 @@ enum groupLabels : size_t {
 
 auto& stationaries(manager->getGroup(groupStationaries));
 auto& buildings(manager->getGroup(groupBuildings));
-auto& movables(manager->getGroup(groupMovables));
+auto& drones(manager->getGroup(groupDrones));
 auto& inerts(manager->getGroup(groupInerts));
 auto& tiles(manager->getGroup(groupTiles));
 
@@ -129,9 +129,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     }
 
     createDrone(  0,   0);
+    // drone1.getComponent<TransformComponent>().velocity = { 0.5f, 0.5f };
     createDrone(100,   0);
     createDrone(  0, 100);
-    createDrone(100, 100);
+    createDrone(200, 200);
 
     map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
     map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
@@ -144,13 +145,13 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
             std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
-            for(auto& m : movables) {
-                float r = m->getComponent<CircleCollider>().radius;
-                if(Distance(m->getComponent<DroneComponent>().getPosition(), world_pos) <= r*r) {
-                    std::cout << m->getComponent<Collider>().identifier << " selected\n";
-                    m->getComponent<DroneComponent>().selected = true;
+            for(auto& dr : drones) {
+                float r = dr->getComponent<CircleCollider>().radius;
+                if(Distance(dr->getComponent<DroneComponent>().getPosition(), world_pos) <= r*r) {
+                    std::cout << dr->getComponent<Collider>().identifier << " selected\n";
+                    dr->getComponent<DroneComponent>().selected = true;
                 } else {
-                    m->getComponent<DroneComponent>().selected = false;
+                    dr->getComponent<DroneComponent>().selected = false;
                 }
             }            
             break;
@@ -160,10 +161,10 @@ void handleMouse(SDL_MouseButtonEvent& b) {
 
         case SDL_BUTTON_RIGHT: {
             std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
-            for(auto& m : movables) {
-                if(m->getComponent<DroneComponent>().selected) {
-                    m->getComponent<DroneComponent>().moveToPoint(world_pos);
-                    path = m->getComponent<DroneComponent>().path;
+            for(auto& dr : drones) {
+                if(dr->getComponent<DroneComponent>().selected) {
+                    dr->getComponent<DroneComponent>().moveToPoint(world_pos);
+                    path = dr->getComponent<DroneComponent>().path;
                 }
             }
             break;
@@ -226,17 +227,18 @@ void Game::handleEvents() {
 }
 
 void Game::update() {
-    for(int i=0; i<movables.size(); ++i) {
-        previous_movables_positions[i] = movables[i]->getComponent<TransformComponent>().position;
+    for(int i=0; i<drones.size(); ++i) {
+        previous_drones_positions[i] = drones[i]->getComponent<TransformComponent>().position;
     }
 
     manager->refresh();
     manager->preUpdate();
     manager->update();
 
-    for(int i=0; i<movables.size(); ++i) {
-        movables[i]->getComponent<DroneComponent>().handleCollisions(previous_movables_positions[i], tiles, buildings);
-    }    
+    for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleStaticCollisions(previous_drones_positions[i], tiles, buildings); }
+    for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleDynamicCollisions(drones); }
+    for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleCollisionTranslations(); }
+    for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleOutOfBounds(map->world_layout_width, map->world_layout_height); }
 
     Game::camera.getComponent<TextComponent>().setText((
         "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)
@@ -250,7 +252,7 @@ void Game::render() {
     for(auto& t : tiles) { t->draw(); }
     for(auto& s : stationaries) { s->draw(); }
     for(auto& b : buildings) { b->draw(); }
-    for(auto& m : movables) { m->draw(); }
+    for(auto& dr : drones) { dr->draw(); }
     for(auto& i : inerts) { i->draw(); }
     Game::camera.draw();    
 
@@ -400,10 +402,11 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
     tile.addGroup(groupTiles);
 }
 
-void Game::createDrone(float pos_x, float pos_y) {
+Entity& Game::createDrone(float pos_x, float pos_y) {
     auto& new_drone(manager->addEntity());
     new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex);
     new_drone.addComponent<Wireframe>();
     new_drone.addComponent<TextComponent>("", 160.0f, 16.0f);
-    new_drone.addGroup(groupMovables);
+    new_drone.addGroup(groupDrones);
+    return new_drone;
 }

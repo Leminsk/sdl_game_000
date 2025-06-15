@@ -30,6 +30,9 @@ bool Map::LoadMapFile(std::string& path) {
     this->layout_height = *reinterpret_cast<uint32_t *>(&header[22]);
     auto depth          = *reinterpret_cast<uint16_t *>(&header[28]);
 
+    this->world_layout_width = this->layout_width * this->tile_width;
+    this->world_layout_height = this->layout_height * this->tile_width;
+
     auto dataSize = ((this->layout_width * 3 + 3) & (~3)) * this->layout_height;
     std::vector<char> img(dataSize);
     mapFile.read(img.data(), img.size());

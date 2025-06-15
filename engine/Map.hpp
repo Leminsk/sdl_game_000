@@ -14,6 +14,8 @@ class Map {
         int tile_width; // in pixels
         bool loaded;
         std::vector<std::vector<int>> layout;
+        uint32_t layout_width, layout_height;
+        float world_layout_width, world_layout_height;
 
         SDL_Texture* dirt_texture     = TextureManager::LoadTexture("assets/tiles/dirt.png");
         SDL_Texture* mountain_texture = TextureManager::LoadTexture("assets/tiles/mountain.png");
@@ -84,6 +86,4 @@ class Map {
             std::cout << "Collision Mesh Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
         }
 
-    private:
-        uint32_t layout_width, layout_height;
 };

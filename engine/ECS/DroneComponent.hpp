@@ -10,7 +10,7 @@
 
 // return a translation vector to be applied to the movable object transform;
 // assumes ALL entities are stationaries EXCEPT for the dynamic_col
-Vector2D getTranslationCollision(
+Vector2D staticTranslationCollision(
     const Collider& dynamic_col, 
     const std::vector<std::pair<Collider*, float>>& collider_distances, 
     const Vector2D& prev_dynamic_pos
@@ -19,7 +19,7 @@ Vector2D getTranslationCollision(
     Vector2D cum_mov_vec = Vector2D(0,0);
     Vector2D curr_vec;
     for(auto& p : collider_distances) {
-        curr_vec = Collision::Collide(dynamic_col, *p.first, p.second, prev_dynamic_pos);
+        curr_vec = Collision::CollideStatic(dynamic_col, *p.first, p.second, prev_dynamic_pos);
         // if one vector needs to move by 2 in x and the other by 1 in x, then moving by 2 will suffice both
         // conversely, if one needs to move by -1 and the other by +1, do neither and assume that it'll resolve on the other axis
         
@@ -50,11 +50,16 @@ Vector2D getTranslationCollision(
     return cum_mov_vec;
 }
 
+
+
 // "drone" as in a combat unit/soldier
 class DroneComponent : public Component {
     private:
         Vector2D starting_position;
         SDL_Texture *sprite_texture;
+
+        Vector2D static_translation = Vector2D(0,0);
+        Vector2D dynamic_translation = Vector2D(0,0);
 
     public:
         TransformComponent *transform;
@@ -69,6 +74,7 @@ class DroneComponent : public Component {
         float radius;
         float diameter;
 
+
         DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture) {
             this->starting_position = starting_position;
             this->sprite_texture = sprite_texture;
@@ -82,6 +88,25 @@ class DroneComponent : public Component {
         // get center (x,y)
         Vector2D getPosition() {
             return this->collider->getCenter();
+        }
+
+        void updateDynamicTranslation(const Vector2D& v) {
+            // on X
+            if(this->dynamic_translation.x >= 0 && v.x >= 0) {
+                this->dynamic_translation.x = std::max(v.x, this->dynamic_translation.x);
+            } else if(this->dynamic_translation.x < 0 && v.x < 0) {
+                this->dynamic_translation.x = std::min(v.x, this->dynamic_translation.x);
+            } else {
+                this->dynamic_translation.x += v.x;
+            }
+            // on Y
+            if(this->dynamic_translation.y >= 0 && v.y >= 0) {
+                this->dynamic_translation.y = std::max(v.y, this->dynamic_translation.y);
+            } else if(this->dynamic_translation.y < 0 && v.y < 0) {
+                this->dynamic_translation.y = std::min(v.y, this->dynamic_translation.y);
+            } else {
+                this->dynamic_translation.y += v.y;
+            }
         }
 
         void moveToPoint(const Vector2D& destination) {
@@ -140,7 +165,7 @@ class DroneComponent : public Component {
             }
         }
 
-        void handleCollisions(const Vector2D& previous_position, const std::vector<Entity*> tiles, const std::vector<Entity*> buildings) {
+        void handleStaticCollisions(const Vector2D& previous_position, const std::vector<Entity*>& tiles, const std::vector<Entity*>& buildings) {
             // get the closest objects to the drone
             float distance_2;
             Collider *current_col;
@@ -150,7 +175,7 @@ class DroneComponent : public Component {
                 col_entity = tiles[i];
                 if(col_entity->hasComponent<Collider>()) {
                     current_col = &col_entity->getComponent<Collider>();
-                    distance_2 = Distance(getPosition(), current_col->getCenter());
+                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
                     if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
                 }        
             }
@@ -158,7 +183,7 @@ class DroneComponent : public Component {
                 col_entity = buildings[i];
                 if(col_entity->hasComponent<Collider>()) {
                     current_col = &col_entity->getComponent<Collider>();
-                    distance_2 = Distance(getPosition(), current_col->getCenter());
+                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
                     if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
                 }        
             }
@@ -171,12 +196,74 @@ class DroneComponent : public Component {
                     return a.second < b.second;
                 }
             );
+            this->static_translation = staticTranslationCollision(*this->collider, collider_distances, previous_position);
+        }
 
-            this->transform->position = this->transform->position + getTranslationCollision(*this->collider, collider_distances, previous_position);
+        void handleDynamicCollisions(const std::vector<Entity*>& drones) {
+            float distance_2, r;
+            Collider *current_col;
+            std::vector<std::pair<Collider*, float>> collider_distances = {};
+            Entity *col_entity;
+            for(int i=0; i<drones.size(); ++i) {
+                col_entity = drones[i];
+                if(col_entity->hasComponent<Collider>() && col_entity->getComponent<Collider>().identifier != this->collider->identifier) {
+                    current_col = &col_entity->getComponent<Collider>();
+                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
+                    r = current_col->entity->getComponent<CircleCollider>().radius;
+                    // only handle drones which are touching this drone
+                    if(distance_2 <= (this->radius + r) * (this->radius + r)) {
+                        collider_distances.push_back({current_col, distance_2}); 
+                    }
+                }        
+            }
+            // updates dynamic_translation of this collider and all others which it could have collided
+            std::vector<Vector2D> curr_vecs;
+            for(auto& p : collider_distances) {
+                curr_vecs = Collision::CollideDynamic(*this->collider, *p.first, p.second);
+                this->updateDynamicTranslation(curr_vecs[0]);
+                p.first->entity->getComponent<DroneComponent>().updateDynamicTranslation(curr_vecs[1]);
+            }
+        }
+
+        // hopefully when this is called, there should be no new dynamic_translations afterwards
+        void handleCollisionTranslations() {
+            Vector2D translation = Vector2D(0,0);
+            // on X
+            if(this->static_translation.x > 0) {
+                if(this->dynamic_translation.x >= 0) { translation.x = std::max(this->static_translation.x, this->dynamic_translation.x); } 
+                else { translation.x = this->static_translation.x; } 
+            } else if(this->static_translation.x < 0) {
+                if(this->dynamic_translation.x < 0) { translation.x = std::min(this->static_translation.x, this->dynamic_translation.x); } 
+                else { translation.x = this->static_translation.x; }
+            } else {
+                translation.x = this->dynamic_translation.x;
+            }
+            // on Y
+            if(this->static_translation.y > 0) {
+                if(this->dynamic_translation.y >= 0) { translation.y = std::max(this->static_translation.y, this->dynamic_translation.y); } 
+                else { translation.y = this->static_translation.y; } 
+            } else if(this->static_translation.y < 0) {
+                if(this->dynamic_translation.y < 0) { translation.y = std::min(this->static_translation.y, this->dynamic_translation.y); } 
+                else { translation.y = this->static_translation.y; }
+            } else {
+                translation.y = this->dynamic_translation.y;
+            }
+            
+
+            this->transform->position = this->transform->position + translation;
+
+            this->static_translation = Vector2D(0,0);
+            this->dynamic_translation = Vector2D(0,0);
 
             entity->getComponent<TextComponent>().setText(
                 this->transform->position.FormatDecimal(4,0)
             .c_str());
         }
         
+        void handleOutOfBounds(float max_x, float max_y) {
+            if(this->transform->position.x < 0) { this->transform->position.x = 0; }
+            if(this->transform->position.y < 0) { this->transform->position.y = 0; }
+            if(this->transform->position.x + this->transform->width > max_x) { this->transform->position.x = max_x - this->transform->width; }
+            if(this->transform->position.y + this->transform->width > max_y) { this->transform->position.y = max_y - this->transform->height; }
+        }
 };

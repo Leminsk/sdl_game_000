@@ -80,7 +80,7 @@ void foo() {
 
 // https://youtu.be/eED4bSkYCB8?t=789
 // Overwrites velocities of BOTH colliders
-void resolveCircleVSCircle(const CircleCollider& a, const CircleCollider& b, const float& distance2) {
+void dynamicCircleVSdynamicCircle(const CircleCollider& a, const CircleCollider& b, const float& distance2) {
     if(distance2 <= (a.radius + b.radius) * (a.radius + b.radius)) {
         // TODO: mass momentum later maybe probably not
         float ma = 1;
@@ -188,6 +188,20 @@ Vector2D resolveCircleVSRect(const CircleCollider& cir, const RectangleCollider&
     return Vector2D(0,0);
 }
 
+
+// treats both CircleColliders as dynamic
+// returns two translation vectors, index 0 for a, index 1 for b
+std::vector<Vector2D> resolveCircleVSCircle(const CircleCollider& a, const CircleCollider& b, const float& distance2) {
+    std::vector<Vector2D> translations = {Vector2D(0,0), Vector2D(0,0)};
+    if(distance2 < (a.radius + b.radius)*(a.radius + b.radius)) {
+        Vector2D ray_a_to_b = (b.center - a.center).Normalize();
+        float half_overlap = ((a.radius + b.radius) - std::sqrt(distance2)) / 2;
+        translations[0] = ray_a_to_b * (-half_overlap);
+        translations[1] = ray_a_to_b * half_overlap;        
+    }
+    return translations;
+}
+
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
     std::vector<Vector2D> hull;
     switch(conv_pol.type) {
@@ -212,10 +226,8 @@ Vector2D resolveCircleOverlap(const Vector2D& nearest_point, const CircleCollide
     Vector2D ray_to_nearest = nearest_point - cir.center;
     float overlap = (cir.radius * cir.radius) - ray_to_nearest.Magnitude2();
     if(overlap > 0) {
-        // std::cout << "nearest_point: " << Vector2D(nearest_point.x, nearest_point.y).FormatDecimal(4,0) << " overlap: " << overlap << '\n';
         overlap = cir.radius - ray_to_nearest.Magnitude();
         Vector2D new_pos = cir.center - (ray_to_nearest.Normalize() * overlap);
-        // offset from center to transform (x,y) pos
         new_pos.x -= cir.transform->width/2;
         new_pos.y -= cir.transform->height/2;
         return new_pos;
@@ -298,43 +310,37 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
     }
 }
 
-// TODO: returns a 2D translation vector to move the moving_col transform
-Vector2D Collision::Collide(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos) {
-    switch(moving_col.type) {
-        case COLLIDER_CIRCLE:
-            switch(col.type) {
-                case COLLIDER_CIRCLE: return CircleCir(
-                    moving_col.entity->getComponent<CircleCollider>(),
-                    col.entity->getComponent<CircleCollider>()
-                ); break;
-                case COLLIDER_HEXAGON: return CircleHex(
-                    moving_col.entity->getComponent<CircleCollider>(),
-                    col.entity->getComponent<HexagonCollider>()
-                ); break;
-                case COLLIDER_RECTANGLE: return resolveCircleVSRect(
-                    moving_col.entity->getComponent<CircleCollider>(), 
-                    col.entity->getComponent<RectangleCollider>(),
-                    distance2, prev_pos
-                ); break;
-            }
-            break;
-
-        case COLLIDER_HEXAGON:
-            switch(col.type) {
-                // case COLLIDER_CIRCLE: return Collision::CircleCircle(moving_col, col); break;
-                // case COLLIDER_HEXAGON: return Collision::HexCircle(moving_col, col); break;
-                // case COLLIDER_RECTANGLE: return Collision::HexRect(moving_col, col); break; <- TODO: IMPLEMENT
-            }
-            break;
-
-        case COLLIDER_RECTANGLE:
-            switch(col.type) {
-                // case COLLIDER_CIRCLE: return Collision::RectCircle(moving_col, col); break; <- TODO: IMPLEMENT
-                // case COLLIDER_HEXAGON: return Collision::RectHex(moving_col, col); break; <- TODO: IMPLEMENT
-                // case COLLIDER_RECTANGLE: return Collision::AABB(moving_col, colB); break;
-            }
-            break;
+// returns a 2D translation vector to move the moving_col transform
+// assumes moving_col can only be moved if it's a CircleCollider
+Vector2D Collision::CollideStatic(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos) {
+    if(moving_col.type == COLLIDER_CIRCLE) {
+        if(col.type == COLLIDER_HEXAGON) {
+            return CircleHex(
+                moving_col.entity->getComponent<CircleCollider>(),
+                col.entity->getComponent<HexagonCollider>()
+            );
+        }
+        if(col.type == COLLIDER_RECTANGLE) {
+            return resolveCircleVSRect(
+                moving_col.entity->getComponent<CircleCollider>(), 
+                col.entity->getComponent<RectangleCollider>(),
+                distance2, prev_pos
+            ); 
+        }
     }
 
-    return moving_col.transform->position;
+    return Vector2D(0,0);
+}
+
+// returns two 2D translation vectors to move both colliders' transforms (index 0 for a, index 1 for b)
+// assumes both are CircleColliders
+std::vector<Vector2D> Collision::CollideDynamic(const Collider& a, const Collider& b, const float& distance2) {
+    if(a.type == COLLIDER_CIRCLE && b.type == COLLIDER_CIRCLE) {
+        return resolveCircleVSCircle(
+            a.entity->getComponent<CircleCollider>(), 
+            b.entity->getComponent<CircleCollider>(), 
+            distance2
+        );
+    }
+    return {Vector2D(0,0), Vector2D(0,0)};
 }
