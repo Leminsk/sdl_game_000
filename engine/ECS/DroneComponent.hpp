@@ -57,9 +57,12 @@ class DroneComponent : public Component {
     private:
         Vector2D starting_position;
         SDL_Texture *sprite_texture;
+        Vector2D destination_position;
+
 
         Vector2D static_translation = Vector2D(0,0);
         Vector2D dynamic_translation = Vector2D(0,0);
+        Vector2D cum_translation = Vector2D(0,0);
 
     public:
         TransformComponent *transform;
@@ -92,24 +95,18 @@ class DroneComponent : public Component {
 
         void updateDynamicTranslation(const Vector2D& v) {
             // on X
-            if(this->dynamic_translation.x >= 0 && v.x >= 0) {
-                this->dynamic_translation.x = std::max(v.x, this->dynamic_translation.x);
-            } else if(this->dynamic_translation.x < 0 && v.x < 0) {
-                this->dynamic_translation.x = std::min(v.x, this->dynamic_translation.x);
-            } else {
-                this->dynamic_translation.x += v.x;
-            }
+            if(this->dynamic_translation.x >= 0 && v.x >= 0) { this->dynamic_translation.x = std::max(v.x, this->dynamic_translation.x); } 
+            else if(this->dynamic_translation.x < 0 && v.x < 0) { this->dynamic_translation.x = std::min(v.x, this->dynamic_translation.x); } 
+            else { this->dynamic_translation.x += v.x; }
             // on Y
-            if(this->dynamic_translation.y >= 0 && v.y >= 0) {
-                this->dynamic_translation.y = std::max(v.y, this->dynamic_translation.y);
-            } else if(this->dynamic_translation.y < 0 && v.y < 0) {
-                this->dynamic_translation.y = std::min(v.y, this->dynamic_translation.y);
-            } else {
-                this->dynamic_translation.y += v.y;
-            }
+            if(this->dynamic_translation.y >= 0 && v.y >= 0) { this->dynamic_translation.y = std::max(v.y, this->dynamic_translation.y); } 
+            else if(this->dynamic_translation.y < 0 && v.y < 0) { this->dynamic_translation.y = std::min(v.y, this->dynamic_translation.y); } 
+            else { this->dynamic_translation.y += v.y; }
         }
 
         void moveToPoint(const Vector2D& destination) {
+            this->cum_translation = Vector2D(0,0);
+            this->destination_position = destination;
             this->path = find_path(getPosition(), destination);
             last_path_index = path.size() - 1;
             this->current_path_index = last_path_index;
@@ -137,7 +134,7 @@ class DroneComponent : public Component {
 
             // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
             if(
-                this->current_path_index >= 0 && 
+                this->current_path_index > 0 && 
                 Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius * this->radius)
             ) {
                 float d;
@@ -148,6 +145,32 @@ class DroneComponent : public Component {
                     if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
                         d = Distance(getPosition(), path[i]);
                         if(d <= 2*(this->radius * this->radius)) {
+                            visited_indices.push_back(i);
+                            candidate_indices.push_back(i);
+                        }
+                    }
+                }
+                
+                int min_idx = last_path_index;
+                // get the min index of the nodes inside the circle -> the node which is farther along the path
+                for(int i=0; i<candidate_indices.size(); ++i) {
+                    if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
+                }
+                // the next one should thus be outside the circle and should serve as the next destination
+                this->current_path_index = min_idx - 1;
+                this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
+            } else if(
+                this->current_path_index == 0 && 
+                Distance(getPosition(), path[this->current_path_index]) <= (this->radius * this->radius)
+            ) {
+                float d;
+                std::vector<int> candidate_indices = {};
+
+                // mark every node inside the circle as visited
+                for(int i=last_path_index; i>=0; --i) {
+                    if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
+                        d = Distance(getPosition(), path[i]);
+                        if(d <= (this->radius * this->radius)) {
                             visited_indices.push_back(i);
                             candidate_indices.push_back(i);
                         }
@@ -248,9 +271,18 @@ class DroneComponent : public Component {
             } else {
                 translation.y = this->dynamic_translation.y;
             }
-            
 
             this->transform->position = this->transform->position + translation;
+            this->cum_translation = this->cum_translation + translation;
+
+            // retrace the path if it went VERY off course
+            if(
+                (this->current_path_index != -1 && this->path.size() > 0) && 
+                Distance(this->path[this->current_path_index], this->getPosition()) > 4*this->diameter*this->diameter
+            ) {
+                printf("RETRACE\n");
+                this->moveToPoint(this->destination_position);
+            }
 
             this->static_translation = Vector2D(0,0);
             this->dynamic_translation = Vector2D(0,0);
