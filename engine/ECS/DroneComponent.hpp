@@ -278,7 +278,7 @@ class DroneComponent : public Component {
             // retrace the path if it went VERY off course
             if(
                 (this->current_path_index != -1 && this->path.size() > 0) && 
-                Distance(this->path[this->current_path_index], this->getPosition()) > 4*this->diameter*this->diameter
+                Distance(this->path[this->current_path_index], this->getPosition()) > 5*this->diameter*this->diameter
             ) {
                 printf("RETRACE\n");
                 this->moveToPoint(this->destination_position);

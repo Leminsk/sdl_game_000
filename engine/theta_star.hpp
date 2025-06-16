@@ -621,18 +621,51 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
     return {};
 }
 
+// go around the blocked tile searching for a walkable tile (like BFS)
+MeshNode findClosestWalkable(
+    const MeshNode& origin, 
+    const std::vector<std::vector<bool>>& mesh, const int branching_factor, 
+    const int mesh_width_limit, const int mesh_height_limit
+) {
+    std::vector<std::vector<bool>> visited = mesh;
+    for(int i=0; i<visited.size(); ++i) {
+        for(int j=0; j<visited.size(); ++j) {
+            visited[i][j] = false;
+        }
+    }
+    visited[origin.y][origin.x] = true;
 
+    std::vector<MeshNode> neighbors;
+    std::queue<MeshNode> q;
+    q.push(origin);
+
+    MeshNode curr = origin;
+    while(true) {
+        curr = q.front();
+        if(walkableInMesh(curr.x, curr.y, mesh)) { break; }
+        q.pop();
+
+        neighbors = getMeshNeighbors(curr.x, curr.y, mesh_width_limit, mesh_height_limit, branching_factor);
+        for(MeshNode& n : neighbors) {
+            if(!visited[n.y][n.x]) {
+                visited[n.y][n.x] = true;
+                q.push(n);
+            }
+        }
+        
+    }
+    return curr;
+}
 
 
 
 // similar to theta_star() but receives a mesh of nodes to use as reference for path finding
-std::vector<Vector2D> theta_star_mesh(
+std::vector<Vector2D> a_star_mesh(
     const MeshNode& start, const MeshNode& destination, 
     const std::vector<std::vector<bool>>& mesh, const int branching_factor,
-    const int mesh_width_limit, const int mesh_height_limit, const int density
+    const int mesh_width_limit, const int mesh_height_limit, const int density,
+    const std::chrono::steady_clock::time_point& begin
 ) {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     std::unordered_map<MeshNode, MeshNode, Node2Hash> parent;
     std::unordered_map<MeshNode, float, Node2Hash> gscore;
     std::unordered_map<MeshNode, float, Node2Hash> fscore;
@@ -661,7 +694,7 @@ std::vector<Vector2D> theta_star_mesh(
         
         if(s == destination) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            std::cout << "theta_star_mesh() Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            std::cout << "a_star_mesh() Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
             return reconstruct_path_mesh(s, parent, density);
         }
 
@@ -683,10 +716,13 @@ std::vector<Vector2D> theta_star_mesh(
         }
     }
 
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "a_star_mesh() NO PATH Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
     return {};
 }
 
 std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destination) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     const float           one_by_one =    8192.0f; //  1x1 tile area
     const float         four_by_four =  131072.0f; //  4x4 tile area
     const float threetwo_by_threetwo = 8388608.0f; // 32x32 tile area
@@ -715,5 +751,11 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
     }
     start_node = convertVector2DToMeshNode(start, density);
     dest_node = convertVector2DToMeshNode(destination, density);
-    return theta_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density);
+    // clamp out of bounds
+    if(dest_node.x > width_limit) { dest_node.x = width_limit; }
+    else if(dest_node.x < 0) { dest_node.x = 0; }
+    if(dest_node.y > height_limit) { dest_node.y = height_limit; }
+    else if(dest_node.y < 0) { dest_node.y = 0; }
+    dest_node = findClosestWalkable(dest_node, *mesh, branching_factor, width_limit, height_limit);
+    return a_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density, begin);
 }
