@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <chrono>
 #include "networking/Client.hpp"
 #include "networking/Server.hpp"
 #include "networking/MessageTypes.h"
@@ -12,8 +12,18 @@ int main() {
     std::cin >> mode;
 
     if (mode == "client") {
+        std::string host_ip = "some_ip";
         Client c;
-        c.Connect("127.0.0.1", 60000);
+        c.Connect(host_ip, 50000);
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point now;
+        while(!c.IsConnected()) {
+            now = std::chrono::steady_clock::now();
+            if(std::chrono::duration_cast<std::chrono::seconds>(now - begin).count() > 4) {
+                std::cout << "Could not connect to server (timed out).\n";
+                return 0;
+            }
+        }
 
         bool key[5] = { false, false, false, false, false };
         bool old_key[5] = { false, false, false, false, false };
@@ -69,7 +79,7 @@ int main() {
                             std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
                             std::chrono::system_clock::time_point timeThen;
                             msg >> timeThen;
-                            std::cout << "Ping: " << std::chrono::duration<double>(timeNow - timeThen).count() << "\n";
+                            std::cout << "Ping: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - timeThen).count() << "\n";
                         }
                         break;
 
@@ -109,7 +119,7 @@ int main() {
             }
         }
     } else if (mode == "server") {
-        Server server(60000); 
+        Server server(50000); 
         server.Start();
 
         while (1) {

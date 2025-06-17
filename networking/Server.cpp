@@ -101,7 +101,7 @@ void Server::OnMessage(std::shared_ptr<olc::net::connection<MessageTypes>> clien
             std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
             std::chrono::system_clock::time_point timeThen;
             msg >> timeThen;
-            this->clients_ping[client_id] = std::chrono::duration<double>(timeNow - timeThen).count();
+            this->clients_ping[client_id] = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - timeThen).count();
 
             // got all clients' status
             if (this->clients_ping.size() == this->clients_amount) {
@@ -117,7 +117,7 @@ void Server::OnMessage(std::shared_ptr<olc::net::connection<MessageTypes>> clien
                     status_content_stream << " User  |  Ping\n";
 
                     for (auto& [id, ping] : this->clients_ping) {
-                        status_content_stream << " " << id << " | " << ping << "\n";
+                        status_content_stream << " " << id << " | " << ping << " ms\n";
                     }
 
                     std::string status_content = status_content_stream.str();

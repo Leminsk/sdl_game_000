@@ -443,14 +443,17 @@ namespace olc
 					asio::async_connect(m_socket, endpoints,
 						[this](std::error_code ec, asio::ip::tcp::endpoint endpoint)
 						{
-							m_socket.set_option(olc::net::no_nagle);
 							if (!ec)
 							{
 								// Was: ReadHeader();
 
+								m_socket.set_option(olc::net::no_nagle);
 								// First thing server will do is send packet to be validated
 								// so wait for that and respond
 								ReadValidation();
+							} else {
+								// std::cout << "Error on ConnectToServer(): " << ec.message() << '\n';
+								throw std::runtime_error("Error on ConnectToServer(): " + ec.message() + " (" + std::to_string(ec.value()) + ")");
 							}
 						});
 				}
@@ -459,13 +462,20 @@ namespace olc
 
 			void Disconnect()
 			{
-				if (IsConnected())
+				if (IsConnected()) {
 					asio::post(m_asioContext, [this]() { m_socket.close(); });
+					m_bConnectionEstablished = false;
+				}					
 			}
 
 			bool IsConnected() const
 			{
 				return m_socket.is_open();
+			}
+
+			bool IsEstablished() const
+			{
+				return m_bConnectionEstablished;
 			}
 
 			// Prime the connection to wait for incoming messages
@@ -535,6 +545,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on WriteHeader(): " << ec.message() << " (" << std::to_string(ec.value()) << ")\n";
 							// ...asio failed to write the message, we could analyse why but 
 							// for now simply assume the connection has died by closing the
 							// socket. When a future attempt to write to this client fails due
@@ -569,6 +580,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on WriteBody(): " << ec.message() << '\n';
 							// Sending failed, see WriteHeader() equivalent for description :P
 							std::cout << "[" << id << "] Write Body Fail.\n";
 							m_socket.close();
@@ -607,6 +619,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on ReadHeader(): " << ec.message() << '\n';
 							// Reading form the client went wrong, most likely a disconnect
 							// has occurred. Close the socket and let the system tidy it up later.
 							std::cout << "[" << id << "] Read Header Fail.\n";
@@ -632,6 +645,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on ReadBody(): " << ec.message() << '\n';
 							// As above!
 							std::cout << "[" << id << "] Read Body Fail.\n";
 							m_socket.close();
@@ -661,6 +675,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on WriteValidation(): " << ec.message() << '\n';
 							m_socket.close();
 						}
 					});
@@ -698,6 +713,7 @@ namespace olc
 							{
 								// Connection is a client, so solve puzzle
 								m_nHandshakeOut = scramble(m_nHandshakeIn);
+								m_bConnectionEstablished = true;
 
 								// Write the result
 								WriteValidation();
@@ -705,6 +721,7 @@ namespace olc
 						}
 						else
 						{
+							std::cout << "Error on ReadValidation(): " << ec.message() << '\n';
 							// Some biggerfailure occured
 							std::cout << "Client Disconnected (ReadValidation)" << std::endl;
 							m_socket.close();
@@ -791,7 +808,7 @@ namespace olc
 					m_connection = std::make_unique<connection<T>>(connection<T>::owner::client, m_context, asio::ip::tcp::socket(m_context), m_qMessagesIn);
 					
 					// Tell the connection object to connect to server
-					m_connection->ConnectToServer(endpoints);					
+					m_connection->ConnectToServer(endpoints);			
 
 					// Start Context Thread
 					thrContext = std::thread([this]() { m_context.run(); });
@@ -824,7 +841,7 @@ namespace olc
 			bool IsConnected()
 			{
 				if (m_connection)
-					return m_connection->IsConnected();
+					return m_connection->IsConnected() && m_connection->IsEstablished();
 				else
 					return false;
 			}
@@ -863,9 +880,19 @@ namespace olc
 		public:
 			// Create a server, ready to listen on specified port
 			server_interface(uint16_t port)
-				: m_asioAcceptor(m_asioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v6(), port))
+				: m_asioAcceptor(m_asioContext)
 			{
+				asio::ip::tcp::endpoint endpoint(asio::ip::tcp::v6(), port);
 
+				// Manually open acceptor to allow configuration before binding
+				m_asioAcceptor.open(endpoint.protocol());
+
+				// Allow both IPv6 and IPv4 connections (dual-stack)
+				m_asioAcceptor.set_option(asio::ip::v6_only(false));
+
+				// Bind and listen as usual
+				m_asioAcceptor.bind(endpoint);
+				m_asioAcceptor.listen();
 			}
 
 			virtual ~server_interface()
@@ -922,11 +949,10 @@ namespace olc
 				m_asioAcceptor.async_accept(
 					[this](std::error_code ec, asio::ip::tcp::socket socket)
 					{
-						socket.set_option(olc::net::no_nagle);
-
 						// Triggered by incoming connection request
 						if (!ec)
 						{
+							socket.set_option(olc::net::no_nagle);
 							// Display some useful(?) information
 							std::cout << "[SERVER] New Connection: " << socket.remote_endpoint() << "\n";
 
