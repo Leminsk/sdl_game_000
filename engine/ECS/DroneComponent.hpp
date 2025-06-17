@@ -6,7 +6,7 @@
 #include "SpriteComponent.hpp"
 #include "Colliders/Collider.hpp"
 #include "Colliders/Collision.hpp"
-#include "../theta_star.hpp"
+#include "../path_finding.hpp"
 
 // return a translation vector to be applied to the movable object transform;
 // assumes ALL entities are stationaries EXCEPT for the dynamic_col
@@ -275,10 +275,10 @@ class DroneComponent : public Component {
             this->transform->position = this->transform->position + translation;
             this->cum_translation = this->cum_translation + translation;
 
-            // retrace the path if it went VERY off course
+            // retrace the path if it went VERY off course (purely eyeballed)
             if(
                 (this->current_path_index != -1 && this->path.size() > 0) && 
-                Distance(this->path[this->current_path_index], this->getPosition()) > 5*this->diameter*this->diameter
+                Distance(this->path[this->current_path_index], this->getPosition()) > 4.5*this->diameter*this->diameter
             ) {
                 printf("RETRACE\n");
                 this->moveToPoint(this->destination_position);

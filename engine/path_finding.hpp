@@ -621,38 +621,45 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
     return {};
 }
 
-// go around the blocked tile searching for a walkable tile (like BFS)
+// Leaving this here in case I want to refactor it. But I might trash this later
+// go around the blocked tile searching for a walkable tile (like Dijkstra)
 MeshNode findClosestWalkable(
     const MeshNode& origin, 
     const std::vector<std::vector<bool>>& mesh, const int branching_factor, 
     const int mesh_width_limit, const int mesh_height_limit
 ) {
+    std::unordered_map<MeshNode, float, Node2Hash> distances;
+    distances[origin] = 0.0f;
+
+    NodeCompareByFScore cmp(distances);
+    std::priority_queue<MeshNode, std::vector<MeshNode>, NodeCompareByFScore> pq(cmp);
+    
+
     std::vector<std::vector<bool>> visited = mesh;
     for(int i=0; i<visited.size(); ++i) {
         for(int j=0; j<visited.size(); ++j) {
             visited[i][j] = false;
         }
     }
-    visited[origin.y][origin.x] = true;
 
     std::vector<MeshNode> neighbors;
-    std::queue<MeshNode> q;
-    q.push(origin);
-
     MeshNode curr = origin;
-    while(true) {
-        curr = q.front();
-        if(walkableInMesh(curr.x, curr.y, mesh)) { break; }
-        q.pop();
+    distances[curr] = 0.0f;
+    pq.push(curr);
+
+    while(!pq.empty()) {
+        curr = pq.top();
+        pq.pop();
+        if(walkableInMesh(curr.x, curr.y, mesh)) { printf("FOUND!\n"); break; }
+        visited[curr.y][curr.x] = true;
 
         neighbors = getMeshNeighbors(curr.x, curr.y, mesh_width_limit, mesh_height_limit, branching_factor);
         for(MeshNode& n : neighbors) {
             if(!visited[n.y][n.x]) {
-                visited[n.y][n.x] = true;
-                q.push(n);
+                distances[n] = Distance(Vector2D(origin.x, origin.y), Vector2D(n.x, n.y));
+                pq.push(n);
             }
         }
-        
     }
     return curr;
 }
@@ -756,6 +763,10 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
     else if(dest_node.x < 0) { dest_node.x = 0; }
     if(dest_node.y > height_limit) { dest_node.y = height_limit; }
     else if(dest_node.y < 0) { dest_node.y = 0; }
-    dest_node = findClosestWalkable(dest_node, *mesh, branching_factor, width_limit, height_limit);
-    return a_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density, begin);
+    if(walkableInMesh(dest_node.x, dest_node.y, *mesh)) {
+        return a_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density, begin);
+    } 
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "a_star_mesh() PATH BLOCKED Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+    return {};    
 }

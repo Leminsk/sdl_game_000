@@ -8,7 +8,7 @@
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"
-#include "theta_star.hpp"
+#include "path_finding.hpp"
 #include "Camera.hpp"
 
 Map* map;
