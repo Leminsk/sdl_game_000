@@ -1,14 +1,12 @@
 # specifies which files to compile as part of the project
-# MAIN_SOURCE = main.cpp
-MAIN_SOURCE = ClientServerHybrid.cpp
-SOURCES = networking/*.cpp
-# SOURCES = engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
+MAIN_SOURCE = main.cpp
+SOURCES = networking/*.cpp engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
 
 # specifies which compiler we're using
 COMPILER = g++
 
 # INCLUDE_PATHS specifies the additional include paths we'll need
-# INCLUDE_PATHS = -IC:/msys64/mingw64/include/SDL2
+INCLUDE_PATHS = -IC:/msys64/mingw64/include/SDL2
 NET_INCLUDE_PATHS = -IC:/msys64/mingw64/include/asio -IN:/game_dev/game_000/networking
 
 # LIBRARY_PATHS specifies the additional library paths we'll need
@@ -22,10 +20,10 @@ LIBRARY_PATHS = -LC:/msys64/mingw64/lib
 
 # LINKER_FLAGS specifies the libraries we're linking against
 NET = -lssl -lcrypto
-# MIXER = -lSDL2_mixer
-# IMAGE = -lSDL2_image
-# TTF = -lSDL2_ttf
-# MAIN_SDL = -lSDL2main -lSDL2
+MIXER = -lSDL2_mixer
+IMAGE = -lSDL2_image
+TTF = -lSDL2_ttf
+MAIN_SDL = -lSDL2main -lSDL2
 
 WIN_NET = -lws2_32 -lwsock32
 MINGW = -lmingw32

@@ -4,8 +4,9 @@
 
 #include <unordered_map>
 
-Server::Server(uint16_t nPort) : olc::net::server_interface<MessageTypes>(nPort) {
+Server::Server(uint16_t nPort, std::string server_name) : olc::net::server_interface<MessageTypes>(nPort) {
     this->port = nPort;
+    this->name = server_name;
 }
 
 bool Server::OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
@@ -15,7 +16,7 @@ bool Server::OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>>
 
     msg.header.id = MessageTypes::ServerAccept;
     std::stringstream msg_stream_content;
-    msg_stream_content << "Connected to " << this->ip << ":" << this->port << " as user id [" << this->nIDCounter << "]";
+    msg_stream_content << "Connected to " << this->name << " as user id [" << this->nIDCounter << "]";
     std::string msg_content = msg_stream_content.str();
     msg <= msg_content;
     client->Send(msg);

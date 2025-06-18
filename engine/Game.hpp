@@ -5,6 +5,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include "../networking/Client.hpp"
+#include "../networking/Server.hpp"
 #include "ECS/ECS.hpp"
 
 class Game {
@@ -34,6 +36,12 @@ class Game {
         static std::vector<std::vector<bool>> collision_mesh_16;
         static std::vector<std::vector<bool>> collision_mesh_4;
         static std::vector<std::vector<bool>> collision_mesh_1;
+
+
+        static bool server_up;
+        static bool client_up;
+        static Client *client;
+        static Server *server;
 
         Game();
         ~Game();

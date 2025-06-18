@@ -5,10 +5,11 @@
 
 class Server : public olc::net::server_interface<MessageTypes> {
     public:
-        Server(uint16_t nPort);
+        Server(uint16_t nPort=50000, std::string server_name="PLACEHOLDER");
+        ~Server() {};
     protected:
-        std::string ip = "[::ffff:127.0.0.1]"; // dummy ip localhost
-        uint16_t port = 30000;
+        std::string name; // dummy ip localhost
+        uint16_t port;
         uint32_t clients_amount = 0;
         std::unordered_map<uint32_t, double> clients_ping = {};
         std::unordered_map<uint32_t, bool> requested_ping = {};

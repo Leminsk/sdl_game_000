@@ -5,6 +5,8 @@
 
 class Client : public olc::net::client_interface<MessageTypes> {
     public:
+        Client() {}
+        ~Client() {}
         void PingServer();
         void MessageAll();
         void ClientGetOwnID();

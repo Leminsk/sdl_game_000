@@ -1,4 +1,7 @@
 #include <vector>
+#include "../networking/MessageTypes.h"
+#include "../networking/Client.hpp"
+#include "../networking/Server.hpp"
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "utils.hpp"
@@ -42,6 +45,11 @@ std::vector<std::vector<bool>> Game::collision_mesh_64;
 std::vector<std::vector<bool>> Game::collision_mesh_16;
 std::vector<std::vector<bool>> Game::collision_mesh_4;
 std::vector<std::vector<bool>> Game::collision_mesh_1;
+
+bool Game::client_up = false;
+bool Game::server_up = false;
+Client* Game::client;
+Server* Game::server;
 
 std::unordered_map<int, Vector2D> previous_drones_positions;
 
@@ -205,6 +213,31 @@ void Game::handleEvents() {
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
         Game::isRunning = false; 
     } else {
+        if(keystates[SDL_SCANCODE_C] && !Game::client_up) {
+            if(Game::server_up) {
+                printf("Stopping server\n");
+                Game::server->~Server();
+                Game::server = NULL;
+                Game::server_up = false;
+            }
+            Game::client = new Client();
+            printf("Client UP\n");
+            Game::client_up = true;
+        }
+        if(keystates[SDL_SCANCODE_S] && !Game::server_up) {
+            if(Game::client_up) {
+                printf("Disconnecting client\n");
+                Game::client->~Client();
+                Game::client = NULL;
+                Game::client_up = false;
+            }
+            Game::server = new Server();
+            printf("Server UP\n");
+            Game::server_up = true;
+        }
+
+
+
         TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
         Vector2D *camera_v = &camera_transform->velocity;
         float *zoom = &camera_transform->scale;
@@ -285,8 +318,8 @@ void Game::render() {
 }
 
 void Game::clean() {
-    delete manager;
-    delete map;
+    manager = NULL;
+    map = NULL;
     TTF_CloseFont(Game::default_font);
     Game::default_font = NULL;
 
