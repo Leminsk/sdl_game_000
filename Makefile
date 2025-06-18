@@ -7,7 +7,7 @@ COMPILER = g++
 
 # INCLUDE_PATHS specifies the additional include paths we'll need
 INCLUDE_PATHS = -IC:/msys64/mingw64/include/SDL2
-NET_INCLUDE_PATHS = -IC:/msys64/mingw64/include/asio -IN:/game_dev/game_000/networking
+NET_INCLUDE_PATHS = -IC:/msys64/mingw64/include/asio -Inetworking
 
 # LIBRARY_PATHS specifies the additional library paths we'll need
 LIBRARY_PATHS = -LC:/msys64/mingw64/lib
