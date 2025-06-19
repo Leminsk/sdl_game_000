@@ -131,7 +131,7 @@ class DroneComponent : public Component {
         void init() override {
             entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
             entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);
-            entity->addComponent<Collider>("Drone_"+std::to_string(Game::UNIT_COUNTER), COLLIDER_CIRCLE);
+            entity->addComponent<Collider>(COLLIDER_CIRCLE);
             this->transform = &entity->getComponent<TransformComponent>();
             this->sprite = &entity->getComponent<SpriteComponent>();
             this->collider = &entity->getComponent<Collider>();
@@ -243,7 +243,7 @@ class DroneComponent : public Component {
             Entity *col_entity;
             for(int i=0; i<drones.size(); ++i) {
                 col_entity = drones[i];
-                if(col_entity->hasComponent<Collider>() && col_entity->getComponent<Collider>().identifier != this->collider->identifier) {
+                if(col_entity->hasComponent<Collider>() && col_entity->getIdentifier() != entity->getIdentifier()) {
                     current_col = &col_entity->getComponent<Collider>();
                     distance_2 = Distance(this->getPosition(), current_col->getCenter());
                     r = current_col->entity->getComponent<CircleCollider>().radius;
@@ -303,7 +303,7 @@ class DroneComponent : public Component {
 
             entity->getComponent<TextComponent>().setText(
                 this->transform->position.FormatDecimal(4,0)
-            .c_str());
+            );
         }
         
         void handleOutOfBounds(float max_x, float max_y) {

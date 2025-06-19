@@ -21,16 +21,19 @@ int main() {
     uint64_t time_spent_on_frame;
     uint64_t elapsed_time;
     uint64_t old_elapsed_time = 0;
-    float frame_delta;
+    uint64_t frame = 0;
 
     game = new Game();
     game->init("Engine", 800, 600, false);
 
     while (true) {
         elapsed_time = SDL_GetTicks64();
-        game->frame_delta = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
+        game->FRAME_COUNT = frame;
+        game->AVERAGE_FPS = frame / (elapsed_time / 1000.0f);
+        game->FRAME_DELTA = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
         old_elapsed_time = elapsed_time;
 
+        game->handleOnline();
         game->handleEvents();
         if(!game->running()) { break; }
 
@@ -44,6 +47,7 @@ int main() {
                 SDL_Delay(MAX_FRAME_DELAY - time_spent_on_frame);
             }
         }
+        ++frame;
     }
 
     game->clean();

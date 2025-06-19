@@ -1,5 +1,5 @@
 #pragma once
-
+#include <string>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -48,6 +48,7 @@ class Component {
 // An Entity holds many components together in a cohesive manner.
 class Entity {
     private:
+        std::string identifier;
         Manager& manager;
         bool active = true;
         std::vector< std::unique_ptr<Component> > components;
@@ -58,7 +59,9 @@ class Entity {
         
 
     public:
-        Entity(Manager& mManager) : manager(mManager) {}
+        Entity(Manager& mManager, std::string id=NULL) : manager(mManager) {
+            this->identifier = id;
+        }
         ~Entity() {}
 
         void preUpdate() {
@@ -104,6 +107,10 @@ class Entity {
         template <typename T> T& getComponent() const {
             auto ptr(this->componentArray[getComponentTypeID<T>()]);
             return *static_cast<T*>(ptr);
+        }
+
+        std::string getIdentifier() {
+            return this->identifier;
         }
 };
 
@@ -162,10 +169,19 @@ class Manager {
             return this->groupedEntities[mGroup];
         }
 
-        Entity& addEntity() {
-            Entity *e = new Entity(*this);
+        Entity& addEntity(std::string id) {
+            Entity *e = new Entity(*this, id);
             std::unique_ptr<Entity> uPtr{ e };
             this->entities.push_back(std::move(uPtr));
             return *e;
+        }
+
+        Entity* getEntity(std::string id) {
+            for(int i=0; this->entities.size(); ++i) {
+                if(this->entities[i]->getIdentifier() == id) {
+                    return &(*this->entities[i]);
+                }
+            }
+            return nullptr;
         }
 };

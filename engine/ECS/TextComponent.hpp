@@ -1,5 +1,5 @@
 #pragma once
-
+#include <string>
 #include "../Camera.hpp"
 #include "../TextureManager.hpp"
 #include "ECS.hpp"
@@ -24,19 +24,25 @@ class TextComponent : public Component {
         SDL_Color color = Game::default_text_color;
         float w = 0.0f;
         float h = 0.0f;
+        float x = 0.0f;
+        float y = 0.0f;
         Vector2D offset = Vector2D(0.0f, 0.0f);
         
         
 
         TextComponent() = default;
-        TextComponent(const char* text, bool fixed_to_screen=false) {
+        TextComponent(std::string text, bool fixed_to_screen=false) {
             this->fixed = fixed_to_screen;
+            this->w = Game::SCREEN_WIDTH/3;
+            this->h = Game::SCREEN_HEIGHT/16;
             setText(text);
         }
         TextComponent(
-            const char* text, float width, float height, SDL_Color color=Game::default_text_color, 
+            std::string text, float pos_x, float pos_y, float width, float height, SDL_Color color=Game::default_text_color, 
             bool fixed_to_screen=false, const char* path=nullptr
         ) {
+            this->x = pos_x;
+            this->y = pos_y;
             this->w = width;
             this->h = height;
             this->fixed = fixed_to_screen;
@@ -57,28 +63,25 @@ class TextComponent : public Component {
             this->offset.y = y_offset;
         }
 
-        void setText(const char* text="", const char* path=nullptr) {
+        void setText(std::string text="", const char* path=nullptr) {
             if(this->texture != NULL) { SDL_DestroyTexture(this->texture); }
             if(text == "") { text = "PLACEHOLDER"; }
             this->content = text;
             int width, height;
-            this->texture = TextureManager::LoadTextTexture(text, this->color, width, height, path);
+            this->texture = TextureManager::LoadTextTexture(text.c_str(), this->color, width, height, path);
         }
 
         void init() override {
-            this->transform = &entity->getComponent<TransformComponent>();
-
             this->srcRect.x = 0;
             this->srcRect.y = 0;
             if(this->fixed) {
                 this->srcRect.w = Game::SCREEN_WIDTH;
                 this->srcRect.h = Game::SCREEN_HEIGHT;
                 // destRect doesn't have to be updated
-                this->destRect.x = 0;
-                this->destRect.y = 0;
-                this->destRect.w = Game::SCREEN_WIDTH/3;
-                this->destRect.h = Game::SCREEN_HEIGHT/16;
+                this->destRect.x = this->x; this->destRect.y = this->y;
+                this->destRect.w = this->w; this->destRect.h = this->h;
             } else {
+                this->transform = &entity->getComponent<TransformComponent>();
                 this->srcRect.w = static_cast<int>(this->w);
                 this->srcRect.h = static_cast<int>(this->h);
             }            

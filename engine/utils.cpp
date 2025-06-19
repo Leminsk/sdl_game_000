@@ -30,7 +30,7 @@ void setBit(uint8_t* byte, uint8_t nbit, uint8_t value) {
     }
 }
 
-std::string format_decimal(float f, int integer_precision, int decimal_precision) {
+std::string format_decimal(float f, int integer_precision, int decimal_precision, bool can_be_negative) {
 
     if(std::isnan(f)) {
         std::string space_padding = "";
@@ -54,8 +54,8 @@ std::string format_decimal(float f, int integer_precision, int decimal_precision
     }
 
     std::string space_padding = "";
-    // add 1 for the '-' sign
-    int spaces = 1 + integer_precision - (integer_digits + is_negative);
+    // add 1 (can_be_negative) for the '-' sign
+    int spaces = can_be_negative + integer_precision - (integer_digits + is_negative);
     for(int i=0; i<spaces; ++i) { space_padding += ' '; }
 
     return space_padding + number_str;

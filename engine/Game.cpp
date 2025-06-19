@@ -21,7 +21,9 @@ const int Game::UNIT_SIZE = 32;
 int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 bool Game::isRunning = false;
-float Game::frame_delta = 0.0f;
+uint64_t Game::FRAME_COUNT;
+float Game::AVERAGE_FPS;
+float Game::FRAME_DELTA = 0.0f;
 int Game::UNIT_COUNTER = 0;
 
 SDL_Color Game::bg_color{ 220, 220, 220, SDL_ALPHA_OPAQUE };
@@ -30,7 +32,7 @@ SDL_Color Game::default_text_color{ 0, 0, 0, SDL_ALPHA_OPAQUE };
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
-Entity& Game::camera(manager->addEntity());
+Entity& Game::camera(manager->addEntity("CAMERA"));
 
 SDL_Texture *Game::unit_tex, *Game::building_tex;
 
@@ -57,16 +59,14 @@ std::unordered_map<int, Vector2D> previous_drones_positions;
 enum groupLabels : size_t {
     groupTiles,
     groupDrones,
-    groupInerts,
-    groupStationaries,
-    groupBuildings
+    groupBuildings,
+    groupUI
 };
 
-auto& stationaries(manager->getGroup(groupStationaries));
 auto& buildings(manager->getGroup(groupBuildings));
 auto& drones(manager->getGroup(groupDrones));
-auto& inerts(manager->getGroup(groupInerts));
 auto& tiles(manager->getGroup(groupTiles));
+auto& ui_elements(manager->getGroup(groupUI));
 
 std::vector<Vector2D> path;
 
@@ -148,6 +148,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
     map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
     map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
+
+    createSimpleUIText("FPS_COUNTER", Game::SCREEN_WIDTH - (Game::SCREEN_WIDTH/3), 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -158,7 +160,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             for(auto& dr : drones) {
                 float r = dr->getComponent<CircleCollider>().radius;
                 if(Distance(dr->getComponent<DroneComponent>().getPosition(), world_pos) <= r*r) {
-                    std::cout << dr->getComponent<Collider>().identifier << " selected\n";
+                    std::cout << dr->getIdentifier() << " selected\n";
                     dr->getComponent<DroneComponent>().selected = true;
                 } else {
                     dr->getComponent<DroneComponent>().selected = false;
@@ -180,6 +182,11 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             break;
         }
     }
+}
+
+void Game::handleOnline() {
+    // is client is server frame count
+    std::cout << "Average FPS: " << Game::AVERAGE_FPS << '\n';
 }
 
 void Game::handleEvents() {
@@ -275,9 +282,12 @@ void Game::update() {
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleCollisionTranslations(); }
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleOutOfBounds(map->world_layout_width, map->world_layout_height); }
 
-    Game::camera.getComponent<TextComponent>().setText((
+    Game::camera.getComponent<TextComponent>().setText(
         "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)
-    ).c_str());
+    );
+
+    manager->getEntity("FPS_COUNTER")->getComponent<TextComponent>().setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
+
 }
 
 
@@ -285,10 +295,9 @@ void Game::update() {
 void Game::render() {
     SDL_RenderClear(Game::renderer);
     for(auto& t : tiles) { t->draw(); }
-    for(auto& s : stationaries) { s->draw(); }
     for(auto& b : buildings) { b->draw(); }
     for(auto& dr : drones) { dr->draw(); }
-    for(auto& i : inerts) { i->draw(); }
+    for(auto& ui : ui_elements) { ui->draw(); }
     Game::camera.draw();    
 
     // draw the path trajectory for debugging
@@ -336,14 +345,14 @@ void Game::clean() {
 }
 
 void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
-    auto& tile(manager->addEntity());
+    auto& tile(manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
     tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
 
     if(id == 4) {
-        auto& building(manager->addEntity());
+        auto& building(manager->addEntity("base"));
         building.addComponent<TransformComponent>(map_x*width, map_y*width, width, width, 1.0);
         building.addComponent<SpriteComponent>(Game::building_tex);
-        building.addComponent<Collider>("base", COLLIDER_HEXAGON);
+        building.addComponent<Collider>(COLLIDER_HEXAGON);
         building.addComponent<Wireframe>();
         building.addGroup(groupBuildings);
     }
@@ -438,10 +447,22 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
 }
 
 Entity& Game::createDrone(float pos_x, float pos_y, main_color c) {
-    auto& new_drone(manager->addEntity());
+    auto& new_drone(manager->addEntity("Drone_"+std::to_string(Game::UNIT_COUNTER)));
     new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
     new_drone.addComponent<Wireframe>();
-    new_drone.addComponent<TextComponent>("", 160.0f, 16.0f);
+    new_drone.addComponent<TextComponent>("", 0, 0, 160.0f, 16.0f);
     new_drone.addGroup(groupDrones);
     return new_drone;
+}
+
+Entity& Game::createSimpleUIText(std::string id, int pos_x, int pos_y, int width, int height, std::string text) {
+    auto& new_ui_text(manager->addEntity(id));
+    new_ui_text.addComponent<TextComponent>(
+        text, 
+        static_cast<float>(pos_x), static_cast<float>(pos_y),
+        static_cast<float>(width), static_cast<float>(height),
+        Game::default_text_color, true
+    );
+    new_ui_text.addGroup(groupUI);
+    return new_ui_text;
 }

@@ -13,7 +13,9 @@
 class Game {
     public:
         static int SCREEN_WIDTH, SCREEN_HEIGHT;
-        static float frame_delta;
+        static uint64_t FRAME_COUNT;
+        static float AVERAGE_FPS;
+        static float FRAME_DELTA;
         static bool isRunning;
         static SDL_Renderer *renderer;
         static SDL_Event event;
@@ -49,6 +51,7 @@ class Game {
 
         void init(const char* title, int width, int height, bool fullscreen);
 
+        void handleOnline();
         void handleEvents();
         void update();
         void render();
@@ -58,6 +61,7 @@ class Game {
 
         static void AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout);
         static Entity& createDrone(float pos_x, float pos_y, main_color c);
+        static Entity& createSimpleUIText(std::string id, int pos_x=0, int pos_y=0, int width=100, int height=10, std::string text="UI_TEXT");
 
     private:
         int cnt = 0;

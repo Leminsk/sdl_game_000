@@ -15,14 +15,12 @@
 class Collider : public Component {
     public:
         collider_type type;
-        std::string identifier;
 
         TransformComponent* transform;
 
         Collider() {}
 
-        Collider(const std::string id, collider_type t) {
-            this->identifier = id;
+        Collider(collider_type t) {
             this->type = t;
         }
 

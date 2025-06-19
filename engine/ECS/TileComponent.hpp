@@ -15,7 +15,7 @@ class TileComponent : public Component {
 
         TileComponent() = default;
 
-        TileComponent(float x, float y, float w, float h, float id, SDL_Texture* t) {
+        TileComponent(float x, float y, float w, float h, int id, SDL_Texture* t) {
             this->tileRect.x = x;
             this->tileRect.y = y;
             this->tileRect.w = w;
@@ -35,7 +35,7 @@ class TileComponent : public Component {
                 case TILE_PLAIN: break;
                 case TILE_ROUGH: break;
                 case TILE_IMPASSABLE: 
-                    entity->addComponent<Collider>("mountain_collider", COLLIDER_RECTANGLE);
+                    entity->addComponent<Collider>(COLLIDER_RECTANGLE);
                     entity->addComponent<Wireframe>();
                     break;
                 case TILE_NAVIGABLE: break;

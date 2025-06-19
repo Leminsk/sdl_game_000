@@ -47,10 +47,10 @@ class TransformComponent : public Component {
         }
 
         void update() override {
-            this->speed += this->acceleration * Game::frame_delta * 0.5f;
-            this->position.x += this->velocity.x * speed * Game::frame_delta;
-            this->position.y += this->velocity.y * speed * Game::frame_delta;
-            this->speed += this->acceleration * Game::frame_delta * 0.5f;                        
+            this->speed += this->acceleration * Game::FRAME_DELTA * 0.5f;
+            this->position.x += this->velocity.x * speed * Game::FRAME_DELTA;
+            this->position.y += this->velocity.y * speed * Game::FRAME_DELTA;
+            this->speed += this->acceleration * Game::FRAME_DELTA * 0.5f;                        
         }
 
         
