@@ -8,6 +8,7 @@
 #include "Map.hpp"
 #include "TextureManager.hpp"
 #include "ECS/ECS.hpp"
+#include "ECS/MainColors.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"
@@ -127,7 +128,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
     Game::camera.addComponent<TextComponent>("", true);
 
-    Game::unit_tex     = TextureManager::LoadTexture("assets/green_circle.png");
+    // white helps with color modulation
+    Game::unit_tex     = TextureManager::LoadTexture("assets/white_circle.png");
     Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
 
     map = new Map("assets/test3.bmp", Game::UNIT_SIZE<<1);
@@ -136,11 +138,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         std::cout << "Map loaded.\n";
     }
 
-    createDrone(  0,   0);
+    createDrone(  0,   0, WHITE);
     // drone1.getComponent<TransformComponent>().velocity = { 0.5f, 0.5f };
-    createDrone(100,   0);
-    createDrone(  0, 100);
-    createDrone(200, 200);
+    createDrone(100,   0, BLACK);
+    createDrone(  0, 100, RED);
+    createDrone(200, 200, GREEN);
 
     map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
     map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
@@ -435,9 +437,9 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
     tile.addGroup(groupTiles);
 }
 
-Entity& Game::createDrone(float pos_x, float pos_y) {
+Entity& Game::createDrone(float pos_x, float pos_y, main_color c) {
     auto& new_drone(manager->addEntity());
-    new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex);
+    new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
     new_drone.addComponent<Wireframe>();
     new_drone.addComponent<TextComponent>("", 160.0f, 16.0f);
     new_drone.addGroup(groupDrones);

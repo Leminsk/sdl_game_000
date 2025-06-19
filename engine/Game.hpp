@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 #include "../networking/Client.hpp"
 #include "../networking/Server.hpp"
+#include "ECS/MainColors.hpp"
 #include "ECS/ECS.hpp"
 
 class Game {
@@ -56,7 +57,7 @@ class Game {
         bool running() { return this->isRunning; }
 
         static void AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout);
-        static Entity& createDrone(float pos_x, float pos_y);
+        static Entity& createDrone(float pos_x, float pos_y, main_color c);
 
     private:
         int cnt = 0;

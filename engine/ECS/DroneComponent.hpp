@@ -1,12 +1,13 @@
 #pragma once
 #include <string>
 #include "../Vector2D.hpp"
+#include "../path_finding.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
 #include "Colliders/Collider.hpp"
 #include "Colliders/Collision.hpp"
-#include "../path_finding.hpp"
+#include "MainColors.hpp"
 
 // return a translation vector to be applied to the movable object transform;
 // assumes ALL entities are stationaries EXCEPT for the dynamic_col
@@ -57,6 +58,7 @@ class DroneComponent : public Component {
     private:
         Vector2D starting_position;
         SDL_Texture *sprite_texture;
+        SDL_Color color;
         Vector2D destination_position;
 
 
@@ -78,11 +80,23 @@ class DroneComponent : public Component {
         float diameter;
 
 
-        DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture) {
+        DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, main_color c) {
             this->starting_position = starting_position;
             this->sprite_texture = sprite_texture;
             this->diameter = diameter;
             this->radius = diameter/2;
+            switch(c) {
+                case   BLACK: this->color = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case   WHITE: this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case     RED: this->color = { 0xFF, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case   GREEN: this->color = { 0x00, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case    BLUE: this->color = { 0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case  YELLOW: this->color = { 0xFF, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case    CYAN: this->color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MAGENTA: this->color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                default:
+                    this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE };
+            }
             ++Game::UNIT_COUNTER;
         }
 
@@ -116,7 +130,7 @@ class DroneComponent : public Component {
 
         void init() override {
             entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
-            entity->addComponent<SpriteComponent>(this->sprite_texture);
+            entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);
             entity->addComponent<Collider>("Drone_"+std::to_string(Game::UNIT_COUNTER), COLLIDER_CIRCLE);
             this->transform = &entity->getComponent<TransformComponent>();
             this->sprite = &entity->getComponent<SpriteComponent>();

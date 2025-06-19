@@ -47,7 +47,8 @@ SDL_Texture* TextureManager::LoadTextTexture(const char* text, const SDL_Color& 
 
 
 
-void TextureManager::Draw(SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip) {
+void TextureManager::Draw(SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip, const SDL_Color& color) {
+    SDL_SetTextureColorMod(tex, color.r, color.g, color.b);
     SDL_RenderCopyExF(
         Game::renderer, tex, &src,
         &dest, rotation_degrees, NULL, flip

@@ -14,6 +14,7 @@ class SpriteComponent : public Component {
         SDL_Texture *texture;
         SDL_Rect srcRect;
         SDL_FRect destRect;
+        SDL_Color color_modulation;
 
         bool animated = false;
         int frames = 0;
@@ -30,19 +31,20 @@ class SpriteComponent : public Component {
         
 
         SpriteComponent() = default;
-        SpriteComponent(SDL_Texture* t) {
+        SpriteComponent(SDL_Texture* t, SDL_Color cm={ 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }) {
             this->texture = t;
+            this->color_modulation = cm;
         }
-        SpriteComponent(SDL_Texture* t, bool isAnimated) {
-            this->animated = isAnimated;
+        // SpriteComponent(SDL_Texture* t, bool isAnimated) {
+        //     this->animated = isAnimated;
 
-            SpriteAnimation idle = SpriteAnimation(0, 3, 100);
+        //     SpriteAnimation idle = SpriteAnimation(0, 3, 100);
 
-            animations.emplace("idle", idle);
+        //     animations.emplace("idle", idle);
 
-            play("idle");
-            this->texture = t;
-        }
+        //     play("idle");
+        //     this->texture = t;
+        // }
         ~SpriteComponent() {}
 
         void init() override {
@@ -83,7 +85,7 @@ class SpriteComponent : public Component {
                     while whatever TransformComponent has as its position was the game WORLD coordinates.
                     So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
                 */
-                TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip);
+                TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip, this->color_modulation);
             }
         }
         void play(const char* name) {
