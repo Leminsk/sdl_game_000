@@ -5,8 +5,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "../networking/Client.hpp"
-#include "../networking/Server.hpp"
+#include "networking/Client.hpp"
+#include "networking/Server.hpp"
 #include "ECS/MainColors.hpp"
 #include "ECS/ECS.hpp"
 

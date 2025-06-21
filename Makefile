@@ -1,6 +1,6 @@
 # specifies which files to compile as part of the project
 MAIN_SOURCE = main.cpp
-SOURCES = engine/*.cpp engine/networking/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
+SOURCES = engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
 
 # specifies which compiler we're using
 COMPILER = g++
