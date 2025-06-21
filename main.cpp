@@ -17,6 +17,8 @@ int main() {
     const bool LIMIT_FPS = true;
     const int MAX_FPS = 60;
     const int MAX_FRAME_DELAY = 1000.0f / MAX_FPS;
+
+    const int SERVER_BROADCAST_RATE = 20;
     
     uint64_t time_spent_on_frame;
     uint64_t elapsed_time;
@@ -25,6 +27,7 @@ int main() {
 
     game = new Game();
     game->init("Engine", 800, 600, false);
+    game->SERVER_FRAME_TARGET = MAX_FPS / SERVER_BROADCAST_RATE;
 
     while (true) {
         elapsed_time = SDL_GetTicks64();
@@ -33,7 +36,6 @@ int main() {
         game->FRAME_DELTA = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
         old_elapsed_time = elapsed_time;
 
-        game->handleOnline();
         game->handleEvents();
         if(!game->running()) { break; }
 

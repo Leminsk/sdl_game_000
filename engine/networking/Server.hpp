@@ -1,7 +1,7 @@
 #pragma once
 
-#include <olcPGEX_Network.h>
-#include <MessageTypes.h>
+#include "olcPGEX_Network.h"
+#include "MessageTypes.h"
 
 class Server : public olc::net::server_interface<MessageTypes> {
     public:

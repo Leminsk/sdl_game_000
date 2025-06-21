@@ -13,4 +13,6 @@ enum class MessageTypes : uint32_t {
     ClientWarnDisconnect,
     GetUsersStatus,
     UsersStatus,
+	ServerState_Drones,
+	ClientState_Drones
 };

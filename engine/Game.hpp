@@ -41,17 +41,23 @@ class Game {
         static std::vector<std::vector<bool>> collision_mesh_1;
 
 
-        static bool server_up;
-        static bool client_up;
+        
+        static bool is_client;
+        static bool is_server;
         static Client *client;
         static Server *server;
+        static int SERVER_FRAME_TARGET;
+        static bool update_server;
+        static const int PACKET_SIZE; // the ideal max size in bytes. 10 bytes or so over it is fine
+
+        // drones which have been selected and have had their moveToPoint invoked on this Client. Their paths should then be sent to the server
+        static std::vector<Entity*> moved_drones;
 
         Game();
         ~Game();
 
         void init(const char* title, int width, int height, bool fullscreen);
 
-        void handleOnline();
         void handleEvents();
         void update();
         void render();

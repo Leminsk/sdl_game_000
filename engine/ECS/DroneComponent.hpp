@@ -128,6 +128,16 @@ class DroneComponent : public Component {
             this->transform->velocity = Vector2D(0,0);
         }
 
+        void moveToPointWithPath(const Vector2D& destination, const std::vector<Vector2D>& p) {
+            this->cum_translation = Vector2D(0,0);
+            this->destination_position = destination;
+            this->path = p;
+            last_path_index = path.size() - 1;
+            this->current_path_index = last_path_index;
+            this->visited_indices = {};
+            this->transform->velocity = Vector2D(0,0);
+        }
+
         void init() override {
             entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
             entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);

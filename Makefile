@@ -1,13 +1,13 @@
 # specifies which files to compile as part of the project
 MAIN_SOURCE = main.cpp
-SOURCES = networking/*.cpp engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
+SOURCES = engine/*.cpp engine/networking/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
 
 # specifies which compiler we're using
 COMPILER = g++
 
 # INCLUDE_PATHS specifies the additional include paths we'll need
 INCLUDE_PATHS = -IC:/msys64/mingw64/include/SDL2
-NET_INCLUDE_PATHS = -IC:/msys64/mingw64/include/asio -Inetworking
+NET_INCLUDE_PATHS = -IC:/msys64/mingw64/include/asio -Iengine/networking
 
 # LIBRARY_PATHS specifies the additional library paths we'll need
 LIBRARY_PATHS = -LC:/msys64/mingw64/lib

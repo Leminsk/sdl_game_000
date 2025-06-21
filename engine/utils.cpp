@@ -30,6 +30,32 @@ void setBit(uint8_t* byte, uint8_t nbit, uint8_t value) {
     }
 }
 
+std::string left_pad_int(int i, int total_digits, const char digit, bool can_be_negative) {
+    std::string number_str = std::to_string(std::abs(i));
+    int digits = number_str.size();
+    char sign = ' ';
+    if(i < 0) {
+        if(digits - 1 > total_digits) {
+            return number_str;
+        }
+        --digits;
+        sign = '-';
+    } else if(digits > total_digits) {
+        return number_str;
+    }
+    
+    std::string left_padding = "";
+    int amount_to_pad = total_digits - digits;
+    for(int i=0; i<amount_to_pad; ++i) {
+        left_padding += digit;
+    }
+
+    if(can_be_negative) {
+        return sign + left_padding + number_str;
+    }
+    return left_padding + number_str;
+}
+
 std::string format_decimal(float f, int integer_precision, int decimal_precision, bool can_be_negative) {
 
     if(std::isnan(f)) {

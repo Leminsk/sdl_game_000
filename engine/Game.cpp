@@ -1,7 +1,7 @@
 #include <vector>
-#include "../networking/MessageTypes.h"
-#include "../networking/Client.hpp"
-#include "../networking/Server.hpp"
+#include "networking/MessageTypes.h"
+#include "networking/Client.hpp"
+#include "networking/Server.hpp"
 #include "Game.hpp"
 #include "Vector2D.hpp"
 #include "utils.hpp"
@@ -49,10 +49,13 @@ std::vector<std::vector<bool>> Game::collision_mesh_16;
 std::vector<std::vector<bool>> Game::collision_mesh_4;
 std::vector<std::vector<bool>> Game::collision_mesh_1;
 
-bool Game::client_up = false;
-bool Game::server_up = false;
+bool Game::is_client = false;
+bool Game::is_server = false;
 Client* Game::client;
 Server* Game::server;
+int Game::SERVER_FRAME_TARGET;
+bool Game::update_server = false;
+const int Game::PACKET_SIZE = 1300;
 
 std::unordered_map<int, Vector2D> previous_drones_positions;
 
@@ -69,6 +72,7 @@ auto& tiles(manager->getGroup(groupTiles));
 auto& ui_elements(manager->getGroup(groupUI));
 
 std::vector<Vector2D> path;
+std::vector<Entity*> Game::moved_drones;
 
 Game::Game() {
 
@@ -177,6 +181,10 @@ void handleMouse(SDL_MouseButtonEvent& b) {
                 if(dr->getComponent<DroneComponent>().selected) {
                     dr->getComponent<DroneComponent>().moveToPoint(world_pos);
                     path = dr->getComponent<DroneComponent>().path;
+                    if(!path.empty()) {
+                        Game::moved_drones.push_back(dr);
+                        Game::update_server = true;
+                    }                    
                 }
             }
             break;
@@ -184,12 +192,107 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     }
 }
 
-void Game::handleOnline() {
-    // is client is server frame count
-    std::cout << "Average FPS: " << Game::AVERAGE_FPS << '\n';
+
+
+void sendStateToServer() {
+    if(Game::moved_drones.size() > 0) {
+        DroneComponent* drone;
+        olc::net::message<MessageTypes> msg;
+        msg.header.id = MessageTypes::ClientState_Drones;
+        int drone_counter = 0;
+        for(int i=0; i<Game::moved_drones.size(); ++i) {
+            // send packet if the next drone would surpass 1300 B
+            if((static_cast<int>(msg.size()) + 14 + (8 * drone->path.size())) >= Game::PACKET_SIZE) {
+                msg << drone_counter; // 4 B
+                Game::client->Send(msg);
+                msg.body = {};
+                msg.header.size = msg.size();
+                drone_counter = 0;
+            }
+            drone = &Game::moved_drones[i]->getComponent<DroneComponent>();
+            for(Vector2D& v : drone->path) {
+                msg << v.y; // 4 B
+                msg << v.x; // 4 B
+            } // subtotal: 8 ~ 1024 B (Most paths should be short, but it's technically unbounded)
+            msg << static_cast<int>(drone->path.size()); // 4 B
+            msg <= Game::moved_drones[i]->getIdentifier(); // 8 B + 2 B (null-terminators)
+            ++drone_counter;
+        }
+        if(drone_counter > 0) { // for loop leftovers
+            msg << drone_counter;
+            Game::client->Send(msg);
+        }
+        Game::moved_drones = {};
+    }
+}
+
+void sendStateToClients() {
+    bool send_drones_state = true;
+    int current_drone_index = 0;
+    int drones_to_send = 0;
+    Entity* dr;
+    DroneComponent* drone_main;
+    TransformComponent* drone_transform;
+    // < 1 KB GOOD, 1200 B Okay, 1400 B Erm, 1500 B LIMIT
+    olc::net::message<MessageTypes> msg;
+    msg.header.id = MessageTypes::ServerState_Drones;
+    for(int i=0; i<drones.size(); ++i) {
+        if(static_cast<int>(msg.size()) + 26 >= Game::PACKET_SIZE) {
+            msg << drones_to_send; // 4 B -> at most msg should have TOTAL: 1304 B
+            Game::server->MessageAllClients(msg);
+            msg.body = {};
+            msg.header.size = msg.size();
+            drones_to_send = 0;
+        }
+        dr = drones[i];
+        if(dr->getComponent<TransformComponent>().velocity != Vector2D(0,0)) {
+            drone_transform = &dr->getComponent<TransformComponent>();
+            msg << drone_transform->position.y;    // 4 B
+            msg << drone_transform->position.x;    // 4 B
+            msg << drone_transform->velocity.y;    // 4 B
+            msg << drone_transform->velocity.x;    // 4 B
+            msg <= dr->getIdentifier();            // 8 B + 2 B (null-terminators)
+                                            // TOTAL: 26 B
+            ++drones_to_send;
+        }
+    }
+    if(drones_to_send > 0) { // for loop leftovers
+        msg << drones_to_send;
+        Game::server->MessageAllClients(msg);
+    }
+}
+
+void handleStateFromServer() {
+    auto msg = Game::client->Incoming().pop_front().msg;
+    switch (msg.header.id) {
+        case MessageTypes::ServerState_Drones: {
+            // get all new states and overwrite local state when needed
+            int drones_to_update;
+            std::string current_identifier;
+            Entity* drone;
+            TransformComponent* drone_transf;
+            msg >> drones_to_update;            
+            for(int i=0; i<drones_to_update; ++i) {
+                msg >= current_identifier;
+                drone = manager->getEntity(current_identifier);
+                drone_transf = &drone->getComponent<TransformComponent>();
+                msg >> drone_transf->velocity.x;
+                msg >> drone_transf->velocity.y;
+                msg >> drone_transf->position.x;
+                msg >> drone_transf->position.y;
+            }
+        } break;
+    }
 }
 
 void Game::handleEvents() {
+    Game::moved_drones = {};
+
+    if(Game::is_server) {
+        Game::server->Update(-1, true);
+    } else if(Game::is_client && Game::client->IsConnected() && !Game::client->Incoming().empty()) {
+        handleStateFromServer();
+    }
     
     while( SDL_PollEvent(&Game::event) ) {
         if(Game::event.type == SDL_QUIT) {
@@ -222,31 +325,54 @@ void Game::handleEvents() {
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
         Game::isRunning = false; 
     } else {
-        if(keystates[SDL_SCANCODE_C] && !Game::client_up) {
-            if(Game::server_up) {
+        if(keystates[SDL_SCANCODE_C] && !Game::is_client) {
+            if(Game::is_server) {
                 printf("Stopping server\n");
                 Game::server->~Server();
                 Game::server = NULL;
-                Game::server_up = false;
+                Game::is_server = false;
             }
+            Game::is_client = true;
             Game::client = new Client();
-            printf("Client UP\n");
-            Game::client_up = true;
+            Game::client->Connect("IP_GOES_HERE", 50000);
+            printf("Client UP\n");            
         }
-        if(keystates[SDL_SCANCODE_S] && !Game::server_up) {
-            if(Game::client_up) {
+        if(keystates[SDL_SCANCODE_S] && !Game::is_server) {
+            if(Game::is_client) {
                 printf("Disconnecting client\n");
+                Game::client->WarnDisconnect();
+                Game::client->Disconnect();
                 Game::client->~Client();
                 Game::client = NULL;
-                Game::client_up = false;
+                Game::is_client = false;
             }
+            Game::is_server = true;
             Game::server = new Server();
+            Game::server->Start();
             printf("Server UP\n");
-            Game::server_up = true;
+        }
+        if(keystates[SDL_SCANCODE_DELETE]) {
+            if(Game::is_server) {
+                printf("Stopping server\n");
+                Game::server->~Server();
+                Game::server = NULL;
+                Game::is_server = false;
+            }
+            if(Game::is_client) {
+                printf("Disconnecting client\n");
+                Game::client->WarnDisconnect();
+                Game::client->Disconnect();
+                Game::client->~Client();
+                Game::client = NULL;
+                Game::is_client = false;
+            }
         }
 
 
 
+
+
+        // Camera controls
         TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
         Vector2D *camera_v = &camera_transform->velocity;
         float *zoom = &camera_transform->scale;
@@ -265,6 +391,13 @@ void Game::handleEvents() {
         if(keystates[SDL_SCANCODE_SPACE]) {
             std::cout << "map{x , y}: " << map->layout.size() << ',' << map->layout[0].size() << "tile_width: " << map->tile_width << '\n';
         }
+    }
+
+    if(Game::is_client && Game::update_server) {
+        sendStateToServer();
+        Game::update_server = false;
+    } else if(Game::is_server && (Game::FRAME_COUNT % Game::SERVER_FRAME_TARGET == 0)) {
+        sendStateToClients();
     }
 }
 
@@ -447,7 +580,7 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
 }
 
 Entity& Game::createDrone(float pos_x, float pos_y, main_color c) {
-    auto& new_drone(manager->addEntity("Drone_"+std::to_string(Game::UNIT_COUNTER)));
+    auto& new_drone(manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
     new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
     new_drone.addComponent<Wireframe>();
     new_drone.addComponent<TextComponent>("", 0, 0, 160.0f, 16.0f);
