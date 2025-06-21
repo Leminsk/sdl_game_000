@@ -27,7 +27,7 @@ int main() {
 
     game = new Game();
     game->init("Engine", 800, 600, false);
-    game->SERVER_FRAME_TARGET = MAX_FPS / SERVER_BROADCAST_RATE;
+    game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
 
     while (true) {
         elapsed_time = SDL_GetTicks64();

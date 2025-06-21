@@ -1,7 +1,13 @@
 #pragma once
 #include <unordered_map>
+#include <vector>
 #include "olcPGEX_Network.h"
 #include "MessageTypes.h"
+#include "../Game.hpp"
+#include "../Vector2D.hpp"
+#include "../ECS/DroneComponent.hpp"
+#include "../GroupLabels.hpp"
+
 
 class Server : public olc::net::server_interface<MessageTypes> {
     public:
@@ -17,7 +23,6 @@ class Server : public olc::net::server_interface<MessageTypes> {
         uint32_t clients_amount = 0;
         std::unordered_map<uint32_t, double> clients_ping = {};
         std::unordered_map<uint32_t, bool> requested_ping = {};
-
 
         virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
             this->clients_amount++;
@@ -46,7 +51,9 @@ class Server : public olc::net::server_interface<MessageTypes> {
             this->clients_ping.erase(client->GetID());
         }
 
-        virtual void OnMessage(std::shared_ptr<olc::net::connection<MessageTypes>> client, olc::net::message<MessageTypes>& msg)  {
+
+
+        virtual void OnMessage(std::shared_ptr<olc::net::connection<MessageTypes>> client, olc::net::message<MessageTypes>& msg) {
             uint32_t client_id = client->GetID();
 
             switch (msg.header.id) {
@@ -54,8 +61,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     std::cout << "[" << client_id << "]: Server Ping\n";
                     // Simply bounce message back to client
                     client->Send(msg);
-                }
-                break;
+                } break;
 
                 case MessageTypes::MessageAll: {
                     std::cout << "[" << client_id << "]: Message All\n";
@@ -64,8 +70,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     broadcast_msg.header.id = MessageTypes::ServerMessage;
                     broadcast_msg <= std::to_string(client_id);
                     MessageAllClients(broadcast_msg, client);
-                }
-                break;
+                } break;
 
                 case MessageTypes::ClientGetOwnID: {
                     std::cout << "[" << client_id << "]: Client get own id\n";
@@ -74,8 +79,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     response.header.id = MessageTypes::ClientGetOwnID;
                     response << client_id;
                     client->Send(response);
-                }
-                break;
+                } break;
 
                 case MessageTypes::ClientWarnDisconnect: {
                     std::cout << "[" << client_id << "] warn disconnect\n";
@@ -87,8 +91,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     // std::string broadcast_content = broadcast_stream_content.str();
                     broadcast_msg <= broadcast_stream_content.str();
                     MessageAllClients(broadcast_msg, client);
-                }
-                break;
+                } break;
 
                 case MessageTypes::GetUsersStatus: {                    
                     std::cout << "[" << client_id << "]: GetUsersStatus\n";
@@ -103,8 +106,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
                     broadcast_msg << timeNow;
                     MessageAllClients(broadcast_msg);
-                }
-                break;
+                } break;
 
                 case MessageTypes::ClientPing: {
                     std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
@@ -137,9 +139,44 @@ class Server : public olc::net::server_interface<MessageTypes> {
                         }
                         
                     }
-                }
-                break;
+                } break;
+
+                case MessageTypes::ClientState_Drones: {
+                    // since the packet takes some time to arrive, 
+                    // the drone should be moved forward on its path by the number of frames equivalent to the time it took to get the packet
+                    // in order to sync it with the client
+                    int average_frames_passed = static_cast<int>((this->clients_ping[client_id]/1000.0f) * Game::AVERAGE_FPS);
+                    DroneComponent* drone;
+                    int drone_counter;
+                    int drone_path_size;
+                    std::string drone_id;
+                    std::vector<Vector2D> drone_path;
+                    Vector2D v;
+                    Vector2D previous_pos;
+                    msg >> drone_counter;
+                    for(int i=0; i<drone_counter; ++i) {
+                        msg >= drone_id;
+                        msg >> drone_path_size;
+                        drone_path = {};
+                        for(int j=0; j<drone_path_size; ++j) {
+                            msg >> v.x;
+                            msg >> v.y;
+                            drone_path.push_back(v);
+                        }
+                        drone = &Game::manager->getEntity(drone_id)->getComponent<DroneComponent>();
+                        drone->moveToPointWithPath(drone_path);
+                        // sync on path
+                        for(int j=0; j<average_frames_passed; ++j) {
+                            previous_pos = drone->transform->position;
+                            drone->preUpdate();
+                            drone->update();
+                            drone->handleStaticCollisions(previous_pos, Game::manager->getGroup(groupTiles), Game::manager->getGroup(groupBuildings));
+                            drone->handleDynamicCollisions(Game::manager->getGroup(groupDrones));
+                            drone->handleCollisionTranslations();
+                            drone->handleOutOfBounds(Game::world_map_layout_width, Game::world_map_layout_height);
+                        }                        
+                    }
+                } break;
             }
         }
-        
 };

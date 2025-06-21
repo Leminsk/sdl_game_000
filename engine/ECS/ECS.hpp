@@ -114,7 +114,7 @@ class Entity {
         }
 };
 
-// A Manager holds many Entities... because reasons?
+// A Manager holds many Entities. Mostly a helper class.
 class Manager {
     private:
         std::vector< std::unique_ptr<Entity> > entities;

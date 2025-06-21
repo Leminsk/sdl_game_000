@@ -5,8 +5,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "networking/Client.hpp"
-#include "networking/Server.hpp"
 #include "ECS/MainColors.hpp"
 #include "ECS/ECS.hpp"
 
@@ -26,6 +24,9 @@ class Game {
         static const int UNIT_SIZE;
         static int UNIT_COUNTER;
 
+        static float world_map_layout_width;
+        static float world_map_layout_height;
+
         static int collision_mesh_1_height;
         static int collision_mesh_1_width;        
         static int collision_mesh_4_height;
@@ -41,12 +42,13 @@ class Game {
         static std::vector<std::vector<bool>> collision_mesh_1;
 
 
+        static Manager* manager;
+
         
         static bool is_client;
         static bool is_server;
-        static Client *client;
-        static Server *server;
-        static int SERVER_FRAME_TARGET;
+        static int SERVER_STATE_SHARE_RATE;
+        static int CLIENT_PING_RATE;
         static bool update_server;
         static const int PACKET_SIZE; // the ideal max size in bytes. 10 bytes or so over it is fine
 

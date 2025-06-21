@@ -119,18 +119,20 @@ class DroneComponent : public Component {
         }
 
         void moveToPoint(const Vector2D& destination) {
+            this->path = find_path(getPosition(), destination);
+            if(this->path.size() == 0) { return; }
             this->cum_translation = Vector2D(0,0);
             this->destination_position = destination;
-            this->path = find_path(getPosition(), destination);
             last_path_index = path.size() - 1;
             this->current_path_index = last_path_index;
             this->visited_indices = {};
             this->transform->velocity = Vector2D(0,0);
         }
 
-        void moveToPointWithPath(const Vector2D& destination, const std::vector<Vector2D>& p) {
+        void moveToPointWithPath(const std::vector<Vector2D>& p) {
+            if(p.size() == 0) { return; }
             this->cum_translation = Vector2D(0,0);
-            this->destination_position = destination;
+            this->destination_position = p[0];
             this->path = p;
             last_path_index = path.size() - 1;
             this->current_path_index = last_path_index;

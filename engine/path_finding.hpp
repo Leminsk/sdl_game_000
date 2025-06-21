@@ -667,6 +667,7 @@ MeshNode findClosestWalkable(
 
 
 // similar to theta_star() but receives a mesh of nodes to use as reference for path finding
+// will return a vector of points in which the FIRST(index:0) element is the DESTINATION with the following elements a path up until the start point
 std::vector<Vector2D> a_star_mesh(
     const MeshNode& start, const MeshNode& destination, 
     const std::vector<std::vector<bool>>& mesh, const int branching_factor,
