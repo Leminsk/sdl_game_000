@@ -59,8 +59,6 @@ class DroneComponent : public Component {
         Vector2D starting_position;
         SDL_Texture *sprite_texture;
         SDL_Color color; // for texture color modulation
-        Vector2D destination_position;
-
 
         Vector2D static_translation = Vector2D(0,0);
         Vector2D dynamic_translation = Vector2D(0,0);
@@ -73,6 +71,8 @@ class DroneComponent : public Component {
         MainColors color_type; // used to distinguish between players
 
         bool selected = false;
+        bool preUpdating = false;
+        Vector2D destination_position;
         std::vector<Vector2D> path = {};
         std::vector<int> visited_indices = {};
         int current_path_index = -1;
@@ -129,6 +129,7 @@ class DroneComponent : public Component {
             this->current_path_index = this->last_path_index;
             this->visited_indices = {};
             this->transform->velocity = Vector2D(0,0);
+            preUpdating = true;
         }
 
         void moveToPointWithPath(const std::vector<Vector2D>& p) {
@@ -140,6 +141,7 @@ class DroneComponent : public Component {
             this->current_path_index = this->last_path_index;
             this->visited_indices = {};
             this->transform->velocity = Vector2D(0,0);
+            preUpdating = true;
         }
 
         void init() override {
@@ -158,6 +160,7 @@ class DroneComponent : public Component {
                 this->visited_indices = {};
                 this->current_path_index = -1;
                 this->transform->velocity = Vector2D(0,0);
+                preUpdating = false;
             }
 
             // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
@@ -213,6 +216,13 @@ class DroneComponent : public Component {
                 // the next one should thus be outside the circle and should serve as the next destination
                 this->current_path_index = min_idx - 1;
                 this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
+            }
+        }
+
+        void update() override {
+            // Server is dealing with the preUpdate
+            if(preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius * this->radius)) {
+                this->transform->velocity = Vector2D(0,0);
             }
         }
 

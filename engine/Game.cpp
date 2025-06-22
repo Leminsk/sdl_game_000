@@ -191,12 +191,19 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             for(auto& dr : drones) {
                 drone = &dr->getComponent<DroneComponent>();
                 if(drone->selected) {
-                    drone->moveToPoint(world_pos);
-                    path = drone->path;
-                    if(!path.empty() && Game::is_client) {
-                        Game::moved_drones.push_back(dr);
-                        Game::update_server = true;
-                    }                    
+                    if(Game::is_client) {
+                        // store path to send to server, but do not move drone
+                        drone->path = find_path(drone->getPosition(), world_pos);
+                        drone->destination_position = world_pos;
+                        path = drone->path;
+                        if(!path.empty()) {
+                            Game::moved_drones.push_back(dr);
+                            Game::update_server = true;
+                        }                 
+                    } else {
+                        drone->moveToPoint(world_pos);
+                        path = drone->path;
+                    }
                 }
             }  
         } break;
@@ -466,7 +473,7 @@ void Game::handleEvents() {
            server->PingAllClients();
         }
 
-        if(Game::FRAME_COUNT % Game::SERVER_STATE_SHARE_RATE == 0) { // ~ 20 Hz
+        if(Game::FRAME_COUNT % Game::SERVER_STATE_SHARE_RATE == 0) { // once every 3 frames
             sendStateToClients();
         }     
     }
