@@ -56,6 +56,8 @@ std::vector<std::vector<bool>> Game::collision_mesh_16;
 std::vector<std::vector<bool>> Game::collision_mesh_4;
 std::vector<std::vector<bool>> Game::collision_mesh_1;
 
+MainColors Game::PLAYER_COLOR = MainColors::NONE;
+
 bool Game::is_client = false;
 bool Game::is_server = false;
 int Game::SERVER_STATE_SHARE_RATE;
@@ -63,6 +65,11 @@ int Game::CLIENT_PING_RATE;
 bool Game::update_server = false;
 const int Game::PACKET_SIZE = 1300;
 int64_t Game::PING_MS;
+uint32_t Game::PLAYER_CLIENT_ID;
+std::unordered_map<uint32_t, int> clients_ping = {};
+std::unordered_map<uint32_t, MainColors> clients_color = {};
+
+
 
 std::unordered_map<int, Vector2D> previous_drones_positions;
 
@@ -144,18 +151,18 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         Game::world_map_layout_height = map->world_layout_height;        
     }
 
-    createDrone(  0,   0, WHITE);
+    createDrone(  0,   0, MainColors::WHITE);
     // drone1.getComponent<TransformComponent>().velocity = { 0.5f, 0.5f };
-    createDrone(100,   0, BLACK);
-    createDrone(  0, 100, RED);
-    createDrone(200, 200, GREEN);
+    createDrone(100,   0, MainColors::BLACK);
+    createDrone(  0, 100, MainColors::RED);
+    createDrone(200, 200, MainColors::GREEN);
 
     map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
     map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
     map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
     map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
 
-    createSimpleUIText("FPS_COUNTER", Game::SCREEN_WIDTH - (Game::SCREEN_WIDTH/3), 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+    createSimpleUIText("FPS_COUNTER", Game::SCREEN_WIDTH - 270, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -163,34 +170,36 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
             std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
+            DroneComponent* drone;
             for(auto& dr : drones) {
                 float r = dr->getComponent<CircleCollider>().radius;
-                if(Distance(dr->getComponent<DroneComponent>().getPosition(), world_pos) <= r*r) {
+                drone = &dr->getComponent<DroneComponent>();
+                if(Distance(drone->getPosition(), world_pos) <= r*r && drone->color_type == Game::PLAYER_COLOR) {
                     std::cout << dr->getIdentifier() << " selected\n";
-                    dr->getComponent<DroneComponent>().selected = true;
+                    drone->selected = true;
                 } else {
-                    dr->getComponent<DroneComponent>().selected = false;
+                    drone->selected = false;
                 }
-            }            
-            break;
-        }
+            }
+        } break;
             
         case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
 
         case SDL_BUTTON_RIGHT: {
             std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
+            DroneComponent* drone;
             for(auto& dr : drones) {
-                if(dr->getComponent<DroneComponent>().selected) {
-                    dr->getComponent<DroneComponent>().moveToPoint(world_pos);
-                    path = dr->getComponent<DroneComponent>().path;
-                    if(!path.empty()) {
+                drone = &dr->getComponent<DroneComponent>();
+                if(drone->selected) {
+                    drone->moveToPoint(world_pos);
+                    path = drone->path;
+                    if(!path.empty() && Game::is_client) {
                         Game::moved_drones.push_back(dr);
                         Game::update_server = true;
                     }                    
                 }
-            }
-            break;
-        }
+            }  
+        } break;
     }
 }
 
@@ -202,22 +211,25 @@ void sendStateToServer() {
         olc::net::message<MessageTypes> msg;
         msg.header.id = MessageTypes::ClientState_Drones;
         int drone_counter = 0;
-        for(int i=0; i<Game::moved_drones.size(); ++i) {
+        int drone_path_size;
+        for(auto& dr : Game::moved_drones) {
+            drone = &dr->getComponent<DroneComponent>();
+            drone_path_size = static_cast<int>(drone->path.size());
             // send packet if the next drone would surpass 1300 B
-            if((static_cast<int>(msg.size()) + 14 + (8 * drone->path.size())) >= Game::PACKET_SIZE) {
+            if((static_cast<int>(msg.size()) + 14 + (8 * drone_path_size)) >= Game::PACKET_SIZE) {
                 msg << drone_counter; // 4 B
                 client->Send(msg);
                 msg.body = {};
                 msg.header.size = msg.size();
                 drone_counter = 0;
             }
-            drone = &Game::moved_drones[i]->getComponent<DroneComponent>();
-            for(Vector2D& v : drone->path) {
-                msg << v.y; // 4 B
-                msg << v.x; // 4 B
+            // send in reverse to ease load on server
+            for(int j=drone_path_size-1; j>=0; --j) {
+                msg << drone->path[j].y; // 4 B
+                msg << drone->path[j].x; // 4 B
             } // subtotal: 8 ~ 1024 B (Most paths should be short, but it's technically unbounded)
-            msg << static_cast<int>(drone->path.size()); // 4 B
-            msg <= Game::moved_drones[i]->getIdentifier(); // 8 B + 2 B (null-terminators)
+            msg << drone_path_size; // 4 B
+            msg <= dr->getIdentifier(); // 8 B + 2 B (null-terminators)
             ++drone_counter;
         }
         if(drone_counter > 0) { // for loop leftovers
@@ -282,8 +294,27 @@ void handleStateFromServer(olc::net::message<MessageTypes>& msg) {
     }
 }
 
+void destroyServer() {
+    printf("Stopping server\n");
+    Game::is_server = false;
+    server->~Server();
+    server = NULL;
+    
+}
+void destroyClient() {
+    printf("Disconnecting client\n");
+    Game::is_client = false;
+    Game::PLAYER_CLIENT_ID = 0;
+    Game::PLAYER_COLOR = MainColors::NONE;
+    client->WarnDisconnect();
+    client->Disconnect();
+    client->~Client();
+    client = NULL;    
+}
+
 void Game::handleEvents() {
     Game::moved_drones = {};
+    TextComponent& fps_text = Game::manager->getEntity("FPS_COUNTER")->getComponent<TextComponent>();
 
     if(Game::is_server) {
         server->Update(-1);
@@ -293,6 +324,29 @@ void Game::handleEvents() {
         while(!client->Incoming().empty()) {
             auto msg = client->Incoming().pop_front().msg;
             switch (msg.header.id) {
+                case MessageTypes::ServerAccept: {
+                    std::string server_name;
+                    msg >= server_name;
+                    msg >> Game::PLAYER_CLIENT_ID;
+                    std::cout << "Connected to: " << server_name << " as user id [" << Game::PLAYER_CLIENT_ID << "]\n";
+                } break;
+                case MessageTypes::ServerState_Colors: {
+                    int clients_amount;
+                    msg >> clients_amount;
+                    int id; MainColors c;
+                    std::cout << "   id | main_color\n";
+                    for(int i=0; i<clients_amount; ++i) {
+                        msg >> id;
+                        msg >> c;
+                        clients_color[id] = c;
+                        if(id == Game::PLAYER_CLIENT_ID) {
+                            Game::PLAYER_COLOR = c;
+                            std::cout << id << " | " << static_cast<int>(c) << " (me)\n";
+                        } else {
+                            std::cout << id << " | " << static_cast<int>(c) << '\n';
+                        }
+                    }
+                } break;
                 case MessageTypes::ServerState_Drones: {
                     handleStateFromServer(msg);
                 } break;
@@ -308,7 +362,13 @@ void Game::handleEvents() {
                     for(int i=0; i<clients_amount; ++i) {
                         msg >> id;
                         msg >> ping;
-                        std::cout << id << " | " << ping << '\n';
+                        clients_ping[id] = ping;
+                        if(id == Game::PLAYER_CLIENT_ID) {
+                            Game::PING_MS = ping;
+                            std::cout << id << " | " << ping << " (me)\n";
+                        } else {
+                            std::cout << id << " | " << ping << '\n';
+                        }
                     }
                 } break;
             }
@@ -330,10 +390,12 @@ void Game::handleEvents() {
 
         if(Game::event.type == SDL_WINDOWEVENT) {
             switch(Game::event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED: {
+                    std::cout << "Window Size Change\n";
                     Game::SCREEN_WIDTH = Game::event.window.data1;
                     Game::SCREEN_HEIGHT = Game::event.window.data2;
-                    break;
+                    fps_text.setRenderPos(Game::SCREEN_WIDTH - 270, 0, fps_text.w, fps_text.h);
+                } break;
                 case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
                 case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
                 case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
@@ -350,46 +412,23 @@ void Game::handleEvents() {
         Game::isRunning = false; 
     } else {
         if(keystates[SDL_SCANCODE_C] && !Game::is_client) {
-            if(Game::is_server) {
-                printf("Stopping server\n");
-                server->~Server();
-                server = NULL;
-                Game::is_server = false;
-            }
+            if(Game::is_server) { destroyServer(); }
             Game::is_client = true;
             client = new Client();
-            client->Connect("IP_HERE", 50000);
+            client->Connect("[IPv4|IPv6]_HERE", 50000);
             printf("Client UP\n");            
         }
         if(keystates[SDL_SCANCODE_S] && !Game::is_server) {
-            if(Game::is_client) {
-                printf("Disconnecting client\n");
-                client->WarnDisconnect();
-                client->Disconnect();
-                client->~Client();
-                client = NULL;
-                Game::is_client = false;
-            }
+            if(Game::is_client) { destroyClient(); }
             Game::is_server = true;
             server = new Server();
             server->Start();
+            Game::PLAYER_COLOR = MainColors::WHITE;
             printf("Server UP\n");
         }
         if(keystates[SDL_SCANCODE_DELETE]) {
-            if(Game::is_server) {
-                printf("Stopping server\n");
-                server->~Server();
-                server = NULL;
-                Game::is_server = false;
-            }
-            if(Game::is_client) {
-                printf("Disconnecting client\n");
-                client->WarnDisconnect();
-                client->Disconnect();
-                client->~Client();
-                client = NULL;
-                Game::is_client = false;
-            }
+            if(Game::is_server) { destroyServer(); }
+            if(Game::is_client) { destroyClient(); }
         }
 
 
@@ -431,6 +470,8 @@ void Game::handleEvents() {
             sendStateToClients();
         }     
     }
+
+    fps_text.setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
 }
 
 void Game::update() {
@@ -450,8 +491,6 @@ void Game::update() {
     Game::camera.getComponent<TextComponent>().setText(
         "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)
     );
-
-    Game::manager->getEntity("FPS_COUNTER")->getComponent<TextComponent>().setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
 }
 
 
@@ -462,7 +501,7 @@ void Game::render() {
     for(auto& b : buildings) { b->draw(); }
     for(auto& dr : drones) { dr->draw(); }
     for(auto& ui : ui_elements) { ui->draw(); }
-    Game::camera.draw();    
+    Game::camera.draw();
 
     // draw the path trajectory for debugging
     if(path.size() > 0) {
@@ -493,6 +532,9 @@ void Game::render() {
 }
 
 void Game::clean() {
+    if(Game::is_server) { destroyServer(); }
+    if(Game::is_client) { destroyClient(); }
+
     Game::manager = NULL;
     map = NULL;
     TTF_CloseFont(Game::default_font);
@@ -516,7 +558,7 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
         auto& building(Game::manager->addEntity("base"));
         building.addComponent<TransformComponent>(map_x*width, map_y*width, width, width, 1.0);
         building.addComponent<SpriteComponent>(Game::building_tex);
-        building.addComponent<Collider>(COLLIDER_HEXAGON);
+        building.addComponent<Collider>(ColliderType::HEXAGON);
         building.addComponent<Wireframe>();
         building.addGroup(groupBuildings);
     }
@@ -610,7 +652,7 @@ void Game::AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, co
     tile.addGroup(groupTiles);
 }
 
-Entity& Game::createDrone(float pos_x, float pos_y, main_color c) {
+Entity& Game::createDrone(float pos_x, float pos_y, MainColors c) {
     auto& new_drone(Game::manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
     new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
     new_drone.addComponent<Wireframe>();

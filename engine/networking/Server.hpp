@@ -7,6 +7,7 @@
 #include "../Vector2D.hpp"
 #include "../ECS/DroneComponent.hpp"
 #include "../GroupLabels.hpp"
+#include "../ECS/MainColors.hpp"
 
 
 class Server : public olc::net::server_interface<MessageTypes> {
@@ -31,33 +32,65 @@ class Server : public olc::net::server_interface<MessageTypes> {
         uint16_t port;
         uint32_t clients_amount = 0;
         std::unordered_map<uint32_t, int> clients_ping = {};
+        std::unordered_map<uint32_t, MainColors> clients_color = {};
+        std::vector<MainColors> possible_colors = { 
+            MainColors::BLACK,
+            MainColors::RED, MainColors::GREEN, MainColors::BLUE, 
+            MainColors::YELLOW, MainColors::CYAN, MainColors::MAGENTA
+        };
+        std::vector<MainColors> colors_used = {};
         std::unordered_map<uint32_t, bool> requested_ping = {};
 
         virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
             this->clients_amount++;
+            MainColors color_for_client = MainColors::NONE;
 
-            olc::net::message<MessageTypes> msg, broadcast_msg;
+            for(MainColors& c : possible_colors) {
+                if(std::find(colors_used.begin(), colors_used.end(), c) == colors_used.end()) {
+                    color_for_client = c;
+                    colors_used.push_back(c);
+                    break;
+                }
+            }
 
+            this->clients_color[this->nIDCounter] = color_for_client;
+
+            olc::net::message<MessageTypes> msg;
+            // send their ID
             msg.header.id = MessageTypes::ServerAccept;
-            std::stringstream msg_stream_content;
-            msg_stream_content << "Connected to " << this->name << " as user id [" << this->nIDCounter << "]";
-            std::string msg_content = msg_stream_content.str();
-            msg <= msg_content;
+            msg << this->nIDCounter;
+            msg <= this->name;
             client->Send(msg);
-
-            broadcast_msg.header.id = MessageTypes::ServerMessage;
-            std::stringstream broadcast_stream_content;
-            broadcast_stream_content << "New user connected [" << this->nIDCounter << "]";
-            // std::string broadcast_content = broadcast_stream_content.str();
-            broadcast_msg <= broadcast_stream_content.str();
-            MessageAllClients(broadcast_msg, client);
             return true;
         }
 
+        void OnClientValidated(std::shared_ptr<olc::net::connection<MessageTypes>> client) override {
+            olc::net::message<MessageTypes> colors_msg;
+            // broadcast updated colors
+            colors_msg.header.id = MessageTypes::ServerState_Colors;
+            for(auto& [id, color] : this->clients_color) {
+                colors_msg << color;
+                colors_msg << id;
+            }
+            colors_msg << this->clients_amount;
+            printf("sending broadcast\n");
+            MessageAllClients(colors_msg);
+        }
+
         virtual void OnClientDisconnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
+            uint32_t client_id = client->GetID();
             this->clients_amount--;
-            std::cout << "Removing client [" << client->GetID() << "]\n";
-            this->clients_ping.erase(client->GetID());
+            MainColors color_to_remove = this->clients_color[client_id];
+            this->colors_used.erase(
+                std::remove(
+                    this->colors_used.begin(), 
+                    this->colors_used.end(), 
+                    color_to_remove
+                )
+            );
+            std::cout << "Removing client [" << client_id << "]\n";
+            this->clients_ping.erase(client_id);
+            this->clients_color.erase(client_id);
         }
 
 
@@ -161,7 +194,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                         }
                         drone = &Game::manager->getEntity(drone_id)->getComponent<DroneComponent>();
                         drone->moveToPointWithPath(drone_path);
-                        // sync on path
+                        // sync on path / roll forward if needed
                         for(int j=0; j<average_frames_passed; ++j) {
                             previous_pos = drone->transform->position;
                             drone->preUpdate();

@@ -1,6 +1,6 @@
 #pragma once
-enum collider_type {
-    COLLIDER_CIRCLE,
-    COLLIDER_HEXAGON,
-    COLLIDER_RECTANGLE,
+enum class ColliderType : uint8_t {
+    CIRCLE,
+    HEXAGON,
+    RECTANGLE,
 };

@@ -1,4 +1,5 @@
 #define SDL_MAIN_HANDLED // https://stackoverflow.com/questions/32342285/undefined-reference-to-winmain16-c-sdl-2
+#include <chrono>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_version.h>
 #include "engine/Game.hpp"
@@ -30,10 +31,22 @@ int main() {
     game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
     game->CLIENT_PING_RATE = MAX_FPS * 3;
 
+    int small_frame_counter = 0;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end;
+    int ms_passed;
+
     while (true) {
+        end = std::chrono::steady_clock::now();
+        ms_passed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        if(ms_passed >= 1000) {
+            game->AVERAGE_FPS = small_frame_counter / (ms_passed / 1000.0f);
+            small_frame_counter = 0;
+            start = std::chrono::steady_clock::now();
+        }
         elapsed_time = SDL_GetTicks64();
         game->FRAME_COUNT = frame;
-        game->AVERAGE_FPS = frame / (elapsed_time / 1000.0f);
+        
         game->FRAME_DELTA = static_cast<float>(elapsed_time - old_elapsed_time)/1000.0f;
         old_elapsed_time = elapsed_time;
 
@@ -51,6 +64,7 @@ int main() {
             }
         }
         ++frame;
+        ++small_frame_counter;
     }
 
     game->clean();

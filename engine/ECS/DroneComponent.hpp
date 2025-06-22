@@ -58,7 +58,7 @@ class DroneComponent : public Component {
     private:
         Vector2D starting_position;
         SDL_Texture *sprite_texture;
-        SDL_Color color;
+        SDL_Color color; // for texture color modulation
         Vector2D destination_position;
 
 
@@ -70,6 +70,7 @@ class DroneComponent : public Component {
         TransformComponent *transform;
         SpriteComponent *sprite;
         Collider *collider;
+        MainColors color_type; // used to distinguish between players
 
         bool selected = false;
         std::vector<Vector2D> path = {};
@@ -80,20 +81,21 @@ class DroneComponent : public Component {
         float diameter;
 
 
-        DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, main_color c) {
+        DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, MainColors c) {
             this->starting_position = starting_position;
             this->sprite_texture = sprite_texture;
             this->diameter = diameter;
             this->radius = diameter/2;
+            this->color_type = c;
             switch(c) {
-                case   BLACK: this->color = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case   WHITE: this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case     RED: this->color = { 0xFF, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case   GREEN: this->color = { 0x00, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case    BLUE: this->color = { 0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case  YELLOW: this->color = { 0xFF, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case    CYAN: this->color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case MAGENTA: this->color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::BLACK  : this->color = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::WHITE  : this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::RED    : this->color = { 0xFF, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::GREEN  : this->color = { 0x00, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::BLUE   : this->color = { 0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::YELLOW : this->color = { 0xFF, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::CYAN   : this->color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::MAGENTA: this->color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
                 default:
                     this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE };
             }
@@ -123,19 +125,19 @@ class DroneComponent : public Component {
             if(this->path.size() == 0) { return; }
             this->cum_translation = Vector2D(0,0);
             this->destination_position = destination;
-            last_path_index = path.size() - 1;
-            this->current_path_index = last_path_index;
+            this->last_path_index = path.size() - 1;
+            this->current_path_index = this->last_path_index;
             this->visited_indices = {};
             this->transform->velocity = Vector2D(0,0);
         }
 
         void moveToPointWithPath(const std::vector<Vector2D>& p) {
             if(p.size() == 0) { return; }
+            this->path = p;
             this->cum_translation = Vector2D(0,0);
             this->destination_position = p[0];
-            this->path = p;
-            last_path_index = path.size() - 1;
-            this->current_path_index = last_path_index;
+            this->last_path_index = path.size() - 1;
+            this->current_path_index = this->last_path_index;
             this->visited_indices = {};
             this->transform->velocity = Vector2D(0,0);
         }
@@ -143,7 +145,7 @@ class DroneComponent : public Component {
         void init() override {
             entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
             entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);
-            entity->addComponent<Collider>(COLLIDER_CIRCLE);
+            entity->addComponent<Collider>(ColliderType::CIRCLE);
             this->transform = &entity->getComponent<TransformComponent>();
             this->sprite = &entity->getComponent<SpriteComponent>();
             this->collider = &entity->getComponent<Collider>();

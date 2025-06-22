@@ -63,7 +63,7 @@ bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& rec
 }
 
 bool Collision::AABB(const Collider& colA, const Collider& colB) {
-    if(colA.type == COLLIDER_RECTANGLE && colB.type == COLLIDER_RECTANGLE) {
+    if(colA.type == ColliderType::RECTANGLE && colB.type == ColliderType::RECTANGLE) {
         return AABB(
             colA.entity->getComponent<RectangleCollider>(), 
             colB.entity->getComponent<RectangleCollider>()
@@ -205,8 +205,8 @@ std::vector<Vector2D> resolveCircleVSCircle(const CircleCollider& a, const Circl
 bool Collision::ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir) {
     std::vector<Vector2D> hull;
     switch(conv_pol.type) {
-        case COLLIDER_HEXAGON:   hull = conv_pol.entity->getComponent<  HexagonCollider>().hull; break;
-        case COLLIDER_RECTANGLE: hull = conv_pol.entity->getComponent<RectangleCollider>().hull; break;
+        case ColliderType::HEXAGON:   hull = conv_pol.entity->getComponent<  HexagonCollider>().hull; break;
+        case ColliderType::RECTANGLE: hull = conv_pol.entity->getComponent<RectangleCollider>().hull; break;
         default: return false;
     }
 
@@ -313,14 +313,14 @@ bool HexCircle(const Collider& hex, const Collider& cir) {
 // returns a 2D translation vector to move the moving_col transform
 // assumes moving_col can only be moved if it's a CircleCollider
 Vector2D Collision::CollideStatic(const Collider& moving_col, const Collider& col, const float& distance2, const Vector2D& prev_pos) {
-    if(moving_col.type == COLLIDER_CIRCLE) {
-        if(col.type == COLLIDER_HEXAGON) {
+    if(moving_col.type == ColliderType::CIRCLE) {
+        if(col.type == ColliderType::HEXAGON) {
             return CircleHex(
                 moving_col.entity->getComponent<CircleCollider>(),
                 col.entity->getComponent<HexagonCollider>()
             );
         }
-        if(col.type == COLLIDER_RECTANGLE) {
+        if(col.type == ColliderType::RECTANGLE) {
             return resolveCircleVSRect(
                 moving_col.entity->getComponent<CircleCollider>(), 
                 col.entity->getComponent<RectangleCollider>(),
@@ -335,7 +335,7 @@ Vector2D Collision::CollideStatic(const Collider& moving_col, const Collider& co
 // returns two 2D translation vectors to move both colliders' transforms (index 0 for a, index 1 for b)
 // assumes both are CircleColliders
 std::vector<Vector2D> Collision::CollideDynamic(const Collider& a, const Collider& b, const float& distance2) {
-    if(a.type == COLLIDER_CIRCLE && b.type == COLLIDER_CIRCLE) {
+    if(a.type == ColliderType::CIRCLE && b.type == ColliderType::CIRCLE) {
         return resolveCircleVSCircle(
             a.entity->getComponent<CircleCollider>(), 
             b.entity->getComponent<CircleCollider>(), 

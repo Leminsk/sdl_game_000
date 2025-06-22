@@ -14,21 +14,21 @@
 
 class Collider : public Component {
     public:
-        collider_type type;
+        ColliderType type;
 
         TransformComponent* transform;
 
         Collider() {}
 
-        Collider(collider_type t) {
+        Collider(ColliderType t) {
             this->type = t;
         }
 
         Vector2D getCenter() {
             switch(this->type) {
-                case COLLIDER_CIRCLE:    return entity->getComponent<   CircleCollider>().center;
-                case COLLIDER_HEXAGON:   return entity->getComponent<  HexagonCollider>().center;
-                case COLLIDER_RECTANGLE: return entity->getComponent<RectangleCollider>().center;
+                case ColliderType::CIRCLE:    return entity->getComponent<   CircleCollider>().center;
+                case ColliderType::HEXAGON:   return entity->getComponent<  HexagonCollider>().center;
+                case ColliderType::RECTANGLE: return entity->getComponent<RectangleCollider>().center;
                 default: return Vector2D(0,0);
             }
         }
@@ -40,18 +40,18 @@ class Collider : public Component {
             transform = &entity->getComponent<TransformComponent>();
 
             switch(this->type) {
-                case COLLIDER_CIRCLE:    entity->addComponent<   CircleCollider>(transform); break;
-                case COLLIDER_HEXAGON:   entity->addComponent<  HexagonCollider>(transform); break;
-                case COLLIDER_RECTANGLE: entity->addComponent<RectangleCollider>(transform); break;
+                case ColliderType::CIRCLE:    entity->addComponent<   CircleCollider>(transform); break;
+                case ColliderType::HEXAGON:   entity->addComponent<  HexagonCollider>(transform); break;
+                case ColliderType::RECTANGLE: entity->addComponent<RectangleCollider>(transform); break;
                 default: break;
             }
         }
 
         void update() override {
             switch(this->type) {
-                case COLLIDER_CIRCLE:    entity->getComponent<   CircleCollider>().update(); break;
-                case COLLIDER_HEXAGON:   entity->getComponent<  HexagonCollider>().update(); break;
-                case COLLIDER_RECTANGLE: entity->getComponent<RectangleCollider>().update(); break;
+                case ColliderType::CIRCLE:    entity->getComponent<   CircleCollider>().update(); break;
+                case ColliderType::HEXAGON:   entity->getComponent<  HexagonCollider>().update(); break;
+                case ColliderType::RECTANGLE: entity->getComponent<RectangleCollider>().update(); break;
                 default: break;
             }
         }

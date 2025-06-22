@@ -44,6 +44,7 @@ class Game {
 
         static Manager* manager;
 
+        static MainColors PLAYER_COLOR;
         
         static bool is_client;
         static bool is_server;
@@ -51,7 +52,8 @@ class Game {
         static int CLIENT_PING_RATE;
         static bool update_server;
         static const int PACKET_SIZE; // the ideal max size in bytes. 10 bytes or so over it is fine
-        static int64_t PING_MS;
+        static int64_t PING_MS; // this client's ping on the server
+        static uint32_t PLAYER_CLIENT_ID; // this client's ID on the server
 
         // drones which have been selected and have had their moveToPoint invoked on this Client. Their paths should then be sent to the server
         static std::vector<Entity*> moved_drones;
@@ -69,7 +71,7 @@ class Game {
         bool running() { return this->isRunning; }
 
         static void AddTile(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout);
-        static Entity& createDrone(float pos_x, float pos_y, main_color c);
+        static Entity& createDrone(float pos_x, float pos_y, MainColors c);
         static Entity& createSimpleUIText(std::string id, int pos_x=0, int pos_y=0, int width=100, int height=10, std::string text="UI_TEXT");
 
     private:

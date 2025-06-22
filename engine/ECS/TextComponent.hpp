@@ -70,6 +70,11 @@ class TextComponent : public Component {
             int width, height;
             this->texture = TextureManager::LoadTextTexture(text.c_str(), this->color, width, height, path);
         }
+        void setRenderPos(float world_x, float world_y, float width, float height) {
+            this->x = world_x; this->y = world_y; this->w = width; this->h = height;
+            this->destRect.x = this->x; this->destRect.y = this->y;
+            this->destRect.w = this->w; this->destRect.h = this->h;
+        }
 
         void init() override {
             this->srcRect.x = 0;

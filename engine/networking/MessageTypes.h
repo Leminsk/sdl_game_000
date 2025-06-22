@@ -10,9 +10,11 @@ enum class MessageTypes : uint32_t {
 	MessageAll,
 	ServerMessage,
 	ClientGetOwnID,
+	ClientGetOwnColor,
     ClientWarnDisconnect,
     GetUsersStatus,
     UsersStatus,
+	ServerState_Colors,
 	ServerState_Drones,
 	ClientState_Drones
 };

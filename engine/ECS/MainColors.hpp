@@ -1,5 +1,6 @@
 #pragma once
-enum main_color {
+enum class MainColors : uint8_t {
+    NONE,
     WHITE,
     BLACK,
     RED,
