@@ -51,6 +51,7 @@ class Game {
         static int CLIENT_PING_RATE;
         static bool update_server;
         static const int PACKET_SIZE; // the ideal max size in bytes. 10 bytes or so over it is fine
+        static int64_t PING_MS;
 
         // drones which have been selected and have had their moveToPoint invoked on this Client. Their paths should then be sent to the server
         static std::vector<Entity*> moved_drones;

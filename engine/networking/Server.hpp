@@ -17,11 +17,20 @@ class Server : public olc::net::server_interface<MessageTypes> {
         }
         ~Server() {};
 
+        void PingAllClients() {
+            olc::net::message<MessageTypes> broadcast_msg;
+            broadcast_msg.header.id = MessageTypes::ClientPing;
+            // Caution with this...
+            std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
+            broadcast_msg << timeNow;
+            MessageAllClients(broadcast_msg);
+        }
+
     protected:
         std::string name; // dummy ip localhost
         uint16_t port;
         uint32_t clients_amount = 0;
-        std::unordered_map<uint32_t, double> clients_ping = {};
+        std::unordered_map<uint32_t, int> clients_ping = {};
         std::unordered_map<uint32_t, bool> requested_ping = {};
 
         virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
@@ -113,31 +122,18 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     std::chrono::system_clock::time_point timeThen;
                     msg >> timeThen;
                     this->clients_ping[client_id] = std::chrono::duration_cast<std::chrono::milliseconds>(timeNow - timeThen).count();
-
                     // got all clients' status
                     if (this->clients_ping.size() == this->clients_amount) {
-                        uint32_t original_sender_id;
-                        msg >> original_sender_id;
-
-                        if (this->requested_ping[original_sender_id] == true) {
-                            this->requested_ping[original_sender_id] = false;
-                            olc::net::message<MessageTypes> ping_status_msg;
-                            ping_status_msg.header.id = MessageTypes::UsersStatus;
-
-                            std::stringstream status_content_stream;
-                            status_content_stream << " User  |  Ping\n";
-
-                            for (auto& [id, ping] : this->clients_ping) {
-                                status_content_stream << " " << id << " | " << ping << " ms\n";
-                            }
-
-                            std::string status_content = status_content_stream.str();
-                            std::cout << "ClientPing:\n" << status_content << "\n";
-                            ping_status_msg <= status_content;
-                            
-                            MessageClientByID(original_sender_id, ping_status_msg);
+                        olc::net::message<MessageTypes> ping_status_msg;
+                        ping_status_msg.header.id = MessageTypes::UsersStatus;
+                        for (auto& [id, ping] : this->clients_ping) {
+                            ping_status_msg << ping;
+                            ping_status_msg << id;
                         }
-                        
+                        ping_status_msg << this->clients_amount;
+                        MessageAllClients(ping_status_msg);
+                        // empty the hashmap to only send once per client per ping loop
+                        this->clients_ping.clear();
                     }
                 } break;
 
@@ -179,4 +175,5 @@ class Server : public olc::net::server_interface<MessageTypes> {
                 } break;
             }
         }
+
 };

@@ -62,6 +62,7 @@ int Game::SERVER_STATE_SHARE_RATE;
 int Game::CLIENT_PING_RATE;
 bool Game::update_server = false;
 const int Game::PACKET_SIZE = 1300;
+int64_t Game::PING_MS;
 
 std::unordered_map<int, Vector2D> previous_drones_positions;
 
@@ -246,16 +247,16 @@ void sendStateToClients() {
             drones_to_send = 0;
         }
         dr = drones[i];
-        if(dr->getComponent<TransformComponent>().velocity != Vector2D(0,0)) {
-            drone_transform = &dr->getComponent<TransformComponent>();
-            msg << drone_transform->position.y;    // 4 B
-            msg << drone_transform->position.x;    // 4 B
-            msg << drone_transform->velocity.y;    // 4 B
-            msg << drone_transform->velocity.x;    // 4 B
-            msg <= dr->getIdentifier();            // 8 B + 2 B (null-terminators)
-                                            // TOTAL: 26 B
-            ++drones_to_send;
-        }
+
+        // TODO: filter and only send data of "active" drones
+        drone_transform = &dr->getComponent<TransformComponent>();
+        msg << drone_transform->position.y;    // 4 B
+        msg << drone_transform->position.x;    // 4 B
+        msg << drone_transform->velocity.y;    // 4 B
+        msg << drone_transform->velocity.x;    // 4 B
+        msg <= dr->getIdentifier();            // 8 B + 2 B (null-terminators)
+                                        // TOTAL: 26 B
+        ++drones_to_send;
     }
     if(drones_to_send > 0) { // for loop leftovers
         msg << drones_to_send;
@@ -269,7 +270,7 @@ void handleStateFromServer(olc::net::message<MessageTypes>& msg) {
     std::string current_identifier;
     Entity* drone;
     TransformComponent* drone_transf;
-    msg >> drones_to_update;            
+    msg >> drones_to_update;
     for(int i=0; i<drones_to_update; ++i) {
         msg >= current_identifier;
         drone = Game::manager->getEntity(current_identifier);
@@ -285,7 +286,7 @@ void Game::handleEvents() {
     Game::moved_drones = {};
 
     if(Game::is_server) {
-        server->Update(-1, true);
+        server->Update(-1);
 
     } else if(Game::is_client && client->IsConnected()) {
 
@@ -295,11 +296,27 @@ void Game::handleEvents() {
                 case MessageTypes::ServerState_Drones: {
                     handleStateFromServer(msg);
                 } break;
+                case MessageTypes::ClientPing: {
+                    // bounce back to calculate ping on server
+                    client->Send(msg);
+                } break;
+                case MessageTypes::UsersStatus: {
+                    int clients_amount;
+                    msg >> clients_amount;
+                    int id, ping;
+                    std::cout << "   id | ping (ms)\n";
+                    for(int i=0; i<clients_amount; ++i) {
+                        msg >> id;
+                        msg >> ping;
+                        std::cout << id << " | " << ping << '\n';
+                    }
+                } break;
             }
         }
         
         
     }
+
     
     while( SDL_PollEvent(&Game::event) ) {
         if(Game::event.type == SDL_QUIT) {
@@ -341,7 +358,7 @@ void Game::handleEvents() {
             }
             Game::is_client = true;
             client = new Client();
-            client->Connect("IP_GOES_HERE", 50000);
+            client->Connect("IP_HERE", 50000);
             printf("Client UP\n");            
         }
         if(keystates[SDL_SCANCODE_S] && !Game::is_server) {
@@ -378,7 +395,6 @@ void Game::handleEvents() {
 
 
 
-
         // Camera controls
         TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
         Vector2D *camera_v = &camera_transform->velocity;
@@ -406,12 +422,12 @@ void Game::handleEvents() {
             Game::update_server = false;
         }
 
-        if(Game::FRAME_COUNT % Game::CLIENT_PING_RATE  == 0) {
-           client->PingServer();
-        }
-        
     } else if(Game::is_server) {
-        if(Game::FRAME_COUNT % Game::SERVER_STATE_SHARE_RATE == 0) {
+        if(Game::FRAME_COUNT % Game::CLIENT_PING_RATE == 0) { // once every 3 s
+           server->PingAllClients();
+        }
+
+        if(Game::FRAME_COUNT % Game::SERVER_STATE_SHARE_RATE == 0) { // ~ 20 Hz
             sendStateToClients();
         }     
     }
@@ -436,7 +452,6 @@ void Game::update() {
     );
 
     Game::manager->getEntity("FPS_COUNTER")->getComponent<TextComponent>().setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
-
 }
 
 

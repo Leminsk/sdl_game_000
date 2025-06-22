@@ -28,6 +28,7 @@ int main() {
     game = new Game();
     game->init("Engine", 800, 600, false);
     game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
+    game->CLIENT_PING_RATE = MAX_FPS * 3;
 
     while (true) {
         elapsed_time = SDL_GetTicks64();

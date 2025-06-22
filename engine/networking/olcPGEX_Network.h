@@ -56,7 +56,7 @@
 */
 
 /*
-	Slightly modified by Matheus Lemos, aka Leminsk 2024
+	Slightly modified by Matheus Lemos, aka Leminsk 2025
 */
 
 #pragma once 
@@ -176,25 +176,15 @@ namespace olc
 				return msg;
 			}
 
-			// Pushes std::string data into the message buffer as a sequence of char's
+			// Pushes std::string data into the message buffer as a sequence of char's (size first, then inverted byte-string)
 			friend message<T>& operator <= (message<T>& msg, const std::string& data) {
-				// Cache current size of vector, as this will be the point we insert the data
-				size_t i = msg.body.size();
-
-				size_t stringBytes = sizeof(char) * data.size();
-
-				// Resize the vector by the size of the data being pushed
-				msg.body.resize(msg.body.size() + stringBytes + 2);
-				// surround string with one null-terminator on each side (2 total)
-				char* c_string_data = (char*)std::malloc(stringBytes + 2);
-				std::memcpy(c_string_data, "\0", 1);
-				std::memcpy(c_string_data + 1, data.c_str(), stringBytes + 1);
-
-				// Physically copy the data into the newly allocated vector space
-				std::memcpy(msg.body.data() + i, c_string_data, stringBytes + 2);
-
-				// Recalculate the message size
-				msg.header.size = msg.size();
+				// byte array;
+				char const *c = data.c_str();
+				int string_size = data.size();
+				for(int i=0; i<string_size; ++i) {
+					msg << c[i];
+				}
+				msg << string_size;
 
 				// Return the target message so it can be "chained"
 				return msg;
@@ -202,31 +192,16 @@ namespace olc
 
 			// Pulls std::string data from the message buffer
 			friend message<T>& operator >= (message<T>& msg, std::string& data) {
-				int vector_size = msg.body.size();
-				std::vector<char> temp = {};
-				int nullTerminatorsFound = 0;
-				for (size_t i = 0; i < vector_size && nullTerminatorsFound < 2; ++i) {
-					if ((char)(msg.body[i]) == '\0') {
-						nullTerminatorsFound++;
-						continue;
-					} else {
-						temp.push_back((char)(msg.body[i]));
-					}
+				int string_size;
+				msg >> string_size;
+				char c;
+				std::string temp;
+				for(int i=0; i<string_size; ++i) {
+					msg >> c;
+					temp += c;
 				}
-
-				int contentBytes = (sizeof(char) * temp.size()) + 2;
-
-				// copy to data (output)
-				data.assign(temp.begin(), temp.end());
-
-				// Cache the location towards the end of the vector where the pulled data starts
-				size_t i = msg.body.size() - contentBytes;
-
-				// Shrink the vector to remove read bytes, and reset end position
-				msg.body.resize(i);
-
-				// Recalculate the message size
-				msg.header.size = msg.size();
+				std::reverse(temp.begin(), temp.end());
+				data = temp;
 
 				// Return the target message so it can be "chained"
 				return msg;
