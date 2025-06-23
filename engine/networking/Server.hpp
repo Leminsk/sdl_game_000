@@ -192,7 +192,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                             msg >> v.y;
                             drone_path.push_back(v);
                         }
-                        drone = &Game::manager->getEntity(drone_id)->getComponent<DroneComponent>();
+                        drone = &Game::manager->getEntityFromGroup(drone_id, groupDrones)->getComponent<DroneComponent>();
                         drone->moveToPointWithPath(drone_path);
                         // sync on path / roll forward if needed
                         for(int j=0; j<average_frames_passed; ++j) {

@@ -292,7 +292,7 @@ void handleStateFromServer(olc::net::message<MessageTypes>& msg) {
     msg >> drones_to_update;
     for(int i=0; i<drones_to_update; ++i) {
         msg >= current_identifier;
-        drone = Game::manager->getEntity(current_identifier);
+        drone = Game::manager->getEntityFromGroup(current_identifier, groupDrones);
         drone_transf = &drone->getComponent<TransformComponent>();
         msg >> drone_transf->velocity.x;
         msg >> drone_transf->velocity.y;
@@ -321,7 +321,7 @@ void destroyClient() {
 
 void Game::handleEvents() {
     Game::moved_drones = {};
-    TextComponent& fps_text = Game::manager->getEntity("FPS_COUNTER")->getComponent<TextComponent>();
+    TextComponent& fps_text = Game::manager->getEntityFromGroup("FPS_COUNTER", groupUI)->getComponent<TextComponent>();
 
     if(Game::is_server) {
         server->Update(-1);

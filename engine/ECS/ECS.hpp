@@ -184,4 +184,14 @@ class Manager {
             }
             return nullptr;
         }
+
+        Entity* getEntityFromGroup(std::string id, Group mGroup) {
+            std::vector<Entity*>& group = this->groupedEntities[mGroup];
+            for(int i=0; group.size(); ++i) {
+                if(group[i]->getIdentifier() == id) {
+                    return group[i];
+                }
+            }
+            return nullptr;
+        }
 };
