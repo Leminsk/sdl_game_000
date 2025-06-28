@@ -67,12 +67,11 @@ class SpriteComponent : public Component {
             }
         }
         void draw() override {
-            TransformComponent& camera_transform = Game::camera.getComponent<TransformComponent>();
             Vector2D screen_pos = convertWorldToScreen(this->transform->position);
             this->destRect.x = screen_pos.x;
             this->destRect.y = screen_pos.y;
-            this->destRect.w = this->transform->width * camera_transform.scale;
-            this->destRect.h = this->transform->height * camera_transform.scale;
+            this->destRect.w = this->transform->width * Game::camera_zoom;
+            this->destRect.h = this->transform->height * Game::camera_zoom;
             // similar to AABB collision, but the screen has position fixed to (0,0) as well as width and height fixed to the window's dimensions
             if(
                 Game::SCREEN_WIDTH >= this->destRect.x &&

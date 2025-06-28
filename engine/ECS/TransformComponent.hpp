@@ -12,7 +12,7 @@ class TransformComponent : public Component {
         float width = 32.0f;
         float scale = 1.0f;
 
-        float speed = 100.0f; // 100 pixels per second
+        float speed = Game::DEFAULT_SPEED; // 100 pixels per second
         float acceleration = 0;
 
         TransformComponent() {

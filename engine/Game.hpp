@@ -5,19 +5,27 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include "Vector2D.hpp"
 #include "ECS/MainColors.hpp"
 #include "ECS/ECS.hpp"
 
 class Game {
     public:
         static int SCREEN_WIDTH, SCREEN_HEIGHT;
+        // camera
+        static Vector2D camera_position;
+        static Vector2D camera_velocity;
+        static float camera_zoom;
+        static Vector2D camera_focus;
+        static const float DEFAULT_SPEED;
+
         static uint64_t FRAME_COUNT;
         static float AVERAGE_FPS;
         static float FRAME_DELTA;
         static bool isRunning;
         static SDL_Renderer *renderer;
         static SDL_Event event;
-        static Entity& camera;
+
         static TTF_Font* default_font;
         static SDL_Color bg_color, default_text_color;
         static SDL_Texture *unit_tex, *building_tex;

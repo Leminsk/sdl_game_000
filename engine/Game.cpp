@@ -24,6 +24,13 @@ Manager* Game::manager = new Manager();
 const int Game::UNIT_SIZE = 32;
 int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
+
+Vector2D Game::camera_position;
+Vector2D Game::camera_velocity;
+Vector2D Game::camera_focus;
+const float Game::DEFAULT_SPEED = 100.0f; // pixels per second
+float Game::camera_zoom;
+
 bool Game::isRunning = false;
 uint64_t Game::FRAME_COUNT;
 float Game::AVERAGE_FPS;
@@ -36,7 +43,6 @@ SDL_Color Game::default_text_color{ 0, 0, 0, SDL_ALPHA_OPAQUE };
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_Event Game::event;
-Entity& Game::camera(Game::manager->addEntity("CAMERA"));
 
 SDL_Texture *Game::unit_tex, *Game::building_tex;
 
@@ -117,6 +123,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::default_font = TTF_OpenFont("assets/fonts/FSEX302-alt.ttf", 16); // ideal size is 16 for this font but multiples of 8 work alright
     Game::SCREEN_WIDTH = width;
     Game::SCREEN_HEIGHT = height;
+    Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
     uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     if (fullscreen) {
@@ -136,8 +143,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
     Game::isRunning = true;
     
-    Game::camera.addComponent<TransformComponent>(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 1.0f);
-    Game::camera.addComponent<TextComponent>("", true);
+    // Vector2D screen_center = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+    // Vector2D screen_center_in_world = convertScreenToWorld(screen_center);
+
+    Game::camera_position = Vector2D(0,0);
+    Game::camera_velocity = Vector2D(0,0);
+    Game::camera_zoom = 1.0f;
 
     // white helps with color modulation
     Game::unit_tex     = TextureManager::LoadTexture("assets/white_circle.png");
@@ -163,6 +174,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
 
     createSimpleUIText("FPS_COUNTER", Game::SCREEN_WIDTH - 270, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+    createSimpleUIText("crosshair", 0, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+    createSimpleUIText("camera_zoom", 0, 30, Game::SCREEN_WIDTH/5, Game::SCREEN_HEIGHT/16);
+    
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -320,7 +334,9 @@ void destroyClient() {
 }
 
 void Game::handleEvents() {
+    // for multiplayer
     Game::moved_drones = {};
+    // frame counter
     TextComponent& fps_text = Game::manager->getEntityFromGroup("FPS_COUNTER", groupUI)->getComponent<TextComponent>();
 
     if(Game::is_server) {
@@ -395,6 +411,15 @@ void Game::handleEvents() {
             handleMouse(Game::event.button);
         }
 
+        if(Game::event.type == SDL_MOUSEWHEEL) {
+            int wheel_y = Game::event.wheel.y;
+            if(wheel_y > 0) { // zoom in
+                Game::camera_zoom = std::min(Game::camera_zoom + 0.5f, 5.0f);
+            } else if(wheel_y < 0) { // zoom out
+                Game::camera_zoom = std::max(Game::camera_zoom - 0.5f, 0.5f);
+            }
+        }
+
         if(Game::event.type == SDL_WINDOWEVENT) {
             switch(Game::event.window.event) {
                 case SDL_WINDOWEVENT_SIZE_CHANGED: {
@@ -418,14 +443,14 @@ void Game::handleEvents() {
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
         Game::isRunning = false; 
     } else {
-        if(keystates[SDL_SCANCODE_C] && !Game::is_client) {
+        if(keystates[SDL_SCANCODE_O] && !Game::is_client) {
             if(Game::is_server) { destroyServer(); }
             Game::is_client = true;
             client = new Client();
             client->Connect("[IPv4|IPv6]_HERE", 50000);
             printf("Client UP\n");            
         }
-        if(keystates[SDL_SCANCODE_S] && !Game::is_server) {
+        if(keystates[SDL_SCANCODE_P] && !Game::is_server) {
             if(Game::is_client) { destroyClient(); }
             Game::is_server = true;
             server = new Server();
@@ -441,21 +466,13 @@ void Game::handleEvents() {
 
 
 
-        // Camera controls
-        TransformComponent *camera_transform = &Game::camera.getComponent<TransformComponent>();
-        Vector2D *camera_v = &camera_transform->velocity;
-        float *zoom = &camera_transform->scale;
+        if(keystates[SDL_SCANCODE_W]) { Game::camera_velocity.y =  -2.0f / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_S]) { Game::camera_velocity.y =   2.0f / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_A]) { Game::camera_velocity.x =  -2.0f / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_D]) { Game::camera_velocity.x =   2.0f / Game::camera_zoom; }
 
-        if(keystates[SDL_SCANCODE_UP   ]) { camera_v->y =  -2.0f / *zoom; }
-        if(keystates[SDL_SCANCODE_DOWN ]) { camera_v->y =   2.0f / *zoom; }
-        if(keystates[SDL_SCANCODE_LEFT ]) { camera_v->x =  -2.0f / *zoom; }
-        if(keystates[SDL_SCANCODE_RIGHT]) { camera_v->x =   2.0f / *zoom; }
-
-        if(!keystates[SDL_SCANCODE_UP  ] && !keystates[SDL_SCANCODE_DOWN ]) { camera_v->y = 0.0f; }
-        if(!keystates[SDL_SCANCODE_LEFT] && !keystates[SDL_SCANCODE_RIGHT]) { camera_v->x = 0.0f; }
-
-        if(keystates[SDL_SCANCODE_KP_PLUS]) { *zoom = std::min(*zoom + 0.02f, 10.0f); }
-        if(keystates[SDL_SCANCODE_KP_MINUS]) { *zoom = std::max(*zoom - 0.02f, 0.05f); }
+        if(!keystates[SDL_SCANCODE_W] && !keystates[SDL_SCANCODE_S]) { Game::camera_velocity.y = 0.0f; }
+        if(!keystates[SDL_SCANCODE_A] && !keystates[SDL_SCANCODE_D]) { Game::camera_velocity.x = 0.0f; }
         
         if(keystates[SDL_SCANCODE_SPACE]) {
             std::cout << "map{x , y}: " << map->layout.size() << ',' << map->layout[0].size() << "tile_width: " << map->tile_width << '\n';
@@ -490,13 +507,19 @@ void Game::update() {
     Game::manager->preUpdate();
     Game::manager->update();
 
+    // special case for camera
+    Game::camera_position = Game::camera_position + (Game::camera_velocity * Game::DEFAULT_SPEED * Game::FRAME_DELTA);
+
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleStaticCollisions(previous_drones_positions[i], tiles, buildings); }
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleDynamicCollisions(drones); }
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleCollisionTranslations(); }
     for(int i=0; i<drones.size(); ++i) { drones[i]->getComponent<DroneComponent>().handleOutOfBounds(Game::world_map_layout_width, Game::world_map_layout_height); }
 
-    Game::camera.getComponent<TextComponent>().setText(
-        "Camera center: " + Game::camera.getComponent<TransformComponent>().getCenter().FormatDecimal(4,0)
+    Game::manager->getEntityFromGroup("crosshair", groupUI)->getComponent<TextComponent>().setText(
+        "Crosshair: " + convertScreenToWorld(Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1)).FormatDecimal(4,0)
+    );
+    Game::manager->getEntityFromGroup("camera_zoom", groupUI)->getComponent<TextComponent>().setText(
+        "Camera zoom: " + format_decimal(Game::camera_zoom, 1, 1, false)
     );
 }
 
@@ -508,7 +531,6 @@ void Game::render() {
     for(auto& b : buildings) { b->draw(); }
     for(auto& dr : drones) { dr->draw(); }
     for(auto& ui : ui_elements) { ui->draw(); }
-    Game::camera.draw();
 
     // draw the path trajectory for debugging
     if(path.size() > 0) {
