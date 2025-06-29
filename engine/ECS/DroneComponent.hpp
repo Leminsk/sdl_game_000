@@ -102,7 +102,9 @@ class DroneComponent : public Component {
             ++Game::UNIT_COUNTER;
         }
 
-        ~DroneComponent() {}
+        ~DroneComponent() {
+            --Game::UNIT_COUNTER;
+        }
 
         // get center (x,y)
         Vector2D getPosition() {
