@@ -1,5 +1,6 @@
 #define SDL_MAIN_HANDLED // https://stackoverflow.com/questions/32342285/undefined-reference-to-winmain16-c-sdl-2
 #include <chrono>
+#include <random>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_version.h>
 #include "engine/Game.hpp"
@@ -26,8 +27,13 @@ int main() {
     uint64_t old_elapsed_time = 0;
     uint64_t frame = 0;
 
+    std::random_device os_seed;
+    uint32_t seed = os_seed();
+    std::mt19937 generator(seed);
+
     game = new Game();
     game->init("Engine", 800, 600, false);
+    game->RNG = &generator;
     game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
     game->CLIENT_PING_RATE = MAX_FPS * 3;
 

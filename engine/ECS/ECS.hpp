@@ -161,6 +161,11 @@ class Manager {
             );
         }
 
+        void clearEntities() { 
+            this->entities.clear();
+            this->entities.shrink_to_fit();
+        }
+
         void AddToGroup(Entity* mEntity, Group mGroup) {
             this->groupedEntities[mGroup].push_back(mEntity);
         }

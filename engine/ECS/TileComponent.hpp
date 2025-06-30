@@ -36,7 +36,7 @@ class TileComponent : public Component {
                 case TILE_ROUGH: break;
                 case TILE_IMPASSABLE: 
                     entity->addComponent<Collider>(ColliderType::RECTANGLE);
-                    entity->addComponent<Wireframe>();
+                    // entity->addComponent<Wireframe>();
                     break;
                 case TILE_NAVIGABLE: break;
                 case TILE_BASE_SPAWN: break;

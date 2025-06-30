@@ -80,6 +80,8 @@ class DroneComponent : public Component {
         float radius;
         float diameter;
 
+        float speed_modifier = 1.0f;
+
 
         DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, MainColors c) {
             this->starting_position = starting_position;
@@ -227,6 +229,15 @@ class DroneComponent : public Component {
             if(preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius * this->radius)) {
                 this->transform->velocity = Vector2D(0,0);
             }
+
+            MeshNode current_mesh_node = convertVector2DToMeshNode(getPosition(), 1);
+            if(Game::collision_mesh_1[current_mesh_node.y][current_mesh_node.x] == TILE_ROUGH) {
+                this->speed_modifier = 0.5f;
+            } else {
+                this->speed_modifier = 1.0f;
+            }
+
+            this->transform->speed = Game::DEFAULT_SPEED * this->speed_modifier; 
         }
 
         void handleStaticCollisions(const Vector2D& previous_position, const std::vector<Entity*>& tiles, const std::vector<Entity*>& buildings) {

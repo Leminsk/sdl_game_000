@@ -17,10 +17,11 @@ class Map {
         uint32_t layout_width, layout_height;
         float world_layout_width, world_layout_height;
 
-        SDL_Texture* dirt_texture     = TextureManager::LoadTexture("assets/tiles/dirt.png");
+        SDL_Texture* rough_terrain_texture     = TextureManager::LoadTexture("assets/tiles/rough.png");
         SDL_Texture* mountain_texture = TextureManager::LoadTexture("assets/tiles/mountain.png");
-        SDL_Texture* water_texture    = TextureManager::LoadTexture("assets/tiles/water.png");
-        SDL_Texture* grass_texture    = TextureManager::LoadTexture("assets/tiles/grass.png");
+        SDL_Texture* water_bg_texture    = TextureManager::LoadTexture("assets/tiles/water_background.png");
+        SDL_Texture* water_fg_texture    = TextureManager::LoadTexture("assets/tiles/water_foreground.png");
+        SDL_Texture* plain_terrain_texture    = TextureManager::LoadTexture("assets/tiles/plain.png");
 
         Map(std::string path, int dimension=1) {
             this->tile_width = dimension;
@@ -38,7 +39,7 @@ class Map {
 
         // generate collision mesh for path finding where true values are IMPASSABLE tiles.
         // out_mesh will be overwritten entirely with the new mesh
-        void generateCollisionMesh(const int subdivisions, std::vector<std::vector<bool>>& out_mesh, int& out_width, int& out_height) {
+        void generateCollisionMesh(const int subdivisions, std::vector<std::vector<uint8_t>>& out_mesh, int& out_width, int& out_height) {
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             int row, column, shifted_row;
             int factor;
@@ -58,7 +59,7 @@ class Map {
                 out_mesh[row].reserve(out_width);
                 shifted_row = row>>factor;
                 for(column=0; column<out_width; ++column) {
-                    out_mesh[row].push_back( this->layout[ shifted_row ][ column>>factor ] == TILE_IMPASSABLE );
+                    out_mesh[row].push_back( this->layout[ shifted_row ][ column>>factor ] );
                 }
             }
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

@@ -57,10 +57,13 @@ class Scene {
         // frame counter
         TextComponent* fps_text;
 
-        Scene(SceneType t) {
-            this->st = t;
+        Scene() {}
+        ~Scene() {}
 
-            switch(this->st) {
+
+        void setScene(SceneType t) {
+            this->st = t;
+            switch(t) {
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -94,8 +97,15 @@ class Scene {
 
                 case SceneType::MAIN_MENU: {} break;
             }
-        };
-        ~Scene() {}
+        }
+
+
+        void setLoadingScreen() {
+
+        }
+
+
+
 
 
 
@@ -212,17 +222,30 @@ class Scene {
                 setBit(neighbors, 6, bot_mid);
                 setBit(neighbors, 7, bot_right);
         }
-        Entity& AddTileOnMap(SDL_Texture* t, int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
+        Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
             auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, t);
-
-            if(id == 4) {
-                createBaseBuilding("base", map_x*width, map_y*width, width);
-            }
-
-            if(id == 2) {
-                uint8_t* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
-                SetSolidTileNeighbors(neighbors, map_x, map_y, layout);
+            
+            switch(id) {
+                case TILE_ROUGH:  {
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->rough_terrain_texture);
+                } break;
+                case TILE_IMPASSABLE: { 
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->mountain_texture);
+                    uint8_t* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
+                    SetSolidTileNeighbors(neighbors, map_x, map_y, layout);
+                } break;
+                case TILE_NAVIGABLE: { 
+                    // need to be in this order to render the foreground "above" the background
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->water_bg_texture);
+                    tile.addComponent<TileFGComponent>(map_x*width, map_y*width, width, width, id, map->water_fg_texture);
+                }
+                break;
+                case TILE_BASE_SPAWN: {
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->plain_terrain_texture);
+                    createBaseBuilding("base", map_x*width, map_y*width, width);
+                } break;
+                default: 
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->plain_terrain_texture);
             }
             
             tile.addGroup(groupTiles);
@@ -233,14 +256,8 @@ class Scene {
             SDL_Texture** tex = nullptr;
             for(row = 0; row < this->map->layout_height; ++row) {
                 for(column = 0; column < this->map->layout_width; ++column) {
-                    switch(this->map->layout[row][column]) {
-                        case TILE_ROUGH:  tex = &map->dirt_texture;     break;
-                        case TILE_IMPASSABLE:  tex = &map->mountain_texture; break;
-                        case TILE_NAVIGABLE:  tex = &map->water_texture;    break;
-                        default: tex = &map->grass_texture;
-                    }
                     AddTileOnMap(
-                        *tex, this->map->layout[row][column], 
+                        this->map->layout[row][column], 
                         this->map->tile_width * tile_scale,
                         column, row,
                         this->map->layout

@@ -167,6 +167,22 @@ float heuristic(const Vector2D& p, const Vector2D& destination) {
     return cost(p, destination);
 }
 
+float nodeTypeCost(const MeshNode& n, const std::vector<std::vector<uint8_t>>& mesh) {
+    // FAR FUTURE TODO: make these values related to techs
+    switch(mesh[n.y][n.x]) {
+        case TILE_PLAIN: return 0.0f;
+        case TILE_ROUGH: return 2.0f;
+        case TILE_NAVIGABLE: return 1.0f;
+        // case TILE_BASE_SPAWN: <-
+        // case TILE_IMPASSABLE: <- these two never get to be walkable
+        default: return 0.0f;
+    }
+}
+// I changed my mind a bit
+float heuristicCost(const MeshNode& n, const MeshNode& dest, const std::vector<std::vector<uint8_t>>& mesh) {
+    return NodeDistance(n, dest) + nodeTypeCost(n, mesh);
+}
+
 
 // too expensive, might ditch it later
 // void update_vertex_theta(
@@ -224,6 +240,8 @@ void update_vertex_a(
     }
 }
 
+
+
 void update_vertex_mesh(
     const MeshNode& s, const MeshNode& neighbor, 
     std::unordered_map<MeshNode, MeshNode, Node2Hash>& parent, 
@@ -231,12 +249,14 @@ void update_vertex_mesh(
     std::unordered_map<MeshNode, float, Node2Hash>& fscore, 
     std::priority_queue<MeshNode, std::vector<MeshNode>, NodeCompareByFScore>& open_queue,
     std::unordered_set<MeshNode, Node2Hash>& open_set, 
-    const MeshNode& destination
+    const MeshNode& destination,
+    const std::vector<std::vector<uint8_t>>& mesh
 ) {
-    if(gscore[s] + NodeDistance(s, neighbor) < gscore[neighbor]) {
-        gscore[neighbor] = gscore[s] + NodeDistance(s, neighbor);
+    float total_cost = gscore[s] + heuristicCost(s, neighbor, mesh);
+    if(total_cost < gscore[neighbor]) {
+        gscore[neighbor] = total_cost;
         parent[neighbor] = s;
-        fscore[neighbor] = gscore[neighbor] + NodeDistance(neighbor, destination);
+        fscore[neighbor] = gscore[neighbor] + heuristicCost(neighbor, destination, mesh);
         if(open_set.find(neighbor) == open_set.end()) {
             open_set.insert(neighbor);
         }
@@ -540,12 +560,13 @@ bool diagonalOK(const Vector2D& s, std::vector<Vector2D>& neighbors, const std::
     return true;
 }
 
-bool walkableInMesh(int x, int y, const std::vector<std::vector<bool>>& mesh) {
+bool walkableInMesh(int x, int y, const std::vector<std::vector<uint8_t>>& mesh) {
     // mesh is indexed HEIGHT first
-    return !mesh[y][x];
+    // FAR FUTURE TODO: change this to receive input of a tech level that unlocks TILE_NAVIGABLE
+    return (mesh[y][x] != TILE_IMPASSABLE && mesh[y][x] != TILE_NAVIGABLE && mesh[y][x] != TILE_BASE_SPAWN);
 }
 
-bool meshDiagonalOK(const MeshNode& s, const MeshNode& n, const std::vector<std::vector<bool>>& mesh) {
+bool meshDiagonalOK(const MeshNode& s, const MeshNode& n, const std::vector<std::vector<uint8_t>>& mesh) {
     // no diagonals
     if(s.y == n.y || s.x == n.x) { return true; }
 
@@ -625,7 +646,7 @@ std::vector<Vector2D> theta_star(const Vector2D& start, const Vector2D& destinat
 // go around the blocked tile searching for a walkable tile (like Dijkstra)
 MeshNode findClosestWalkable(
     const MeshNode& origin, 
-    const std::vector<std::vector<bool>>& mesh, const int branching_factor, 
+    const std::vector<std::vector<uint8_t>>& mesh, const int branching_factor, 
     const int mesh_width_limit, const int mesh_height_limit
 ) {
     std::unordered_map<MeshNode, float, Node2Hash> distances;
@@ -635,10 +656,10 @@ MeshNode findClosestWalkable(
     std::priority_queue<MeshNode, std::vector<MeshNode>, NodeCompareByFScore> pq(cmp);
     
 
-    std::vector<std::vector<bool>> visited = mesh;
+    std::vector<std::vector<uint8_t>> visited = mesh;
     for(int i=0; i<visited.size(); ++i) {
         for(int j=0; j<visited.size(); ++j) {
-            visited[i][j] = false;
+            visited[i][j] = 0;
         }
     }
 
@@ -651,11 +672,11 @@ MeshNode findClosestWalkable(
         curr = pq.top();
         pq.pop();
         if(walkableInMesh(curr.x, curr.y, mesh)) { printf("FOUND!\n"); break; }
-        visited[curr.y][curr.x] = true;
+        visited[curr.y][curr.x] = 1;
 
         neighbors = getMeshNeighbors(curr.x, curr.y, mesh_width_limit, mesh_height_limit, branching_factor);
         for(MeshNode& n : neighbors) {
-            if(!visited[n.y][n.x]) {
+            if(visited[n.y][n.x] = 0) {
                 distances[n] = Distance(Vector2D(origin.x, origin.y), Vector2D(n.x, n.y));
                 pq.push(n);
             }
@@ -670,7 +691,7 @@ MeshNode findClosestWalkable(
 // will return a vector of points in which the FIRST(index:0) element is the DESTINATION with the following elements a path up until the start point
 std::vector<Vector2D> a_star_mesh(
     const MeshNode& start, const MeshNode& destination, 
-    const std::vector<std::vector<bool>>& mesh, const int branching_factor,
+    const std::vector<std::vector<uint8_t>>& mesh, const int branching_factor,
     const int mesh_width_limit, const int mesh_height_limit, const int density,
     const std::chrono::steady_clock::time_point& begin
 ) {
@@ -679,7 +700,7 @@ std::vector<Vector2D> a_star_mesh(
     std::unordered_map<MeshNode, float, Node2Hash> fscore;
     parent[start] = start;
     gscore[start] = 0.0f;
-    fscore[start] = NodeDistance(start, destination);
+    fscore[start] = heuristicCost(start, destination, mesh);
 
     std::unordered_set<MeshNode, Node2Hash> open_set;
     NodeCompareByFScore cmp(fscore);
@@ -717,7 +738,7 @@ std::vector<Vector2D> a_star_mesh(
                         if(open_set.find(n) == open_set.end()) {
                             gscore[n] = std::numeric_limits<float>::infinity();
                         }
-                        update_vertex_mesh(s, n, parent, gscore, fscore, open_queue, open_set, destination);
+                        update_vertex_mesh(s, n, parent, gscore, fscore, open_queue, open_set, destination, mesh);
                     }
                 }                
             }
@@ -738,7 +759,7 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
     const int branching_factor = 8;
     MeshNode start_node;
     MeshNode dest_node;
-    std::vector<std::vector<bool>> *mesh;
+    std::vector<std::vector<uint8_t>> *mesh;
     int density, width_limit, height_limit;
     if(distance <= one_by_one) { // use very granular mesh (tile -> 64 nodes)
         density = 64; mesh = &Game::collision_mesh_64; 

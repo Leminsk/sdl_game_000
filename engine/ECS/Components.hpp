@@ -6,6 +6,7 @@
 #include "KeyboardController.hpp"
 #include "Colliders/Collider.hpp"
 #include "TileComponent.hpp"
+#include "TileFGComponent.hpp"
 #include "Wireframe.hpp"
 #include "TextComponent.hpp"
 #include "DroneComponent.hpp"

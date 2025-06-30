@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <random>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -10,6 +11,7 @@
 
 class Game {
     public:
+        static std::mt19937 *RNG;
         static int SCREEN_WIDTH, SCREEN_HEIGHT;
         // camera
         static Vector2D camera_position;
@@ -43,10 +45,10 @@ class Game {
         static int collision_mesh_64_height;
         static int collision_mesh_64_width;
         // All meshes are indexed Y first, then X
-        static std::vector<std::vector<bool>> collision_mesh_64;
-        static std::vector<std::vector<bool>> collision_mesh_16;
-        static std::vector<std::vector<bool>> collision_mesh_4;
-        static std::vector<std::vector<bool>> collision_mesh_1;
+        static std::vector<std::vector<uint8_t>> collision_mesh_64;
+        static std::vector<std::vector<uint8_t>> collision_mesh_16;
+        static std::vector<std::vector<uint8_t>> collision_mesh_4;
+        static std::vector<std::vector<uint8_t>> collision_mesh_1;
 
 
         static Manager* manager;

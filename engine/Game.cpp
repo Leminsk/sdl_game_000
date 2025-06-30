@@ -1,8 +1,10 @@
 #include <vector>
+#include <random>
 #include "Game.hpp"
 #include "SceneTypes.hpp"
 #include "Scene.hpp"
 
+std::mt19937* Game::RNG;
 
 Manager* Game::manager;
 const int Game::UNIT_SIZE = 32;
@@ -21,9 +23,9 @@ float Game::AVERAGE_FPS;
 float Game::FRAME_DELTA = 0.0f;
 int Game::UNIT_COUNTER = 0;
 
-SDL_Color Game::bg_color{ 220, 220, 220, SDL_ALPHA_OPAQUE };
+SDL_Color Game::bg_color{ 50, 5, 10, SDL_ALPHA_OPAQUE };
 TTF_Font *Game::default_font;
-SDL_Color Game::default_text_color{ 0, 0, 0, SDL_ALPHA_OPAQUE };
+SDL_Color Game::default_text_color{ 249, 211, 0, SDL_ALPHA_OPAQUE };
 
 SDL_Renderer *Game::renderer = nullptr;
 
@@ -40,10 +42,10 @@ int Game::collision_mesh_16_height;
 int Game::collision_mesh_16_width;
 int Game::collision_mesh_64_height;
 int Game::collision_mesh_64_width;
-std::vector<std::vector<bool>> Game::collision_mesh_64;
-std::vector<std::vector<bool>> Game::collision_mesh_16;
-std::vector<std::vector<bool>> Game::collision_mesh_4;
-std::vector<std::vector<bool>> Game::collision_mesh_1;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_64;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_16;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_4;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_1;
 
 
 int Game::SERVER_STATE_SHARE_RATE;
@@ -117,9 +119,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
 
     Game::manager = new Manager();
 
-    scene = new Scene(SceneType::MATCH_GAME);    
+    scene = new Scene();
+    scene->setScene(SceneType::MATCH_GAME);
 }
 
+void loadTransition() {
+    // scene->setLoadingScreen();
+    // Game::manager->clearEntities();
+}
 
 
 void Game::handleEvents() {

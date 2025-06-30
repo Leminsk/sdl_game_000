@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <random>
 
 /*
 read bit value from a byte. LSB=0, MSB=7
@@ -85,4 +86,16 @@ std::string format_decimal(float f, int integer_precision, int decimal_precision
     for(int i=0; i<spaces; ++i) { space_padding += ' '; }
 
     return space_padding + number_str;
+}
+
+// range is inclusive on both ends
+int randomInt(std::mt19937 *generator, int min, int max) {
+    std::uniform_int_distribution<int> distribute(min, max);
+    return distribute(*generator);
+}
+
+// range is inclusive on both ends
+float randomFloat(std::mt19937 *generator, float min, float max) {
+    std::uniform_real_distribution<float> distribute(min, max);
+    return distribute(*generator);
 }
