@@ -681,11 +681,10 @@ class Scene {
                     Vector2D line_right[2]  = { Vector2D(screen_center.x+1, screen_center.y), Vector2D(screen_center.x+1+line_length, screen_center.y) };
                     Vector2D line_top[2]    = { Vector2D(screen_center.x, screen_center.y-1), Vector2D(screen_center.x, screen_center.y-1-line_length) };
                     Vector2D line_bottom[2] = { Vector2D(screen_center.x, screen_center.y+1), Vector2D(screen_center.x, screen_center.y+1+line_length) };
-                    SDL_Color cross_hair_color = {0xBA, 0x00, 0x03, SDL_ALPHA_OPAQUE};
-                    TextureManager::DrawLine(  line_left[0],   line_left[1], cross_hair_color);
-                    TextureManager::DrawLine( line_right[0],  line_right[1], cross_hair_color);
-                    TextureManager::DrawLine(   line_top[0],    line_top[1], cross_hair_color);
-                    TextureManager::DrawLine(line_bottom[0], line_bottom[1], cross_hair_color);
+                    TextureManager::DrawLine(  line_left[0],   line_left[1], Game::default_text_color);
+                    TextureManager::DrawLine( line_right[0],  line_right[1], Game::default_text_color);
+                    TextureManager::DrawLine(   line_top[0],    line_top[1], Game::default_text_color);
+                    TextureManager::DrawLine(line_bottom[0], line_bottom[1], Game::default_text_color);
                 } break;
 
                 case SceneType::MAIN_MENU: {} break;
