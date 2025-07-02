@@ -29,6 +29,14 @@ class Scene {
         SceneType st;
         SDL_Event event;
 
+        // --------------------------------  TEXTURES  --------------------------------
+        SDL_Texture* plain_terrain_texture = TextureManager::LoadTexture("assets/tiles/plain.png");
+        SDL_Texture* rough_terrain_texture = TextureManager::LoadTexture("assets/tiles/rough.png");
+        SDL_Texture* mountain_texture      = TextureManager::LoadTexture("assets/tiles/mountain.png");
+        SDL_Texture* water_bg_texture      = TextureManager::LoadTexture("assets/tiles/water_background.png");
+        SDL_Texture* water_fg_texture      = TextureManager::LoadTexture("assets/tiles/water_foreground.png");
+        // -------------------------------- ---------- --------------------------------
+
         // -------------------------------- MATCH_GAME --------------------------------
         Map* map;
         Client* client;
@@ -48,10 +56,11 @@ class Scene {
         std::unordered_map<int, Vector2D> previous_drones_positions = {};
         std::vector<Vector2D> path_to_draw = {};
 
-        std::vector<Entity*>&   buildings = Game::manager->getGroup(groupBuildings);
-        std::vector<Entity*>&      drones = Game::manager->getGroup(groupDrones);
-        std::vector<Entity*>&       tiles = Game::manager->getGroup(groupTiles);
-        std::vector<Entity*>& ui_elements = Game::manager->getGroup(groupUI);
+        std::vector<Entity*>&      buildings = Game::manager->getGroup(groupBuildings);
+        std::vector<Entity*>&         drones = Game::manager->getGroup(groupDrones);
+        std::vector<Entity*>&          tiles = Game::manager->getGroup(groupTiles);
+        std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
+        std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 
         // -------------------------------- ---------- --------------------------------
 
@@ -73,13 +82,20 @@ class Scene {
                 case SceneType::MAIN_MENU: {
                     Game::default_bg_color = { 123, 82, 35, SDL_ALPHA_OPAQUE };
 
+                    const int w = 64;
+                    const int h = 64;
+                    for(int i=0; i<Game::SCREEN_HEIGHT; i+=h) {
+                        for(int j=0; j<Game::SCREEN_WIDTH; j+=w) {
+                            createUIImage("menu_background-" + std::to_string(j) + ',' + std::to_string(i), this->plain_terrain_texture, j, i, w, h);
+                        }
+                    }                    
                     
                     SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
                     SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    createUIButton(    "button_top_left",  40,  40, "Top Left",     Game::default_text_color, background_color, border_color);
-                    createUIButton(   "button_top_right", -40,  40, "Top Right",    Game::default_text_color, background_color, border_color);
-                    createUIButton( "button_bottom_left",  40, -40, "Bottom Left",  Game::default_text_color, background_color, border_color);
-                    createUIButton("button_bottom_right", -40, -40, "Bottom Right", Game::default_text_color, background_color, border_color);
+                    createUIButton("button_single_player",  50,   50, "Single-Player", Game::default_text_color, background_color, border_color);
+                    createUIButton(  "button_multiplayer",  50,  200,   "Multiplayer", Game::default_text_color, background_color, border_color);
+                    createUIButton(     "button_settings",  50, -200,      "Settings", Game::default_text_color, background_color, border_color);
+                    createUIButton(         "button_quit",  50,  -50,          "Quit", Game::default_text_color, background_color, border_color);
                 } break;
 
                 case SceneType::LOBBY: {} break;
@@ -88,7 +104,16 @@ class Scene {
                 case SceneType::MATCH_GAME: {
                     Game::default_bg_color = { 50, 5, 10, SDL_ALPHA_OPAQUE };
 
-                    this->map = new Map("assets/test3.bmp", Game::UNIT_SIZE<<1);
+                    this->map = new Map(
+                        "assets/test3.bmp", 
+                        this->plain_terrain_texture,
+                        this->rough_terrain_texture,
+                        this->mountain_texture,
+                        this->water_bg_texture,
+                        this->water_fg_texture,
+                        Game::UNIT_SIZE<<1
+                    );
+
                     if(this->map->loaded) {
                         LoadMapRender();
                         Game::world_map_layout_width = this->map->world_layout_width;
@@ -127,6 +152,18 @@ class Scene {
             new_drone.addGroup(groupDrones);
             return new_drone;
         }
+        Entity& createUIImage(
+            const std::string& id, SDL_Texture* image_texture,
+            int pos_x=0, int pos_y=0, int width=32, int height=32
+        ) {
+            auto& new_ui_image(Game::manager->addEntity(id));
+            int x = pos_x < 0 ? ((Game::SCREEN_WIDTH - width) + pos_x) : pos_x; 
+            int y = pos_y < 0 ? ((Game::SCREEN_HEIGHT - height) + pos_y) : pos_y;
+            new_ui_image.addComponent<TransformComponent>(pos_x, pos_y, width, height, 1);
+            new_ui_image.addComponent<SpriteComponent>(image_texture);
+            new_ui_image.addGroup(groupBackgroundUI);
+            return new_ui_image;
+        }
         Entity& createUISimpleText(
             const std::string& id, 
             int pos_x=0, int pos_y=0, int width=100, int height=10, 
@@ -145,11 +182,12 @@ class Scene {
         }
         /* 
             if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-            1 char -> width 24
-            1 line -> height 40 // these values look okay
-            ideally height should have a value such that height - (2*border_thickness + 2) is a multiple of 16 (e.g. 40 - (2*3 + 2) == 2*16), 
+            1 char -> width 26
+            1 line -> height 42 // these values look okay
+            ideally height should have a value such that height - (2*border_thickness + 4) is a multiple of 16 (e.g. 42 - (2*3 + 4) == 2*16), 
             but this is not enforced in TextBoxComponent
-            similarly for width the value should be such that width - (2*border_thickness + 2) is a multiple of 8, also not enforced
+            similarly for width the value should be such that width - (2*border_thickness + 4) is a multiple of 8 (e.g. 26 - (2*3 + 4) == 2*8) 
+            also not enforced
         */ 
         Entity& createUIButton(
             const std::string& id, 
@@ -160,7 +198,7 @@ class Scene {
             const SDL_Color& border_color=Game::default_text_color
         ) {
             auto& new_text_box(Game::manager->addEntity(id));
-            const int w = 24*text.size(); const int h = 40;
+            const int w = 26*text.size(); const int h = 42;
             int x = pos_x < 0 ? ((Game::SCREEN_WIDTH - w) + pos_x) : pos_x; 
             int y = pos_y < 0 ? ((Game::SCREEN_HEIGHT - h) + pos_y) : pos_y;
             new_text_box.addComponent<TextBoxComponent>(
@@ -270,25 +308,25 @@ class Scene {
             
             switch(id) {
                 case TILE_ROUGH:  {
-                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->rough_terrain_texture);
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->rough_terrain_texture);
                 } break;
                 case TILE_IMPASSABLE: { 
-                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->mountain_texture);
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->mountain_texture);
                     uint8_t* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
                     SetSolidTileNeighbors(neighbors, map_x, map_y, layout);
                 } break;
                 case TILE_NAVIGABLE: { 
                     // need to be in this order to render the foreground "above" the background
-                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->water_bg_texture);
-                    tile.addComponent<TileFGComponent>(map_x*width, map_y*width, width, width, id, map->water_fg_texture);
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->water_bg_texture);
+                    tile.addComponent<TileFGComponent>(map_x*width, map_y*width, width, width, id, this->water_fg_texture);
                 }
                 break;
                 case TILE_BASE_SPAWN: {
-                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->plain_terrain_texture);
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
                     createBaseBuilding("base", map_x*width, map_y*width, width);
                 } break;
                 default: 
-                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, map->plain_terrain_texture);
+                    tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
             }
             
             tile.addGroup(groupTiles);
@@ -342,6 +380,22 @@ class Scene {
                     std::cout << "RELEASE LEFT: " << pos << '\n';
                     for(auto& ui : this->ui_elements) {
                         if(ui->hasComponent<TextBoxComponent>()) {
+                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
+                                if(ui->getComponent<TextBoxComponent>().mouse_down) {
+                                    std::string button_id = ui->getIdentifier();
+                                    if(button_id == "button_single_player") {
+                                        printf("single-player\n");
+                                    } else if(button_id == "button_multiplayer") {
+                                        clean();
+                                        setScene(SceneType::MATCH_GAME);
+                                    } else if(button_id == "button_settings") {
+                                        printf("settings\n");
+                                    } else if(button_id == "button_quit") {
+                                        Game::isRunning = false;
+                                    }
+                                }                               
+                            }
                             ui->getComponent<TextBoxComponent>().mouse_down = false;
                         }
                     }
@@ -778,6 +832,7 @@ class Scene {
             this->fps_text->setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
             switch(this->st) {
                 case SceneType::MAIN_MENU: {
+                    for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
                     for(auto& ui : this->ui_elements) { ui->draw(); }
                 } break;
 
@@ -838,5 +893,6 @@ class Scene {
                     this->update_server = false;
                 } break;
             }
+            Game::manager->clearEntities();
         }
 };

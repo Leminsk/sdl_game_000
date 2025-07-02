@@ -17,13 +17,26 @@ class Map {
         uint32_t layout_width, layout_height;
         float world_layout_width, world_layout_height;
 
-        SDL_Texture* rough_terrain_texture     = TextureManager::LoadTexture("assets/tiles/rough.png");
-        SDL_Texture* mountain_texture = TextureManager::LoadTexture("assets/tiles/mountain.png");
-        SDL_Texture* water_bg_texture    = TextureManager::LoadTexture("assets/tiles/water_background.png");
-        SDL_Texture* water_fg_texture    = TextureManager::LoadTexture("assets/tiles/water_foreground.png");
-        SDL_Texture* plain_terrain_texture    = TextureManager::LoadTexture("assets/tiles/plain.png");
+        SDL_Texture* plain_terrain_texture;
+        SDL_Texture* rough_terrain_texture;
+        SDL_Texture* mountain_texture;
+        SDL_Texture* water_bg_texture;
+        SDL_Texture* water_fg_texture;
 
-        Map(std::string path, int dimension=1) {
+        Map(
+            std::string path, 
+            SDL_Texture* plain, 
+            SDL_Texture* rough,
+            SDL_Texture* mountain,
+            SDL_Texture* water_bg,
+            SDL_Texture* water_fg,
+            int dimension=1
+        ) {
+            this->plain_terrain_texture = plain;
+            this->rough_terrain_texture = rough;
+            this->mountain_texture = mountain;
+            this->water_bg_texture = water_bg;
+            this->water_fg_texture = water_fg;
             this->tile_width = dimension;
             this->loaded = LoadMapFile(path);
         }

@@ -92,8 +92,8 @@ class TextBoxComponent : public Component {
             this->srcRect.x = 0; this->srcRect.y = 0;
             this->srcRect.w = Game::SCREEN_WIDTH; this->srcRect.h = Game::SCREEN_HEIGHT;
             
-            this->destRect.x = this->inner_x + 1; this->destRect.y = this->inner_y + 1;
-            this->destRect.w = this->inner_w - 2; this->destRect.h = this->inner_h - 2;
+            this->destRect.x = this->inner_x + 2; this->destRect.y = this->inner_y + 2;
+            this->destRect.w = this->inner_w - 4; this->destRect.h = this->inner_h - 4;
 
             this->bgRect.x = this->inner_x; this->bgRect.y = this->inner_y;
             this->bgRect.w = this->inner_w; this->bgRect.h = this->inner_h;
