@@ -9,4 +9,5 @@
 #include "TileFGComponent.hpp"
 #include "Wireframe.hpp"
 #include "TextComponent.hpp"
+#include "TextBoxComponent.hpp"
 #include "DroneComponent.hpp"

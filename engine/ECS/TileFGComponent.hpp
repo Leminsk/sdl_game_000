@@ -43,8 +43,9 @@ class TileFGComponent : public Component {
 
         void update() override {
             // yes it's related to the frame rate but for this thing I don't care that much
-            float f = this->fraction * ((Game::FRAME_COUNT>>1) % this->amount_of_points);
-            entity->getComponent<TransformComponent>().position = rotation_center + (Vector2D(5.0f * cosf(f), 5.0f * sinf(f)) * randomFloat(Game::RNG, 0.95f, 1.05f));
+            float f = this->fraction * ((Game::FRAME_COUNT>>2) % this->amount_of_points);
+            // TODO: change some of these values when drones are passing by
+            entity->getComponent<TransformComponent>().position = rotation_center + (Vector2D(7.0f * cosf(f), 7.0f * sinf(f)) * randomFloat(Game::RNG, 0.98f, 1.02f));
         }
 
 };

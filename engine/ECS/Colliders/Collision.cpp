@@ -49,6 +49,13 @@ Vector2D projectionLineIntersectCircle(const CircleCollider& cir, const Vector2D
     return line_start + (line_vec * t);
 }
 
+bool Collision::pointInRect(float px, float py, float rx, float ry, float rw, float rh) {
+    return (
+        rx <= px && px <= (rx + rw) &&
+        ry <= py && py <= (ry + rh)
+    );
+}
+
 bool Collision::AABB(const RectangleCollider& recA, const RectangleCollider& recB) {
     if(
         recA.x + recA.w >= recB.x &&

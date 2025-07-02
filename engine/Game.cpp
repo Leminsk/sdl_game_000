@@ -23,7 +23,7 @@ float Game::AVERAGE_FPS;
 float Game::FRAME_DELTA = 0.0f;
 int Game::UNIT_COUNTER = 0;
 
-SDL_Color Game::bg_color{ 50, 5, 10, SDL_ALPHA_OPAQUE };
+SDL_Color Game::default_bg_color{ 50, 5, 10, SDL_ALPHA_OPAQUE };
 TTF_Font *Game::default_font;
 SDL_Color Game::default_text_color{ 249, 211, 0, SDL_ALPHA_OPAQUE };
 
@@ -120,13 +120,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::manager = new Manager();
 
     scene = new Scene();
-    scene->setScene(SceneType::MATCH_GAME);
+    scene->setScene(SceneType::MAIN_MENU);
 }
 
-void loadTransition() {
-    // scene->setLoadingScreen();
-    // Game::manager->clearEntities();
-}
+
 
 
 void Game::handleEvents() {

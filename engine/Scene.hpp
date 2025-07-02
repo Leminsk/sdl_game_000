@@ -11,6 +11,7 @@
 #include "ECS/MainColors.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
+#include "ECS/Colliders/Collision.hpp"
 
 #include "path_finding.hpp"
 #include "Camera.hpp"
@@ -22,6 +23,7 @@
 #include "networking/Server.hpp"
 
 // Scene is a helper class to initialize Managers and globals
+// I thought about making a separate class for each different Scene, but I think a fat class for all of them might save me from linking errors down the road
 class Scene {
     private:
         SceneType st;
@@ -63,11 +65,29 @@ class Scene {
 
         void setScene(SceneType t) {
             this->st = t;
+
+            Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 270, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+            this->fps_text = &fps_ui.getComponent<TextComponent>();
+
             switch(t) {
+                case SceneType::MAIN_MENU: {
+                    Game::default_bg_color = { 123, 82, 35, SDL_ALPHA_OPAQUE };
+
+                    
+                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+                    createUIButton(    "button_top_left",  40,  40, "Top Left",     Game::default_text_color, background_color, border_color);
+                    createUIButton(   "button_top_right", -40,  40, "Top Right",    Game::default_text_color, background_color, border_color);
+                    createUIButton( "button_bottom_left",  40, -40, "Bottom Left",  Game::default_text_color, background_color, border_color);
+                    createUIButton("button_bottom_right", -40, -40, "Bottom Right", Game::default_text_color, background_color, border_color);
+                } break;
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
                 case SceneType::MATCH_GAME: {
+                    Game::default_bg_color = { 50, 5, 10, SDL_ALPHA_OPAQUE };
+
                     this->map = new Map("assets/test3.bmp", Game::UNIT_SIZE<<1);
                     if(this->map->loaded) {
                         LoadMapRender();
@@ -84,27 +104,16 @@ class Scene {
                         createDrone(  0, 100, MainColors::RED);
                         createDrone(200, 200, MainColors::GREEN);
 
-                        Entity& fps_ui = createSimpleUIText("FPS_COUNTER", Game::SCREEN_WIDTH - 270, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
-                        this->fps_text = &fps_ui.getComponent<TextComponent>();
-                        createSimpleUIText("crosshair", 0, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
-                        createSimpleUIText("camera_zoom", 0, 30, Game::SCREEN_WIDTH/5, Game::SCREEN_HEIGHT/16);
+                        createUISimpleText("crosshair", 0, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+                        createUISimpleText("camera_zoom", 0, 30, Game::SCREEN_WIDTH/5, Game::SCREEN_HEIGHT/16);
 
                     } else {
                         printf("Map failed to load.\n");
                     }
                     
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
-
-
-        void setLoadingScreen() {
-
-        }
-
-
 
 
 
@@ -118,7 +127,12 @@ class Scene {
             new_drone.addGroup(groupDrones);
             return new_drone;
         }
-        Entity& createSimpleUIText(std::string id, int pos_x=0, int pos_y=0, int width=100, int height=10, std::string text="UI_TEXT") {
+        Entity& createUISimpleText(
+            const std::string& id, 
+            int pos_x=0, int pos_y=0, int width=100, int height=10, 
+            const std::string& text="SIMPLE_TEXT",
+            const SDL_Color& text_color=Game::default_text_color            
+        ) {
             auto& new_ui_text(Game::manager->addEntity(id));
             new_ui_text.addComponent<TextComponent>(
                 text, 
@@ -128,6 +142,35 @@ class Scene {
             );
             new_ui_text.addGroup(groupUI);
             return new_ui_text;
+        }
+        /* 
+            if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
+            1 char -> width 24
+            1 line -> height 40 // these values look okay
+            ideally height should have a value such that height - (2*border_thickness + 2) is a multiple of 16 (e.g. 40 - (2*3 + 2) == 2*16), 
+            but this is not enforced in TextBoxComponent
+            similarly for width the value should be such that width - (2*border_thickness + 2) is a multiple of 8, also not enforced
+        */ 
+        Entity& createUIButton(
+            const std::string& id, 
+            int pos_x=0, int pos_y=0,
+            const std::string& text="TEXT_BOX",
+            const SDL_Color& text_color=Game::default_text_color, 
+            const SDL_Color& bg_color=Game::default_bg_color, 
+            const SDL_Color& border_color=Game::default_text_color
+        ) {
+            auto& new_text_box(Game::manager->addEntity(id));
+            const int w = 24*text.size(); const int h = 40;
+            int x = pos_x < 0 ? ((Game::SCREEN_WIDTH - w) + pos_x) : pos_x; 
+            int y = pos_y < 0 ? ((Game::SCREEN_HEIGHT - h) + pos_y) : pos_y;
+            new_text_box.addComponent<TextBoxComponent>(
+                text, 
+                x, y, w, h,
+                text_color, bg_color, border_color,
+                3 // fixed border thickness for now
+            );
+            new_text_box.addGroup(groupUI);
+            return new_text_box;
         }
         Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
             auto& building(Game::manager->addEntity(id));
@@ -270,8 +313,48 @@ class Scene {
 
 
 
+        void handleMouseMainMenu(SDL_MouseButtonEvent& b) {
+            Vector2D pos = Vector2D(b.x, b.y);
+            switch(b.button) {
+                case SDL_BUTTON_LEFT: {
+                    std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
+                    for(auto& ui : this->ui_elements) {
+                        if(ui->hasComponent<TextBoxComponent>()) {
+                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
+                                ui->getComponent<TextBoxComponent>().mouse_down = true;
+                            }
+                        }
+                    }
+                } break;
+                    
+                case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
 
-        void handleMouse(SDL_MouseButtonEvent& b) {
+                case SDL_BUTTON_RIGHT: {
+                    std::cout << "MOUSE BUTTON RIGHT: " << pos << '\n';
+                } break;
+            }
+        }
+        void handleMouseMainMenuRelease(SDL_MouseButtonEvent& b) {
+            Vector2D pos = Vector2D(b.x, b.y);
+            switch(b.button) {
+                case SDL_BUTTON_LEFT: {
+                    std::cout << "RELEASE LEFT: " << pos << '\n';
+                    for(auto& ui : this->ui_elements) {
+                        if(ui->hasComponent<TextBoxComponent>()) {
+                            ui->getComponent<TextBoxComponent>().mouse_down = false;
+                        }
+                    }
+                } break;
+                    
+                case SDL_BUTTON_MIDDLE: std::cout << "RELEASE MIDDLE\n"; break;
+
+                case SDL_BUTTON_RIGHT: {
+                    std::cout << "RELEASE RIGHT: " << pos << '\n';
+                } break;
+            }
+        }
+        void handleMouseMatchGame(SDL_MouseButtonEvent& b) {
             Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
             switch(b.button) {
                 case SDL_BUTTON_LEFT: {
@@ -424,6 +507,9 @@ class Scene {
 
         void handleEventsPrePoll() {
             switch(this->st) {
+                case SceneType::MAIN_MENU: {} break;
+
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -492,14 +578,45 @@ class Scene {
 
                     }
                 } break;
-
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 
         void handleEventsPollEvent() {
             switch(this->st) {
+                case SceneType::MAIN_MENU: {
+                    while( SDL_PollEvent(&this->event) ) {
+                        switch(this->event.type) {
+                            case SDL_QUIT: {
+                                Game::isRunning = false;
+                                return;
+                            } break;
+                            case SDL_MOUSEBUTTONDOWN: {
+                                handleMouseMainMenu(this->event.button);
+                            } break;
+                            case SDL_MOUSEBUTTONUP: {
+                                handleMouseMainMenuRelease(this->event.button);
+                            } break;
+                            case SDL_WINDOWEVENT: {
+                                switch(this->event.window.event) {
+                                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
+                                        std::cout << "Window Size Change\n";
+                                        Game::SCREEN_WIDTH = this->event.window.data1;
+                                        Game::SCREEN_HEIGHT = this->event.window.data2;
+                                        Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
+                                        Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
+                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - 270, 0, this->fps_text->w, this->fps_text->h);
+                                    } break;
+                                    case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
+                                    case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
+                                    case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
+                                    case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
+                                }
+                            } break;
+                        }                
+                    }
+                } break;
+
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -511,7 +628,7 @@ class Scene {
                         }
 
                         if(this->event.type == SDL_MOUSEBUTTONDOWN) {
-                            handleMouse(this->event.button);
+                            handleMouseMatchGame(this->event.button);
                         }
 
                         if(this->event.type == SDL_MOUSEWHEEL) {
@@ -542,8 +659,6 @@ class Scene {
                         
                     }
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 
@@ -551,12 +666,19 @@ class Scene {
             const uint8_t *keystates = SDL_GetKeyboardState(NULL);
 
             switch(this->st) {
+                case SceneType::MAIN_MENU: {
+                    if(keystates[SDL_SCANCODE_ESCAPE]) { 
+                            Game::isRunning = false; 
+                    } 
+                } break;
+
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
                 case SceneType::MATCH_GAME: {
-                if(keystates[SDL_SCANCODE_ESCAPE]) { 
-                        Game::isRunning = false; 
+                    if(keystates[SDL_SCANCODE_ESCAPE]) { 
+                            Game::isRunning = false; 
                     } else {
                         if(keystates[SDL_SCANCODE_O] && !this->is_client) {
                             if(this->is_server) { destroyServer(); }
@@ -610,15 +732,18 @@ class Scene {
                         }     
                     }
 
-                    this->fps_text->setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 
         void update() {
             switch(this->st) {
+                case SceneType::MAIN_MENU: {
+                    Game::manager->refresh();
+                    Game::manager->preUpdate();
+                    Game::manager->update();
+                } break;
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -646,13 +771,16 @@ class Scene {
                         "Camera zoom: " + format_decimal(Game::camera_zoom, 1, 1, false)
                     );
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 
         void render() {
+            this->fps_text->setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
             switch(this->st) {
+                case SceneType::MAIN_MENU: {
+                    for(auto& ui : this->ui_elements) { ui->draw(); }
+                } break;
+
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -686,13 +814,13 @@ class Scene {
                     TextureManager::DrawLine(   line_top[0],    line_top[1], Game::default_text_color);
                     TextureManager::DrawLine(line_bottom[0], line_bottom[1], Game::default_text_color);
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 
         void clean() {
             switch(this->st) {
+                case SceneType::MAIN_MENU: {} break;
+                
                 case SceneType::LOBBY: {} break;
                 case SceneType::SETTINGS: {} break;
 
@@ -709,8 +837,6 @@ class Scene {
                     this->PLAYER_CLIENT_ID = -1;
                     this->update_server = false;
                 } break;
-
-                case SceneType::MAIN_MENU: {} break;
             }
         }
 };

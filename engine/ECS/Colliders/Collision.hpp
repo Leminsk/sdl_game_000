@@ -8,6 +8,7 @@
 
 class Collision {
     public:
+        static bool pointInRect(float px, float py, float rx, float ry, float rw, float rh);
         static bool AABB(const RectangleCollider& recA, const RectangleCollider& recB);
         static bool AABB(const Collider& colA, const Collider& colB);
         static bool ConvexPolygonCircle(const Collider& conv_pol, const CircleCollider& cir);
