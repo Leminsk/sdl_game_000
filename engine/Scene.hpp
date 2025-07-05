@@ -92,10 +92,11 @@ class Scene {
                     
                     SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
                     SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    createUIButton("button_single_player",  50,   50, "Single-Player", Game::default_text_color, background_color, border_color);
-                    createUIButton(  "button_multiplayer",  50,  200,   "Multiplayer", Game::default_text_color, background_color, border_color);
-                    createUIButton(     "button_settings",  50, -200,      "Settings", Game::default_text_color, background_color, border_color);
-                    createUIButton(         "button_quit",  50,  -50,          "Quit", Game::default_text_color, background_color, border_color);
+                    createUIButton("button_single_player", "Single-Player", 50,   50, Game::default_text_color, background_color, border_color);
+                    createUIButton(  "button_multiplayer",   "Multiplayer", 50,  200, Game::default_text_color, background_color, border_color);
+                    createUIButton(     "button_settings",      "Settings", 50, -200, Game::default_text_color, background_color, border_color);
+                    createUIButton(         "button_quit",          "Quit", 50,  -50, Game::default_text_color, background_color, border_color);
+                    createUIMultilineText("multiline", { "first_line", "second_line" }, -10, 50, Game::default_text_color, background_color, border_color);
                 } break;
 
                 case SceneType::LOBBY: {} break;
@@ -180,35 +181,39 @@ class Scene {
             new_ui_text.addGroup(groupUI);
             return new_ui_text;
         }
-        /* 
-            if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-            1 char -> width 26
-            1 line -> height 42 // these values look okay
-            ideally height should have a value such that height - (2*border_thickness + 4) is a multiple of 16 (e.g. 42 - (2*3 + 4) == 2*16), 
-            but this is not enforced in TextBoxComponent
-            similarly for width the value should be such that width - (2*border_thickness + 4) is a multiple of 8 (e.g. 26 - (2*3 + 4) == 2*8) 
-            also not enforced
-        */ 
+        // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
         Entity& createUIButton(
             const std::string& id, 
-            int pos_x=0, int pos_y=0,
             const std::string& text="TEXT_BOX",
+            int pos_x=0, int pos_y=0,
             const SDL_Color& text_color=Game::default_text_color, 
             const SDL_Color& bg_color=Game::default_bg_color, 
             const SDL_Color& border_color=Game::default_text_color
         ) {
             auto& new_text_box(Game::manager->addEntity(id));
-            const int w = 26*text.size(); const int h = 42;
-            int x = pos_x < 0 ? ((Game::SCREEN_WIDTH - w) + pos_x) : pos_x; 
-            int y = pos_y < 0 ? ((Game::SCREEN_HEIGHT - h) + pos_y) : pos_y;
             new_text_box.addComponent<TextBoxComponent>(
-                text, 
-                x, y, w, h,
-                text_color, bg_color, border_color,
-                3 // fixed border thickness for now
+                text, pos_x, pos_y,
+                text_color, bg_color, border_color
             );
             new_text_box.addGroup(groupUI);
             return new_text_box;
+        }
+        // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
+        Entity& createUIMultilineText(
+            const std::string& id, 
+            const std::vector<std::string>& lines,
+            int pos_x=0, int pos_y=0,
+            const SDL_Color& text_color=Game::default_text_color, 
+            const SDL_Color& bg_color=Game::default_bg_color, 
+            const SDL_Color& border_color=Game::default_text_color
+        ) {
+            auto& new_multiline_text(Game::manager->addEntity(id));
+            new_multiline_text.addComponent<TextBoxComponent>(
+                lines, pos_x, pos_y,
+                text_color, bg_color, border_color
+            );
+            new_multiline_text.addGroup(groupUI);
+            return new_multiline_text;            
         }
         Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
             auto& building(Game::manager->addEntity(id));
