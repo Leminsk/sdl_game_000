@@ -164,6 +164,10 @@ class Manager {
         void clearEntities() { 
             this->entities.clear();
             this->entities.shrink_to_fit();
+            for(int i=0; i<maxGroups; ++i) {
+                this->groupedEntities[i].clear();
+                this->groupedEntities[i].shrink_to_fit();
+            }
         }
 
         void AddToGroup(Entity* mEntity, Group mGroup) {

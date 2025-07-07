@@ -100,7 +100,14 @@ class Scene {
                 } break;
 
                 case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+
+                case SceneType::SETTINGS: {
+                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+                    
+
+                    createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
+                } break;
 
                 case SceneType::MATCH_GAME: {
                     Game::default_bg_color = { 50, 5, 10, SDL_ALPHA_OPAQUE };
@@ -391,13 +398,18 @@ class Scene {
                                     std::string button_id = ui->getIdentifier();
                                     if(button_id == "button_single_player") {
                                         printf("single-player\n");
+                                        break;
                                     } else if(button_id == "button_multiplayer") {
                                         clean();
                                         setScene(SceneType::MATCH_GAME);
+                                        break;
                                     } else if(button_id == "button_settings") {
-                                        printf("settings\n");
+                                        clean();
+                                        setScene(SceneType::SETTINGS);
+                                        break;
                                     } else if(button_id == "button_quit") {
                                         Game::isRunning = false;
+                                        break;
                                     }
                                 }                               
                             }
@@ -413,6 +425,55 @@ class Scene {
                 } break;
             }
         }
+
+        void handleMouseSettingsMenu(SDL_MouseButtonEvent& b) {
+            Vector2D pos = Vector2D(b.x, b.y);
+            switch(b.button) {
+                case SDL_BUTTON_LEFT: {
+                    std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
+                    for(auto& ui : this->ui_elements) {
+                        if(ui->hasComponent<TextBoxComponent>()) {
+                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
+                                ui->getComponent<TextBoxComponent>().mouse_down = true;
+                            }
+                        }
+                    }
+                } break;
+            }
+        }
+        void handleMouseSettingsMenuRelease(SDL_MouseButtonEvent& b) {
+            Vector2D pos = Vector2D(b.x, b.y);
+            switch(b.button) {
+                case SDL_BUTTON_LEFT: {
+                    std::cout << "RELEASE LEFT: " << pos << '\n';
+                    for(auto& ui : this->ui_elements) {
+                        if(ui->hasComponent<TextBoxComponent>()) {
+                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
+                                if(ui->getComponent<TextBoxComponent>().mouse_down) {
+                                    std::string button_id = ui->getIdentifier();
+                                    if(button_id == "button_back") {
+                                        clean();
+                                        setScene(SceneType::MAIN_MENU);
+                                        break;
+                                    } else if(button_id == "button_SOMEBUTTON") {
+                                        printf("some action\n");
+                                        break;
+                                    }
+                                }                               
+                            }
+                            ui->getComponent<TextBoxComponent>().mouse_down = false;
+                        }
+                    }
+                } break;
+            }
+        }
+
+
+
+
+
         void handleMouseMatchGame(SDL_MouseButtonEvent& b) {
             Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
             switch(b.button) {
@@ -677,7 +738,39 @@ class Scene {
 
 
                 case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+
+                case SceneType::SETTINGS: {
+                    while( SDL_PollEvent(&this->event) ) {
+                        switch(this->event.type) {
+                            case SDL_QUIT: {
+                                Game::isRunning = false;
+                                return;
+                            } break;
+                            case SDL_MOUSEBUTTONDOWN: {
+                                handleMouseSettingsMenu(this->event.button);
+                            } break;
+                            case SDL_MOUSEBUTTONUP: {
+                                handleMouseSettingsMenuRelease(this->event.button);
+                            } break;
+                            case SDL_WINDOWEVENT: {
+                                switch(this->event.window.event) {
+                                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
+                                        std::cout << "Window Size Change\n";
+                                        Game::SCREEN_WIDTH = this->event.window.data1;
+                                        Game::SCREEN_HEIGHT = this->event.window.data2;
+                                        Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
+                                        Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
+                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - 270, 0, this->fps_text->w, this->fps_text->h);
+                                    } break;
+                                    case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
+                                    case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
+                                    case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
+                                    case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
+                                }
+                            } break;
+                        }                
+                    }
+                } break;
 
                 case SceneType::MATCH_GAME: {
                     while( SDL_PollEvent(&this->event) ) {
@@ -804,7 +897,12 @@ class Scene {
                 } break;
 
                 case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+
+                case SceneType::SETTINGS: {
+                    Game::manager->refresh();
+                    Game::manager->preUpdate();
+                    Game::manager->update();
+                } break;
 
                 case SceneType::MATCH_GAME: {
                     for(int i=0; i<this->drones.size(); ++i) {
@@ -842,7 +940,19 @@ class Scene {
                 } break;
 
                 case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+
+                case SceneType::SETTINGS: {
+                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+                    SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
+                    SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
+                    
+                    TextureManager::DrawRect(&borderRect, border_color);
+                    TextureManager::DrawRect(&backgroundRect, background_color);
+
+                    for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
+                    for(auto& ui : this->ui_elements) { ui->draw(); }
+                } break;
 
                 case SceneType::MATCH_GAME: {
                     for(auto& t : this->tiles) { t->draw(); }
