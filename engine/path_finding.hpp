@@ -171,8 +171,8 @@ float nodeTypeCost(const MeshNode& n, const std::vector<std::vector<uint8_t>>& m
     // FAR FUTURE TODO: make these values related to techs
     switch(mesh[n.y][n.x]) {
         case TILE_PLAIN: return 0.0f;
-        case TILE_ROUGH: return 30.0f;
-        case TILE_NAVIGABLE: return 10.0f;
+        case TILE_ROUGH: return 50.0f;
+        case TILE_NAVIGABLE: return 20.0f;
         // case TILE_BASE_SPAWN: <-
         // case TILE_IMPASSABLE: <- these two never get to be walkable
         default: return 0.0f;

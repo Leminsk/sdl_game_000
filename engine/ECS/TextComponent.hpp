@@ -38,13 +38,11 @@ class TextComponent : public Component {
             setText(text);
         }
         TextComponent(
-            std::string text, float pos_x, float pos_y, float width, float height, SDL_Color color=Game::default_text_color, 
+            std::string text, float pos_x, float pos_y, SDL_Color color=Game::default_text_color, 
             bool fixed_to_screen=false, const char* path=nullptr
         ) {
             this->x = pos_x;
             this->y = pos_y;
-            this->w = width;
-            this->h = height;
             this->fixed = fixed_to_screen;
             this->font_path = path;
             this->color.r = color.r; this->color.g = color.g; this->color.b = color.b; this->color.a = SDL_ALPHA_OPAQUE;
@@ -69,6 +67,9 @@ class TextComponent : public Component {
             this->content = text;
             int width, height;
             this->texture = TextureManager::LoadTextTexture(text.c_str(), this->color, width, height, path);
+            
+            this->w = 16 * text.size();
+            this->h = 32;
         }
         void setRenderPos(float world_x, float world_y, float width, float height) {
             this->x = world_x; this->y = world_y; this->w = width; this->h = height;

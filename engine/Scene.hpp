@@ -75,7 +75,7 @@ class Scene {
         void setScene(SceneType t) {
             this->st = t;
 
-            Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 270, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
+            Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 163, 3, "FPS:000.00");
             this->fps_text = &fps_ui.getComponent<TextComponent>();
 
             switch(t) {
@@ -137,8 +137,8 @@ class Scene {
                         createDrone(  0, 100, MainColors::RED);
                         createDrone(200, 200, MainColors::GREEN);
 
-                        createUISimpleText("crosshair", 0, 0, Game::SCREEN_WIDTH/3, Game::SCREEN_HEIGHT/16);
-                        createUISimpleText("camera_zoom", 0, 30, Game::SCREEN_WIDTH/5, Game::SCREEN_HEIGHT/16);
+                        createUISimpleText("crosshair", 0, 0, "Crosshair: (-0000,-0000)");
+                        createUISimpleText("camera_zoom", 0, 30, "Camera zoom: 0.0");
 
                     } else {
                         printf("Map failed to load.\n");
@@ -156,7 +156,7 @@ class Scene {
             auto& new_drone(Game::manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
             new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
             new_drone.addComponent<Wireframe>();
-            new_drone.addComponent<TextComponent>("", 0, 0, 160.0f, 16.0f);
+            new_drone.addComponent<TextComponent>("", 0, 0);
             new_drone.addGroup(groupDrones);
             return new_drone;
         }
@@ -174,15 +174,13 @@ class Scene {
         }
         Entity& createUISimpleText(
             const std::string& id, 
-            int pos_x=0, int pos_y=0, int width=100, int height=10, 
+            int pos_x=0, int pos_y=0,
             const std::string& text="SIMPLE_TEXT",
             const SDL_Color& text_color=Game::default_text_color            
         ) {
             auto& new_ui_text(Game::manager->addEntity(id));
             new_ui_text.addComponent<TextComponent>(
-                text, 
-                static_cast<float>(pos_x), static_cast<float>(pos_y),
-                static_cast<float>(width), static_cast<float>(height),
+                text, pos_x, pos_y,
                 Game::default_text_color, true
             );
             new_ui_text.addGroup(groupUI);
@@ -724,7 +722,7 @@ class Scene {
                                         Game::SCREEN_HEIGHT = this->event.window.data2;
                                         Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
                                         Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - 270, 0, this->fps_text->w, this->fps_text->h);
+                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
                                     } break;
                                     case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
                                     case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
@@ -760,7 +758,7 @@ class Scene {
                                         Game::SCREEN_HEIGHT = this->event.window.data2;
                                         Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
                                         Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - 270, 0, this->fps_text->w, this->fps_text->h);
+                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
                                     } break;
                                     case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
                                     case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
@@ -800,7 +798,7 @@ class Scene {
                                     Game::SCREEN_HEIGHT = this->event.window.data2;
                                     Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
                                     Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                                    this->fps_text->setRenderPos(Game::SCREEN_WIDTH - 270, 0, this->fps_text->w, this->fps_text->h);
+                                    this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
                                 } break;
                                 case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
                                 case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
