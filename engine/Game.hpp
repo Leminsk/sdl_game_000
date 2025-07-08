@@ -24,6 +24,7 @@ class Game {
         static float AVERAGE_FPS;
         static float FRAME_DELTA;
         static bool isRunning;
+        static SDL_Window *window;
         static SDL_Renderer *renderer;
         static SDL_Event event;
 
@@ -73,6 +74,5 @@ class Game {
 
     private:
         int cnt = 0;
-        SDL_Window *window;
 
 };

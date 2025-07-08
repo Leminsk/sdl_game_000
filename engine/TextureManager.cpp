@@ -5,7 +5,7 @@
 SDL_Texture* TextureManager::LoadTexture(const char* texture) {
     SDL_Surface* tempSurface = IMG_Load(texture);
     if(tempSurface == NULL) {
-        SDL_Log("Unable to render surface. SDL_ttf Error: %s\n", SDL_GetError());
+        SDL_Log("Unable to render surface. SDL_Image Error: %s\n", SDL_GetError());
         return NULL;
     }
     SDL_Texture* tex = SDL_CreateTextureFromSurface(Game::renderer, tempSurface);

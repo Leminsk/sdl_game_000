@@ -171,16 +171,19 @@ float nodeTypeCost(const MeshNode& n, const std::vector<std::vector<uint8_t>>& m
     // FAR FUTURE TODO: make these values related to techs
     switch(mesh[n.y][n.x]) {
         case TILE_PLAIN: return 0.0f;
-        case TILE_ROUGH: return 50.0f;
-        case TILE_NAVIGABLE: return 20.0f;
+        case TILE_ROUGH: return 20.0f;
+        case TILE_NAVIGABLE: return 10.0f;
         // case TILE_BASE_SPAWN: <-
         // case TILE_IMPASSABLE: <- these two never get to be walkable
         default: return 0.0f;
     }
 }
-// I changed my mind a bit
+// I changed my mind again. 
+// Maybe I'll reintroduce tile costs in some other way, 
+// but if I just add it up here, the average runtime of path finding for 1 drone jumps to 2.3ms which is kinda bad. (graph exploration grows a lot more)
+// If I leave it with just the node distance, it usually stays under 1ms.
 float heuristicCost(const MeshNode& n, const MeshNode& dest, const std::vector<std::vector<uint8_t>>& mesh) {
-    return NodeDistance(n, dest) + nodeTypeCost(n, mesh);
+    return NodeDistance(n, dest);// + nodeTypeCost(n, mesh);
 }
 
 

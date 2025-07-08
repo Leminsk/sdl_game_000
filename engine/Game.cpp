@@ -28,8 +28,10 @@ TTF_Font *Game::default_font;
 SDL_Color Game::default_text_color{ 249, 211, 0, SDL_ALPHA_OPAQUE };
 
 SDL_Renderer *Game::renderer = nullptr;
+SDL_Window *Game::window = nullptr;
 
-SDL_Texture *Game::unit_tex, *Game::building_tex;
+SDL_Texture *Game::unit_tex = nullptr;
+SDL_Texture *Game::building_tex = nullptr;
 
 float Game::world_map_layout_width;
 float Game::world_map_layout_height;
@@ -91,9 +93,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::SCREEN_HEIGHT = height;
     Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
-    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
     if (fullscreen) {
-        flags |= SDL_WINDOW_FULLSCREEN;
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }
     
     Game::window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
@@ -101,7 +103,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         std::cout << "Window created\n";
     }
 
-    Game::renderer = SDL_CreateRenderer(window, -1, 0);
+    Game::renderer = SDL_CreateRenderer(Game::window, -1, 0);
     if (Game::renderer) {
         SDL_SetRenderDrawColor(Game::renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
         std::cout << "Renderer created\n";
@@ -112,10 +114,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::camera_position = Vector2D(0,0);
     Game::camera_velocity = Vector2D(0,0);
     Game::camera_zoom = 1.0f;
-
-    // white helps with color modulation
-    Game::unit_tex     = TextureManager::LoadTexture("assets/white_circle.png");
-    Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
 
     Game::manager = new Manager();
 

@@ -28,13 +28,15 @@ class Scene {
     private:
         SceneType st;
         SDL_Event event;
+        bool load_textures = true;
+
 
         // --------------------------------  TEXTURES  --------------------------------
-        SDL_Texture* plain_terrain_texture = TextureManager::LoadTexture("assets/tiles/plain.png");
-        SDL_Texture* rough_terrain_texture = TextureManager::LoadTexture("assets/tiles/rough.png");
-        SDL_Texture* mountain_texture      = TextureManager::LoadTexture("assets/tiles/mountain.png");
-        SDL_Texture* water_bg_texture      = TextureManager::LoadTexture("assets/tiles/water_background.png");
-        SDL_Texture* water_fg_texture      = TextureManager::LoadTexture("assets/tiles/water_foreground.png");
+        SDL_Texture* plain_terrain_texture;
+        SDL_Texture* rough_terrain_texture;
+        SDL_Texture* mountain_texture;
+        SDL_Texture* water_bg_texture;
+        SDL_Texture* water_fg_texture;
         // -------------------------------- ---------- --------------------------------
 
         // -------------------------------- MATCH_GAME --------------------------------
@@ -71,8 +73,24 @@ class Scene {
         Scene() {}
         ~Scene() {}
 
+        void loadTextures() {
+            // white helps with color modulation
+            Game::unit_tex     = TextureManager::LoadTexture("assets/white_circle.png");
+            Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
+
+            this->plain_terrain_texture = TextureManager::LoadTexture("assets/tiles/plain.png");
+            this->rough_terrain_texture = TextureManager::LoadTexture("assets/tiles/rough.png");
+            this->mountain_texture      = TextureManager::LoadTexture("assets/tiles/mountain.png");
+            this->water_bg_texture      = TextureManager::LoadTexture("assets/tiles/water_background.png");
+            this->water_fg_texture      = TextureManager::LoadTexture("assets/tiles/water_foreground.png");
+
+            this->load_textures = false;
+        }
+
 
         void setScene(SceneType t) {
+            // if this texture is null, all others are also null
+            if(Game::unit_tex == nullptr || this->load_textures) { loadTextures(); }
             this->st = t;
 
             Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 163, 3, "FPS:000.00");
@@ -93,10 +111,11 @@ class Scene {
                     SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
                     SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
                     createUIButton("button_single_player", "Single-Player", 50,   50, Game::default_text_color, background_color, border_color);
-                    createUIButton(  "button_multiplayer",   "Multiplayer", 50,  200, Game::default_text_color, background_color, border_color);
-                    createUIButton(     "button_settings",      "Settings", 50, -200, Game::default_text_color, background_color, border_color);
+                    createUIButton(  "button_multiplayer",   "Multiplayer", 50,  114, Game::default_text_color, background_color, border_color);
+                    createUIButton(     "button_settings",      "Settings", 50,  178, Game::default_text_color, background_color, border_color);
+
                     createUIButton(         "button_quit",          "Quit", 50,  -50, Game::default_text_color, background_color, border_color);
-                    createUIMultilineText("multiline", { "first_line", "second_line" }, -10, 50, Game::default_text_color, background_color, border_color);
+                    createUIMultilineText("multiline", { "first line", "second line", " ", "fourth line" }, -10, 50, Game::default_text_color, background_color, border_color);
                 } break;
 
                 case SceneType::LOBBY: {} break;
@@ -105,6 +124,11 @@ class Scene {
                     SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
                     SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
                     
+                    // TODO: store these resolutions in some kind of table or hashmap
+                    createUIButton("button_res_SVGA",   " 800 x  600",  50,  50, Game::default_text_color, background_color, border_color);
+                    createUIButton("button_res_WXGA",   "1280 x  720",  50, 114, Game::default_text_color, background_color, border_color);
+                    createUIButton("button_res_1.56M3", "1440 x 1080",  50, 178, Game::default_text_color, background_color, border_color);
+                    createUIButton("button_res_FHD",    "1920 x 1080",  50, 242, Game::default_text_color, background_color, border_color);
 
                     createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
                 } break;
@@ -440,6 +464,17 @@ class Scene {
                 } break;
             }
         }
+        void changeScreenResolution(unsigned int width, unsigned int height) {
+            SDL_DestroyWindow(Game::window);
+            SDL_DestroyRenderer(Game::renderer);
+            const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
+            Game::window = SDL_CreateWindow("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
+            Game::renderer = SDL_CreateRenderer(Game::window, -1, 0);
+            Game::SCREEN_WIDTH = width;
+            Game::SCREEN_HEIGHT = height;
+            Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+            this->load_textures = true;
+        }
         void handleMouseSettingsMenuRelease(SDL_MouseButtonEvent& b) {
             Vector2D pos = Vector2D(b.x, b.y);
             switch(b.button) {
@@ -455,8 +490,25 @@ class Scene {
                                         clean();
                                         setScene(SceneType::MAIN_MENU);
                                         break;
-                                    } else if(button_id == "button_SOMEBUTTON") {
-                                        printf("some action\n");
+                                    } else if(button_id == "button_res_SVGA") {
+                                        changeScreenResolution(800, 600);
+                                        clean();
+                                        setScene(SceneType::SETTINGS);
+                                        break;
+                                    } else if(button_id == "button_res_WXGA") {
+                                        changeScreenResolution(1280, 720);
+                                        clean();
+                                        setScene(SceneType::SETTINGS);
+                                        break;
+                                    } else if(button_id == "button_res_1.56M3") {
+                                        changeScreenResolution(1440, 1080);
+                                        clean();
+                                        setScene(SceneType::SETTINGS);
+                                        break;
+                                    } else if(button_id == "button_res_FHD") {
+                                        changeScreenResolution(1920, 1080);
+                                        clean();
+                                        setScene(SceneType::SETTINGS);
                                         break;
                                     }
                                 }                               
@@ -941,7 +993,7 @@ class Scene {
 
                 case SceneType::SETTINGS: {
                     SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+                    SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
                     SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
                     SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
                     
