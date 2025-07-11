@@ -6,6 +6,7 @@
 #include "utils.hpp"
 #include "Map.hpp"
 #include "TextureManager.hpp"
+#include "AudioManager.hpp"
 
 #include "ECS/ECS.hpp"
 #include "ECS/MainColors.hpp"
@@ -39,6 +40,13 @@ class Scene {
         SDL_Texture* water_fg_texture;
         // -------------------------------- ---------- --------------------------------
 
+        // --------------------------------  SOUND  --------------------------------
+        Mix_Music* music_main_menu = NULL;
+        Mix_Chunk* sound_button = NULL;
+        // --------------------------------  -----  --------------------------------
+
+
+
         // -------------------------------- MATCH_GAME --------------------------------
         Map* map;
         Client* client;
@@ -71,7 +79,17 @@ class Scene {
         TextComponent* fps_text;
 
         Scene() {}
-        ~Scene() {}
+        ~Scene() {
+            Mix_HaltMusic();
+            Mix_FreeMusic(this->music_main_menu);
+            Mix_FreeChunk(this->sound_button);
+
+            SDL_DestroyTexture(this->plain_terrain_texture);
+            SDL_DestroyTexture(this->plain_terrain_texture);
+            SDL_DestroyTexture(this->mountain_texture);
+            SDL_DestroyTexture(this->water_bg_texture);
+            SDL_DestroyTexture(this->water_fg_texture);
+        }
 
         void loadTextures() {
             // white helps with color modulation
@@ -87,6 +105,11 @@ class Scene {
             this->load_textures = false;
         }
 
+        void loadAudio() {
+            this->music_main_menu = AudioManager::LoadMusic("assets/audio/music/f-zero-ending_theme_dsp_1.wav");
+            this->sound_button = AudioManager::LoadSound("assets/audio/sfx/mario64-bowser_road_channel_9-noise.wav");
+        }
+
 
         void setScene(SceneType t) {
             // if this texture is null, all others are also null
@@ -98,6 +121,13 @@ class Scene {
 
             switch(t) {
                 case SceneType::MAIN_MENU: {
+                    if(this->music_main_menu == NULL) { 
+                        Mix_HaltMusic();
+                        loadAudio(); 
+                        Mix_PlayMusic(this->music_main_menu, -1);
+                    }
+                    
+
                     Game::default_bg_color = { 123, 82, 35, SDL_ALPHA_OPAQUE };
 
                     const int w = 64;
@@ -134,6 +164,7 @@ class Scene {
                 } break;
 
                 case SceneType::MATCH_GAME: {
+                    Mix_HaltMusic();
                     Game::default_bg_color = { 50, 5, 10, SDL_ALPHA_OPAQUE };
 
                     this->map = new Map(
@@ -420,16 +451,20 @@ class Scene {
                                     std::string button_id = ui->getIdentifier();
                                     if(button_id == "button_single_player") {
                                         printf("single-player\n");
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
                                         break;
                                     } else if(button_id == "button_multiplayer") {
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
                                         clean();
                                         setScene(SceneType::MATCH_GAME);
                                         break;
                                     } else if(button_id == "button_settings") {
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
                                         clean();
                                         setScene(SceneType::SETTINGS);
                                         break;
                                     } else if(button_id == "button_quit") {
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
                                         Game::isRunning = false;
                                         break;
                                     }
@@ -465,6 +500,7 @@ class Scene {
             }
         }
         void changeScreenResolution(unsigned int width, unsigned int height) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
             SDL_DestroyWindow(Game::window);
             SDL_DestroyRenderer(Game::renderer);
             const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
@@ -487,6 +523,7 @@ class Scene {
                                 if(ui->getComponent<TextBoxComponent>().mouse_down) {
                                     std::string button_id = ui->getIdentifier();
                                     if(button_id == "button_back") {
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
                                         clean();
                                         setScene(SceneType::MAIN_MENU);
                                         break;

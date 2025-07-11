@@ -77,6 +77,19 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
         return;
     }
 
+    const int img_flags = IMG_INIT_JPG | IMG_INIT_PNG;
+    if(IMG_Init(img_flags) != img_flags) {
+        SDL_Log("SDL_image could not initialize. SDL_image error %s\n", IMG_GetError());
+        Game::isRunning = false;
+        return;
+    }
+
+    if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        SDL_Log("SDL_mixer could not initialize. SDL_mixer error: %s\n", Mix_GetError());
+        Game::isRunning = false;
+        return;
+    }
+
     if(TTF_Init() != 0) {
         SDL_Log("SDL_ttf could not initialize. SDL_ttf Error: %s\n", SDL_GetError());
         Game::isRunning = false;
@@ -143,7 +156,12 @@ void Game::render() {
 }
 
 void Game::clean() {
+    scene->clean();
     scene->~Scene();
+    SDL_DestroyTexture(Game::unit_tex);
+    SDL_DestroyTexture(Game::building_tex);
+    Game::unit_tex = nullptr;
+    Game::building_tex = nullptr;
     Game::manager = nullptr;
     
     TTF_CloseFont(Game::default_font);
@@ -153,6 +171,7 @@ void Game::clean() {
     SDL_DestroyRenderer(Game::renderer);
     Game::window = nullptr;
     Game::renderer = nullptr;
+    Mix_Quit();
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();

@@ -2,8 +2,8 @@
 
 // When in doubt: https://stackoverflow.com/questions/21007329/what-is-an-sdl-renderer
 
-SDL_Texture* TextureManager::LoadTexture(const char* texture) {
-    SDL_Surface* tempSurface = IMG_Load(texture);
+SDL_Texture* TextureManager::LoadTexture(const char* texture_file_path) {
+    SDL_Surface* tempSurface = IMG_Load(texture_file_path);
     if(tempSurface == NULL) {
         SDL_Log("Unable to render surface. SDL_Image Error: %s\n", SDL_GetError());
         return NULL;
