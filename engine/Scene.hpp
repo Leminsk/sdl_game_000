@@ -15,6 +15,7 @@
 #include "ECS/Colliders/Collision.hpp"
 
 #include "path_finding.hpp"
+#include "HexagonGrid.hpp"
 #include "Camera.hpp"
 #include "GroupLabels.hpp"
 #include "SceneTypes.hpp"
@@ -40,14 +41,21 @@ class Scene {
         SDL_Texture* water_fg_texture;
         // -------------------------------- ---------- --------------------------------
 
-        // --------------------------------  SOUND  --------------------------------
+        // --------------------------------  AUDIO  --------------------------------
         Mix_Music* music_main_menu = NULL;
         Mix_Chunk* sound_button = NULL;
         // --------------------------------  -----  --------------------------------
 
 
 
+
         // -------------------------------- MATCH_GAME --------------------------------
+
+        bool draw_grids = false;
+        std::vector<Vector2D> hex_tile = { {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0} };
+        Vector2D clicked_point;
+        Vector2D converted_point;
+
         Map* map;
         Client* client;
         Server* server;
@@ -178,6 +186,7 @@ class Scene {
                     );
 
                     if(this->map->loaded) {
+                        printf("Map  x: %d  by  y: %d\n", this->map->layout_width, this->map->layout_height);
                         LoadMapRender();
                         Game::world_map_layout_width = this->map->world_layout_width;
                         Game::world_map_layout_height = this->map->world_layout_height;
@@ -579,7 +588,14 @@ class Scene {
                     }
                 } break;
                     
-                case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
+                case SDL_BUTTON_MIDDLE: {
+                    this->draw_grids = true;
+                    std::cout << "MOUSE MIDDLE RIGHT: " << world_pos << '\n';
+                    HexPos h = convertWorldToHex(world_pos);
+                    std::cout << "convertWorldToHex: " << h.q << ',' << h.r << '\n';
+                    std::cout << "convertHexToWorld: " << convertHexToWorld(h) << '\n';
+
+                } break;
 
                 case SDL_BUTTON_RIGHT: {
                     std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
@@ -603,6 +619,11 @@ class Scene {
                         }
                     }  
                 } break;
+            }
+        }
+        void handleMouseMatchGameRelease(SDL_MouseButtonEvent& b) {
+            if(b.button == SDL_BUTTON_MIDDLE) {
+                this->draw_grids = false;
             }
         }
 
@@ -870,6 +891,10 @@ class Scene {
                             handleMouseMatchGame(this->event.button);
                         }
 
+                        if(this->event.type == SDL_MOUSEBUTTONUP) {
+                            handleMouseMatchGameRelease(this->event.button);
+                        }
+
                         if(this->event.type == SDL_MOUSEWHEEL) {
                             int wheel_y = this->event.wheel.y;
                             if(wheel_y > 0) { // zoom in
@@ -1058,6 +1083,90 @@ class Scene {
                             );
                         }
                     }
+
+
+                    // debugging hex grid
+                    if(this->draw_grids) {
+                        int max_q_axis = (this->map->layout_width<<1) / sqrt_3;
+                        int max_r_axis = (this->map->layout_height<<1) / 1.5f;
+                        int min_q_axis = -(max_q_axis>>1);
+
+                        HexPos current_hex = { 0, 0 };
+                        Vector2D hex_pos, hex_world_pos;
+                        float hex_pos_w = 4.0f;
+                        SDL_Color hex_center_color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE };
+                        SDL_Color hex_border_color = { 0x00, 0xF0, 0x20, SDL_ALPHA_OPAQUE };
+                        SDL_FRect hex_center = { hex_pos.x, hex_pos.y, hex_pos_w, hex_pos_w };
+                        SDL_FRect crop_rect = { (HEX_X_WIDTH/2) - 1, static_cast<float>(HEX_SIDE_LENGTH), this->map->world_layout_width - (HEX_X_WIDTH), this->map->world_layout_height - (HEX_SIDE_LENGTH<<1) };
+                        for(int q=min_q_axis; q<=max_q_axis; ++q) {
+                            current_hex.q = q;
+                            for(int r=0; r<=max_r_axis; ++r) {
+                                current_hex.r = r;
+                                hex_world_pos = convertHexToWorld(current_hex);
+
+                                if(Collision::pointInRect(hex_world_pos.x, hex_world_pos.y, crop_rect.x, crop_rect.y, crop_rect.w, crop_rect.h)) { 
+                                    float lesser_height = HEX_SIDE_LENGTH>>1;
+                                    float cos_30_radius = HEX_SIDE_LENGTH * 0.8660254f;
+                                    float x_gap = HEX_SIDE_LENGTH - cos_30_radius;
+                                    float right_x = HEX_RECT_TILE_WIDTH - x_gap;
+                                    float greater_height = HEX_RECT_TILE_WIDTH - lesser_height;
+
+                                    float offset_x = hex_world_pos.x - HEX_SIDE_LENGTH;
+                                    float offset_y = hex_world_pos.y - HEX_SIDE_LENGTH;
+
+                                    std::vector<Vector2D> hex_hull = { 
+                                        {         right_x + offset_x,      greater_height + offset_y },
+                                        { HEX_SIDE_LENGTH + offset_x, HEX_RECT_TILE_WIDTH + offset_y },
+                                        {           x_gap + offset_x,      greater_height + offset_y },
+                                        {           x_gap + offset_x,       lesser_height + offset_y },
+                                        { HEX_SIDE_LENGTH + offset_x,                0.0f + offset_y },
+                                        {         right_x + offset_x,       lesser_height + offset_y }
+                                    };
+
+                                    SDL_FPoint draw_points[7];
+                                    SDL_FPoint p;
+                                    for(int i=0; i<6; ++i) {
+                                        Vector2D s_p = convertWorldToScreen(hex_hull[i]);
+                                        p.x = s_p.x; p.y = s_p.y;
+                                        draw_points[i] = p;
+                                    }
+                                    draw_points[6] = draw_points[0];                                
+
+                                    hex_pos = convertWorldToScreen(hex_world_pos);
+                                    hex_center.x = hex_pos.x - 2.0f;
+                                    hex_center.y = hex_pos.y - 2.0f;
+
+                                    TextureManager::DrawWireframe(draw_points, 7, hex_border_color);
+                                    TextureManager::DrawRect(&hex_center, hex_center_color);
+                                }                            
+                            }
+                        }
+
+                        // map grid
+                        Vector2D pivot;
+                        SDL_Color grid_line_color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE };
+                        SDL_FRect grid_line;
+                        pivot.y = 0.0f;
+                        grid_line.w = 1.0f;
+                        grid_line.h = this->map->world_layout_height * Game::camera_zoom;
+                        for(int i=0; i<=this->map->layout_width; ++i) {
+                            pivot.x = i*(this->map->tile_width);
+                            Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
+                            grid_line.x = pos.x;
+                            grid_line.y = pos.y;
+                            TextureManager::DrawRect(&grid_line, grid_line_color);
+                        }
+                        pivot.x = 0.0f;
+                        grid_line.w = this->map->world_layout_width * Game::camera_zoom;
+                        grid_line.h = 1.0f;
+                        for(int i=0; i<=this->map->layout_height; ++i) {
+                            pivot.y = i*(this->map->tile_width);
+                            Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
+                            grid_line.x = pos.x;
+                            grid_line.y = pos.y;
+                            TextureManager::DrawRect(&grid_line, grid_line_color);
+                        }
+                    }                  
 
                     // crosshair
                     float line_length = 10;
