@@ -1,4 +1,7 @@
-#define SDL_MAIN_HANDLED // https://stackoverflow.com/questions/32342285/undefined-reference-to-winmain16-c-sdl-2
+#ifdef _WIN32
+    #define SDL_MAIN_HANDLED // https://stackoverflow.com/questions/32342285/undefined-reference-to-winmain16-c-sdl-2
+#endif
+
 #include <chrono>
 #include <random>
 #include <SDL2/SDL.h>

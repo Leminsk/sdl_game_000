@@ -33,14 +33,15 @@ ifeq ($(OS),Windows_NT) # For Windows
 
 else # For Linux
     INCLUDE_PATHS = -I/usr/include/SDL2
-    NET_INCLUDE_PATHS = -I/usr/include/asio -Iengine/networking
+    NET_INCLUDE_PATHS = -I/usr/include -Iengine/networking
+	LIBRARY_PATHS = -L/usr/lib/x86_64-linux-gnu
     
     MIXER = -lSDL2_mixer
     IMAGE = -lSDL2_image
     TTF = -lSDL2_ttf
     MAIN_SDL = -lSDL2
     
-    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF)
+    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lpng -ljpeg -lfreetype -lz -lm
     COMPILER_FLAGS = -pthread
 
 endif
