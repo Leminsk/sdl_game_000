@@ -21,7 +21,7 @@ class SceneSettings {
         SceneSettings(SDL_Event* e) { this->event = e; }
         ~SceneSettings() {}
 
-        void setScene(Mix_Chunk* sound_b, TextComponent* fps) {
+        void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
             this->sound_button = sound_b;
             this->fps_text = fps;
 

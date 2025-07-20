@@ -24,14 +24,18 @@ class SceneMainMenu {
         SceneMainMenu(SDL_Event* e) { this->event = e; }
         ~SceneMainMenu() {}
 
-        void setScene(SDL_Texture* plain_terrain, TextComponent* fps) {
+        void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, TextComponent* fps) {
             this->plain_terrain_texture = plain_terrain;
+            this->music_main_menu = music;
+            this->sound_button = sound;
             this->fps_text = fps;
 
             if(music_main_menu == nullptr) {
                 Mix_HaltMusic();
-                this->music_main_menu = AudioManager::LoadMusic("assets/audio/music/f-zero-ending_theme_dsp_1.wav");
-                this->sound_button = AudioManager::LoadSound("assets/audio/sfx/mario64-bowser_road_channel_9-noise.wav");
+                music = AudioManager::LoadMusic("assets/audio/music/f-zero-ending_theme_dsp_1.wav");
+                sound = AudioManager::LoadSound("assets/audio/sfx/mario64-bowser_road_channel_9-noise.wav");
+                this->music_main_menu = music;
+                this->sound_button = sound;
                 Mix_PlayMusic(this->music_main_menu, -1);
             }
 
