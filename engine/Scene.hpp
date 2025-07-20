@@ -24,8 +24,12 @@
 #include "networking/Client.hpp"
 #include "networking/Server.hpp"
 
+#include "Scene_utils.hpp"
+#include "SceneLobby.hpp"
+#include "SceneMainMenu.hpp"
+#include "SceneSettings.hpp"
+
 // Scene is a helper class to initialize Managers and globals
-// I thought about making a separate class for each different Scene, but I think a fat class for all of them might save me from linking errors down the road
 class Scene {
     private:
         SceneType st;
@@ -82,11 +86,19 @@ class Scene {
 
         // -------------------------------- ---------- --------------------------------
 
+        SceneLobby* S_Lobby;
+        SceneMainMenu* S_MainMenu;
+        SceneSettings* S_Settings;
+
     public:
         // frame counter
         TextComponent* fps_text;
 
-        Scene() {}
+        Scene() {
+            this->S_Lobby = new SceneLobby();
+            this->S_MainMenu = new SceneMainMenu(&this->event);
+            this->S_Settings = new SceneSettings(&this->event);
+        }
         ~Scene() {
             Mix_HaltMusic();
             Mix_FreeMusic(this->music_main_menu);
@@ -113,12 +125,6 @@ class Scene {
             this->load_textures = false;
         }
 
-        void loadAudio() {
-            this->music_main_menu = AudioManager::LoadMusic("assets/audio/music/f-zero-ending_theme_dsp_1.wav");
-            this->sound_button = AudioManager::LoadSound("assets/audio/sfx/mario64-bowser_road_channel_9-noise.wav");
-        }
-
-
         void setScene(SceneType t) {
             // if this texture is null, all others are also null
             if(Game::unit_tex == nullptr || this->load_textures) { loadTextures(); }
@@ -128,48 +134,9 @@ class Scene {
             this->fps_text = &fps_ui.getComponent<TextComponent>();
 
             switch(t) {
-                case SceneType::MAIN_MENU: {
-                    if(this->music_main_menu == NULL) { 
-                        Mix_HaltMusic();
-                        loadAudio(); 
-                        Mix_PlayMusic(this->music_main_menu, -1);
-                    }
-                    
-
-                    Game::default_bg_color = { 123, 82, 35, SDL_ALPHA_OPAQUE };
-
-                    const int w = 64;
-                    const int h = 64;
-                    for(int i=0; i<Game::SCREEN_HEIGHT; i+=h) {
-                        for(int j=0; j<Game::SCREEN_WIDTH; j+=w) {
-                            createUIImage("menu_background-" + std::to_string(j) + ',' + std::to_string(i), this->plain_terrain_texture, j, i, w, h);
-                        }
-                    }                    
-                    
-                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    createUIButton("button_single_player", "Single-Player", 50,   50, Game::default_text_color, background_color, border_color);
-                    createUIButton(  "button_multiplayer",   "Multiplayer", 50,  114, Game::default_text_color, background_color, border_color);
-                    createUIButton(     "button_settings",      "Settings", 50,  178, Game::default_text_color, background_color, border_color);
-
-                    createUIButton(         "button_quit",          "Quit", 50,  -50, Game::default_text_color, background_color, border_color);
-                    createUIMultilineText("multiline", { "first line", "second line", " ", "fourth line" }, -10, 50, Game::default_text_color, background_color, border_color);
-                } break;
-
-                case SceneType::LOBBY: {} break;
-
-                case SceneType::SETTINGS: {
-                    SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    
-                    // TODO: store these resolutions in some kind of table or hashmap
-                    createUIButton("button_res_SVGA",   " 800 x  600",  50,  50, Game::default_text_color, background_color, border_color);
-                    createUIButton("button_res_WXGA",   "1280 x  720",  50, 114, Game::default_text_color, background_color, border_color);
-                    createUIButton("button_res_1.56M3", "1440 x 1080",  50, 178, Game::default_text_color, background_color, border_color);
-                    createUIButton("button_res_FHD",    "1920 x 1080",  50, 242, Game::default_text_color, background_color, border_color);
-
-                    createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
-                } break;
+                case SceneType::MAIN_MENU: { this->S_MainMenu->setScene(this->plain_terrain_texture, this->fps_text); } break;
+                case SceneType::LOBBY: { this->S_Lobby->setScene(); } break;
+                case SceneType::SETTINGS: { this->S_Settings->setScene(this->sound_button, this->fps_text); } break;
 
                 case SceneType::MATCH_GAME: {
                     Mix_HaltMusic();
@@ -216,167 +183,6 @@ class Scene {
 
 
 
-        Entity& createDrone(float pos_x, float pos_y, MainColors c) {
-            auto& new_drone(Game::manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
-            new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
-            new_drone.addComponent<Wireframe>();
-            new_drone.addComponent<TextComponent>("", 0, 0);
-            new_drone.addGroup(groupDrones);
-            return new_drone;
-        }
-        Entity& createUIImage(
-            const std::string& id, SDL_Texture* image_texture,
-            int pos_x=0, int pos_y=0, int width=32, int height=32
-        ) {
-            auto& new_ui_image(Game::manager->addEntity(id));
-            int x = pos_x < 0 ? ((Game::SCREEN_WIDTH - width) + pos_x) : pos_x; 
-            int y = pos_y < 0 ? ((Game::SCREEN_HEIGHT - height) + pos_y) : pos_y;
-            new_ui_image.addComponent<TransformComponent>(pos_x, pos_y, width, height, 1);
-            new_ui_image.addComponent<SpriteComponent>(image_texture);
-            new_ui_image.addGroup(groupBackgroundUI);
-            return new_ui_image;
-        }
-        Entity& createUISimpleText(
-            const std::string& id, 
-            int pos_x=0, int pos_y=0,
-            const std::string& text="SIMPLE_TEXT",
-            const SDL_Color& text_color=Game::default_text_color            
-        ) {
-            auto& new_ui_text(Game::manager->addEntity(id));
-            new_ui_text.addComponent<TextComponent>(
-                text, pos_x, pos_y,
-                Game::default_text_color, true
-            );
-            new_ui_text.addGroup(groupUI);
-            return new_ui_text;
-        }
-        // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-        Entity& createUIButton(
-            const std::string& id, 
-            const std::string& text="TEXT_BOX",
-            int pos_x=0, int pos_y=0,
-            const SDL_Color& text_color=Game::default_text_color, 
-            const SDL_Color& bg_color=Game::default_bg_color, 
-            const SDL_Color& border_color=Game::default_text_color
-        ) {
-            auto& new_text_box(Game::manager->addEntity(id));
-            new_text_box.addComponent<TextBoxComponent>(
-                text, pos_x, pos_y,
-                text_color, bg_color, border_color
-            );
-            new_text_box.addGroup(groupUI);
-            return new_text_box;
-        }
-        // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-        Entity& createUIMultilineText(
-            const std::string& id, 
-            const std::vector<std::string>& lines,
-            int pos_x=0, int pos_y=0,
-            const SDL_Color& text_color=Game::default_text_color, 
-            const SDL_Color& bg_color=Game::default_bg_color, 
-            const SDL_Color& border_color=Game::default_text_color
-        ) {
-            auto& new_multiline_text(Game::manager->addEntity(id));
-            new_multiline_text.addComponent<TextBoxComponent>(
-                lines, pos_x, pos_y,
-                text_color, bg_color, border_color
-            );
-            new_multiline_text.addGroup(groupUI);
-            return new_multiline_text;            
-        }
-        Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
-            auto& building(Game::manager->addEntity(id));
-            building.addComponent<TransformComponent>(world_pos_x, world_pos_y, width, width, 1.0);
-            building.addComponent<SpriteComponent>(Game::building_tex);
-            building.addComponent<Collider>(ColliderType::HEXAGON);
-            building.addComponent<Wireframe>();
-            building.addGroup(groupBuildings);
-            return building;
-        }
-        void SetSolidTileNeighbors(uint8_t* neighbors, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
-                int dec_map_x = map_x-1;
-                int inc_map_x = map_x+1;
-                int dec_map_y = map_y-1;
-                int inc_map_y = map_y+1;
-
-                bool top_left  = false;
-                bool top_mid   = false;
-                bool top_right = false;
-                bool left      = false;
-                bool right     = false;
-                bool bot_left  = false;
-                bool bot_mid   = false;
-                bool bot_right = false;
-
-                int layout_width = layout[0].size();
-                int layout_height = layout.size();
-
-                if(map_x == 0) {
-                    if(map_y == 0) { // top left corner
-                        right     = layout[    map_y][inc_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                        bot_right = layout[inc_map_y][inc_map_x] == 2;
-                    } else if(map_y == layout_height-1) { // bottom left corner
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        top_right = layout[dec_map_y][inc_map_x] == 2;
-                        right     = layout[    map_y][inc_map_x] == 2;
-                    } else { // left column
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        top_right = layout[dec_map_y][inc_map_x] == 2;
-                        right     = layout[    map_y][inc_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                        bot_right = layout[inc_map_y][inc_map_x] == 2;
-                    }
-                } else if(map_x == layout_width-1) {
-                    if(map_y == 0) { // top right corner
-                        left      = layout[    map_y][dec_map_x] == 2;
-                        bot_left  = layout[inc_map_y][dec_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                    } else if(map_y == layout_height-1) { // bottom right corner
-                        top_left  = layout[dec_map_y][dec_map_x] == 2;
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        left      = layout[    map_y][dec_map_x] == 2;
-                    } else { // right column
-                        top_left  = layout[dec_map_y][dec_map_x] == 2;
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        left      = layout[    map_y][dec_map_x] == 2;
-                        bot_left  = layout[inc_map_y][dec_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                    }
-                } else {
-                    if(map_y == 0) { // top row
-                        left      = layout[    map_y][dec_map_x] == 2;
-                        right     = layout[    map_y][inc_map_x] == 2;
-                        bot_left  = layout[inc_map_y][dec_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                        bot_right = layout[inc_map_y][inc_map_x] == 2;
-                    } else if(map_y == layout_height-1) { // bottom row
-                        top_left  = layout[dec_map_y][dec_map_x] == 2;
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        top_right = layout[dec_map_y][inc_map_x] == 2;
-                        left      = layout[    map_y][dec_map_x] == 2;
-                        right     = layout[    map_y][inc_map_x] == 2;
-                    } else { // middle of the layout (most cases)
-                        top_left  = layout[dec_map_y][dec_map_x] == 2;
-                        top_mid   = layout[dec_map_y][    map_x] == 2;
-                        top_right = layout[dec_map_y][inc_map_x] == 2;
-                        left      = layout[    map_y][dec_map_x] == 2;
-                        right     = layout[    map_y][inc_map_x] == 2;
-                        bot_left  = layout[inc_map_y][dec_map_x] == 2;
-                        bot_mid   = layout[inc_map_y][    map_x] == 2;
-                        bot_right = layout[inc_map_y][inc_map_x] == 2;
-                    }
-                }
-
-                setBit(neighbors, 0, top_left);
-                setBit(neighbors, 1, top_mid);
-                setBit(neighbors, 2, top_right);
-                setBit(neighbors, 3, left);
-                setBit(neighbors, 4, right);
-                setBit(neighbors, 5, bot_left);
-                setBit(neighbors, 6, bot_mid);
-                setBit(neighbors, 7, bot_right);
-        }
         Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
             auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
             
@@ -424,147 +230,7 @@ class Scene {
 
 
 
-
-        void handleMouseMainMenu(SDL_MouseButtonEvent& b) {
-            Vector2D pos = Vector2D(b.x, b.y);
-            switch(b.button) {
-                case SDL_BUTTON_LEFT: {
-                    std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
-                    for(auto& ui : this->ui_elements) {
-                        if(ui->hasComponent<TextBoxComponent>()) {
-                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                                ui->getComponent<TextBoxComponent>().mouse_down = true;
-                            }
-                        }
-                    }
-                } break;
-                    
-                case SDL_BUTTON_MIDDLE: std::cout << "MOUSE BUTTON MIDDLE\n"; break;
-
-                case SDL_BUTTON_RIGHT: {
-                    std::cout << "MOUSE BUTTON RIGHT: " << pos << '\n';
-                } break;
-            }
-        }
-        void handleMouseMainMenuRelease(SDL_MouseButtonEvent& b) {
-            Vector2D pos = Vector2D(b.x, b.y);
-            switch(b.button) {
-                case SDL_BUTTON_LEFT: {
-                    std::cout << "RELEASE LEFT: " << pos << '\n';
-                    for(auto& ui : this->ui_elements) {
-                        if(ui->hasComponent<TextBoxComponent>()) {
-                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
-                                if(ui->getComponent<TextBoxComponent>().mouse_down) {
-                                    std::string button_id = ui->getIdentifier();
-                                    if(button_id == "button_single_player") {
-                                        printf("single-player\n");
-                                        Mix_PlayChannel(-1, this->sound_button, 0);
-                                        break;
-                                    } else if(button_id == "button_multiplayer") {
-                                        Mix_PlayChannel(-1, this->sound_button, 0);
-                                        clean();
-                                        setScene(SceneType::MATCH_GAME);
-                                        break;
-                                    } else if(button_id == "button_settings") {
-                                        Mix_PlayChannel(-1, this->sound_button, 0);
-                                        clean();
-                                        setScene(SceneType::SETTINGS);
-                                        break;
-                                    } else if(button_id == "button_quit") {
-                                        Mix_PlayChannel(-1, this->sound_button, 0);
-                                        Game::isRunning = false;
-                                        break;
-                                    }
-                                }                               
-                            }
-                            ui->getComponent<TextBoxComponent>().mouse_down = false;
-                        }
-                    }
-                } break;
-                    
-                case SDL_BUTTON_MIDDLE: std::cout << "RELEASE MIDDLE\n"; break;
-
-                case SDL_BUTTON_RIGHT: {
-                    std::cout << "RELEASE RIGHT: " << pos << '\n';
-                } break;
-            }
-        }
-
-        void handleMouseSettingsMenu(SDL_MouseButtonEvent& b) {
-            Vector2D pos = Vector2D(b.x, b.y);
-            switch(b.button) {
-                case SDL_BUTTON_LEFT: {
-                    std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
-                    for(auto& ui : this->ui_elements) {
-                        if(ui->hasComponent<TextBoxComponent>()) {
-                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                                ui->getComponent<TextBoxComponent>().mouse_down = true;
-                            }
-                        }
-                    }
-                } break;
-            }
-        }
-        void changeScreenResolution(unsigned int width, unsigned int height) {
-            Mix_PlayChannel(-1, this->sound_button, 0);
-            SDL_DestroyWindow(Game::window);
-            SDL_DestroyRenderer(Game::renderer);
-            const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
-            Game::window = SDL_CreateWindow("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-            Game::renderer = SDL_CreateRenderer(Game::window, -1, 0);
-            Game::SCREEN_WIDTH = width;
-            Game::SCREEN_HEIGHT = height;
-            Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
-            this->load_textures = true;
-        }
-        void handleMouseSettingsMenuRelease(SDL_MouseButtonEvent& b) {
-            Vector2D pos = Vector2D(b.x, b.y);
-            switch(b.button) {
-                case SDL_BUTTON_LEFT: {
-                    std::cout << "RELEASE LEFT: " << pos << '\n';
-                    for(auto& ui : this->ui_elements) {
-                        if(ui->hasComponent<TextBoxComponent>()) {
-                            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
-                                if(ui->getComponent<TextBoxComponent>().mouse_down) {
-                                    std::string button_id = ui->getIdentifier();
-                                    if(button_id == "button_back") {
-                                        Mix_PlayChannel(-1, this->sound_button, 0);
-                                        clean();
-                                        setScene(SceneType::MAIN_MENU);
-                                        break;
-                                    } else if(button_id == "button_res_SVGA") {
-                                        changeScreenResolution(800, 600);
-                                        clean();
-                                        setScene(SceneType::SETTINGS);
-                                        break;
-                                    } else if(button_id == "button_res_WXGA") {
-                                        changeScreenResolution(1280, 720);
-                                        clean();
-                                        setScene(SceneType::SETTINGS);
-                                        break;
-                                    } else if(button_id == "button_res_1.56M3") {
-                                        changeScreenResolution(1440, 1080);
-                                        clean();
-                                        setScene(SceneType::SETTINGS);
-                                        break;
-                                    } else if(button_id == "button_res_FHD") {
-                                        changeScreenResolution(1920, 1080);
-                                        clean();
-                                        setScene(SceneType::SETTINGS);
-                                        break;
-                                    }
-                                }                               
-                            }
-                            ui->getComponent<TextBoxComponent>().mouse_down = false;
-                        }
-                    }
-                } break;
-            }
-        }
+       
 
 
 
@@ -735,12 +401,9 @@ class Scene {
 
         void handleEventsPrePoll() {
             switch(this->st) {
-                case SceneType::MAIN_MENU: {} break;
-
-
-                case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
-
+                case SceneType::MAIN_MENU: { this->S_MainMenu->handleEventsPrePoll(); } break;
+                case SceneType::LOBBY: { this->S_Lobby->handleEventsPrePoll(); } break;
+                case SceneType::SETTINGS: { this->S_Settings->handleEventsPrePoll(); } break;
 
                 case SceneType::MATCH_GAME: {
                     // for multiplayer
@@ -812,71 +475,23 @@ class Scene {
         void handleEventsPollEvent() {
             switch(this->st) {
                 case SceneType::MAIN_MENU: {
-                    while( SDL_PollEvent(&this->event) ) {
-                        switch(this->event.type) {
-                            case SDL_QUIT: {
-                                Game::isRunning = false;
-                                return;
-                            } break;
-                            case SDL_MOUSEBUTTONDOWN: {
-                                handleMouseMainMenu(this->event.button);
-                            } break;
-                            case SDL_MOUSEBUTTONUP: {
-                                handleMouseMainMenuRelease(this->event.button);
-                            } break;
-                            case SDL_WINDOWEVENT: {
-                                switch(this->event.window.event) {
-                                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
-                                        std::cout << "Window Size Change\n";
-                                        Game::SCREEN_WIDTH = this->event.window.data1;
-                                        Game::SCREEN_HEIGHT = this->event.window.data2;
-                                        Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
-                                        Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
-                                    } break;
-                                    case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
-                                    case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
-                                    case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
-                                    case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
-                                }
-                            } break;
-                        }                
+                    this->S_MainMenu->handleEventsPollEvent();
+                    if(this->S_MainMenu->change_to_scene != SceneType::NONE) {                        
+                        setScene(this->S_MainMenu->change_to_scene);
+                        this->S_MainMenu->change_to_scene = SceneType::NONE;
                     }
                 } break;
 
-
-                case SceneType::LOBBY: {} break;
+                case SceneType::LOBBY: {
+                    this->S_Lobby->handleEventsPollEvent();
+                } break;
 
                 case SceneType::SETTINGS: {
-                    while( SDL_PollEvent(&this->event) ) {
-                        switch(this->event.type) {
-                            case SDL_QUIT: {
-                                Game::isRunning = false;
-                                return;
-                            } break;
-                            case SDL_MOUSEBUTTONDOWN: {
-                                handleMouseSettingsMenu(this->event.button);
-                            } break;
-                            case SDL_MOUSEBUTTONUP: {
-                                handleMouseSettingsMenuRelease(this->event.button);
-                            } break;
-                            case SDL_WINDOWEVENT: {
-                                switch(this->event.window.event) {
-                                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
-                                        std::cout << "Window Size Change\n";
-                                        Game::SCREEN_WIDTH = this->event.window.data1;
-                                        Game::SCREEN_HEIGHT = this->event.window.data2;
-                                        Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
-                                        Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
-                                    } break;
-                                    case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
-                                    case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
-                                    case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
-                                    case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
-                                }
-                            } break;
-                        }                
+                    this->S_Settings->handleEventsPollEvent();
+                    if(this->S_Settings->change_to_scene != SceneType::NONE) {                        
+                        this->load_textures = true;
+                        setScene(this->S_Settings->change_to_scene);
+                        this->S_Settings->change_to_scene = SceneType::NONE;
                     }
                 } break;
 
@@ -931,14 +546,16 @@ class Scene {
 
             switch(this->st) {
                 case SceneType::MAIN_MENU: {
-                    if(keystates[SDL_SCANCODE_ESCAPE]) { 
-                            Game::isRunning = false; 
-                    } 
+                    this->S_MainMenu->handleEventsPostPoll(keystates);
                 } break;
 
+                case SceneType::LOBBY: {
+                    this->S_Lobby->handleEventsPostPoll();
+                } break;
 
-                case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+                case SceneType::SETTINGS: {
+                    this->S_Settings->handleEventsPostPoll();
+                } break;
 
                 case SceneType::MATCH_GAME: {
                     if(keystates[SDL_SCANCODE_ESCAPE]) { 
@@ -1002,19 +619,9 @@ class Scene {
 
         void update() {
             switch(this->st) {
-                case SceneType::MAIN_MENU: {
-                    Game::manager->refresh();
-                    Game::manager->preUpdate();
-                    Game::manager->update();
-                } break;
-
-                case SceneType::LOBBY: {} break;
-
-                case SceneType::SETTINGS: {
-                    Game::manager->refresh();
-                    Game::manager->preUpdate();
-                    Game::manager->update();
-                } break;
+                case SceneType::MAIN_MENU: { this->S_MainMenu->update(); } break;
+                case SceneType::LOBBY: { this->S_Lobby->update(); } break;
+                case SceneType::SETTINGS: { this->S_Settings->update(); } break;
 
                 case SceneType::MATCH_GAME: {
                     for(int i=0; i<this->drones.size(); ++i) {
@@ -1046,25 +653,9 @@ class Scene {
         void render() {
             this->fps_text->setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
             switch(this->st) {
-                case SceneType::MAIN_MENU: {
-                    for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
-                    for(auto& ui : this->ui_elements) { ui->draw(); }
-                } break;
-
-                case SceneType::LOBBY: {} break;
-
-                case SceneType::SETTINGS: {
-                    SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-                    SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
-                    SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
-                    SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
-                    
-                    TextureManager::DrawRect(&borderRect, border_color);
-                    TextureManager::DrawRect(&backgroundRect, background_color);
-
-                    for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
-                    for(auto& ui : this->ui_elements) { ui->draw(); }
-                } break;
+                case SceneType::MAIN_MENU: { this->S_MainMenu->render(); } break;
+                case SceneType::LOBBY: { this->S_Lobby->render(); } break;
+                case SceneType::SETTINGS: { this->S_Settings->render(); } break;
 
                 case SceneType::MATCH_GAME: {
                     for(auto& t : this->tiles) { t->draw(); }
@@ -1185,10 +776,9 @@ class Scene {
 
         void clean() {
             switch(this->st) {
-                case SceneType::MAIN_MENU: {} break;
-                
-                case SceneType::LOBBY: {} break;
-                case SceneType::SETTINGS: {} break;
+                case SceneType::MAIN_MENU: { this->S_MainMenu->clean(); } break;
+                case SceneType::LOBBY: { this->S_Lobby->clean(); } break;
+                case SceneType::SETTINGS: { this->S_Settings->clean(); } break;
 
                 case SceneType::MATCH_GAME: {
                     if(this->is_server) { destroyServer(); }
@@ -1202,8 +792,8 @@ class Scene {
                     this->PING_MS = 0;
                     this->PLAYER_CLIENT_ID = -1;
                     this->update_server = false;
+                    Game::manager->clearEntities();
                 } break;
             }
-            Game::manager->clearEntities();
         }
 };

@@ -1,5 +1,6 @@
 #pragma once
 enum class SceneType : uint8_t {
+    NONE,
     LOADING,
     MAIN_MENU,
     SETTINGS,
