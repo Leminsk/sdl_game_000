@@ -47,11 +47,18 @@ else # For Linux
 endif
 
 
+ifeq ($(tree),y)
+	DEPENDENCIES_FLAG = -H -c
+else ifeq ($(debug),y)
+	DEBUG_FLAG = -g
+	OBJ = -o main
+else 
+	OBJ = -o main
+endif
 
 
-# OBJ_NAME specifies the name of our executable
-OBJ_NAME = main
+
 
 #This is the target that compiles our executable. ALSO MAKE SURE THE FIRST CHARACTER IS A TAB AND NOT SPACES
 all : $(MAIN_SOURCE)
-	$(COMPILER) $(MAIN_SOURCE) $(SOURCES) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(COMPILER_FLAGS) -o $(OBJ_NAME)
+	$(COMPILER) $(DEPENDENCIES_FLAG) $(MAIN_SOURCE) $(SOURCES) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(COMPILER_FLAGS) $(DEBUG_FLAG) $(OBJ)

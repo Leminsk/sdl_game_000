@@ -1,11 +1,20 @@
 $display_include_tree=$args[0]
 
 if($display_include_tree -eq 'show' -or $display_include_tree -eq 'tree') {
-    $pattern = '"^\.+ (engine|src|include)"'
-    $command = 'g++ -H -c main.cpp engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp -IC:/msys64/mingw64/include/SDL2 -IC:/msys64/mingw64/include/asio -Iengine/networking -LC:/msys64/mingw64/lib  -lmingw32 -lSDL2main -lSDL2 -lws2_32 -lwsock32 -lSDL2_mixer -lSDL2_image -lSDL2_ttf'
-    
-    Invoke-Expression "$command 2>&1 | Select-String -Pattern $pattern"
-    Remove-Item "*.o"
-}
 
-Start-Process make -NoNewWindow -Wait
+    $pattern = "^\.+ (engine|src|include)"
+    $makeOutput = & "C:\msys64\usr\bin\bash.exe" -c "make tree=y -n"
+    $gppCommandLine = $makeOutput | Where-Object { $_ -match "g\+\+" }
+    if (-not $gppCommandLine) {
+        Write-Error "Could not find the g++ command in Makefile output."
+        exit 1
+    }
+    Write-Host "`n[Running]: $gppCommandLine"
+    Invoke-Expression "$gppCommandLine 2>&1 | Select-String -Pattern '$pattern'"
+    Remove-Item "*.o"
+
+} elseif($display_include_tree -eq 'debug') {
+    Start-Process -FilePath "make" -ArgumentList "debug=y" -NoNewWindow -Wait
+} else {
+    Start-Process -FilePath "make" -NoNewWindow -Wait
+}

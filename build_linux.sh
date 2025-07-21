@@ -1,12 +1,22 @@
 #!/bin/bash
 
 if [[ "$1" == "show" || "$1" == "tree" ]]; then
+
     pattern='^\.+ (engine|src|include)'
 
-    g++ -H -c main.cpp engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp -I///include/SDL2 -I///include/asio -Iengine/networking -L//mingw64/lib  -l? -lSDL2 -lSDL2_mixer -lSDL2_image -lSDL2_ttf 2>&1 | grep -E  "$pattern"
+    gpp_command=$(make tree=y -n | grep -m 1 '^g++')
+    if [[ -z "$gpp_command" ]]; then
+        echo "Error: Could not find the g++ command in Makefile output." >&2
+        exit 1
+    fi
+
+    echo -e "\n[Running]: $gpp_command"
+    eval "$gpp_command" 2>&1 | grep -E "$pattern"
 
     rm -f *.o
 
+elif [[ "$1" == "debug" ]]; then
+    make debug=y
+else
+    make
 fi
-
-make
