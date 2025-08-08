@@ -11,9 +11,9 @@ class SceneMainMenu {
     private:
         std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
         std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
+        SDL_Event* event = nullptr;
 
     public:
-        SDL_Event* event = nullptr;
         SDL_Texture* plain_terrain_texture = nullptr;
         Mix_Music* music_main_menu = nullptr;
         Mix_Chunk* sound_button = nullptr;
@@ -88,8 +88,9 @@ class SceneMainMenu {
                                 if(ui->getComponent<TextBoxComponent>().mouse_down) {
                                     std::string button_id = ui->getIdentifier();
                                     if(button_id == "button_single_player") {
-                                        printf("single-player\n");
                                         Mix_PlayChannel(-1, this->sound_button, 0);
+                                        clean();
+                                        this->change_to_scene = SceneType::LOBBY;
                                         break;
                                     } else if(button_id == "button_multiplayer") {
                                         Mix_PlayChannel(-1, this->sound_button, 0);

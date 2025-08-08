@@ -59,7 +59,7 @@ class Scene {
         TextComponent* fps_text;
 
         Scene() {
-            this->S_Lobby = new SceneLobby();
+            this->S_Lobby = new SceneLobby(&this->event);
             this->S_MainMenu = new SceneMainMenu(&this->event);
             this->S_Settings = new SceneSettings(&this->event);
             this->S_MatchGame = new SceneMatchGame(&this->event);
@@ -108,7 +108,12 @@ class Scene {
                     ); 
                 } break;
 
-                case SceneType::LOBBY: { this->S_Lobby->setScene(); } break;
+                case SceneType::LOBBY: { 
+                    this->S_Lobby->setScene(
+                        this->sound_button, 
+                        this->fps_text
+                    ); 
+                } break;
 
                 case SceneType::SETTINGS: { 
                     this->S_Settings->setScene(
@@ -154,6 +159,10 @@ class Scene {
 
                 case SceneType::LOBBY: {
                     this->S_Lobby->handleEventsPollEvent();
+                    if(this->S_Lobby->change_to_scene != SceneType::NONE) {                        
+                        setScene(this->S_Lobby->change_to_scene);
+                        this->S_Lobby->change_to_scene = SceneType::NONE;
+                    }
                 } break;
 
                 case SceneType::SETTINGS: {

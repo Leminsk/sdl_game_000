@@ -11,9 +11,9 @@ class SceneSettings {
     private:
         std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
         std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
+        SDL_Event* event;
 
     public:
-        SDL_Event* event;
         Mix_Chunk* sound_button = NULL;
         TextComponent* fps_text;
         SceneType change_to_scene = SceneType::NONE;
