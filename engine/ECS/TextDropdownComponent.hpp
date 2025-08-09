@@ -41,11 +41,12 @@ TextDropdownComponent(
     for(const std::string& op : labels) {
         if(op.size() > max_chars) { max_chars = op.size(); }
     }
-    for(const std::string& op : labels) {
-        int chars_to_pad = max_chars - op.size();
-        std::string padded = op;
+    this->padded_labels.resize(options_amount);
+    for(int i=0; i<options_amount; ++i) {
+        int chars_to_pad = max_chars - labels[i].size();
+        std::string padded = labels[i];
         for(int i=0; i<chars_to_pad; ++i) { padded += ' '; }
-        this->padded_labels.push_back(padded);
+        this->padded_labels[i] = padded;
     }
     
 
@@ -77,6 +78,12 @@ TextDropdownComponent(
     }
 }
 ~TextDropdownComponent() {
+}
+
+void setSelectedOption(const int option_index=0) {
+    this->selected_option_label = this->options_labels[option_index];
+    this->selected_option->setText(this->padded_labels[option_index]);
+    this->display_dropdown = false;
 }
 
 void init() override {

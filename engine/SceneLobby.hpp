@@ -74,9 +74,7 @@ public:
                                     TextBoxComponent* option = dropdown.options[i];
                                     if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
                                         Mix_PlayChannel(-1, this->sound_button, 0);
-                                        dropdown.selected_option_label = dropdown.options_labels[i];
-                                        dropdown.selected_option->setText(dropdown.padded_labels[i]);
-                                        pr_ui->getComponent<TextDropdownComponent>().display_dropdown = false;
+                                        pr_ui->getComponent<TextDropdownComponent>().setSelectedOption(i);
                                         return;
                                     }
                                 }
