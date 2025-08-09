@@ -10,4 +10,5 @@
 #include "Wireframe.hpp"
 #include "TextComponent.hpp"
 #include "TextBoxComponent.hpp"
+#include "TextDropdownComponent.hpp"
 #include "DroneComponent.hpp"

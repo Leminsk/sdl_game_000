@@ -137,10 +137,17 @@ class TextBoxComponent : public Component {
             this->bgRect.x = this->inner_x; this->bgRect.y = this->inner_y;
             this->bgRect.w = this->inner_w; this->bgRect.h = this->inner_h;
 
-            this->destRect.x = this->inner_x + 1; 
-            this->destRect.y = this->inner_y + 1;
-            this->destRect.w = this->inner_w - this->v_line_gap; 
-            this->destRect.h = this->inner_h - this->v_line_gap;
+            // always used for 1 line at a time
+            this->destRect.x = this->inner_x + this->v_line_gap; 
+            this->destRect.y = this->inner_y + this->v_line_gap;
+            this->destRect.w = this->inner_w - (this->v_line_gap<<1);
+            if(this->single_line) {
+                this->destRect.h = this->inner_h - (this->v_line_gap<<1);
+            } else {           
+                                                         // top gap
+                this->line_thickness = ((this->inner_h - this->v_line_gap) / this->lines_amount);
+                this->destRect.h = this->line_thickness - this->v_line_gap; // bottom/inner gaps
+            }
         }
 
         void init() override {

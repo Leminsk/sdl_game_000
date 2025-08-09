@@ -1,11 +1,5 @@
 #include "utils.hpp"
-#include <cstdint>
-#include <cmath>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <random>
+
 
 /*
 read bit value from a byte. LSB=0, MSB=7
@@ -98,4 +92,39 @@ int randomInt(std::mt19937 *generator, int min, int max) {
 float randomFloat(std::mt19937 *generator, float min, float max) {
     std::uniform_real_distribution<float> distribute(min, max);
     return distribute(*generator);
+}
+
+
+// https://stackoverflow.com/questions/216823/how-can-i-trim-a-stdstring
+// Trim from the start (in place)
+void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+// Trim from the end (in place)
+void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+// Trim from both ends (in place)
+void trim(std::string &s) {
+    rtrim(s);
+    ltrim(s);
+}
+// Trim from the start (copying)
+std::string ltrim_copy(std::string s) {
+    ltrim(s);
+    return s;
+}
+// Trim from the end (copying)
+std::string rtrim_copy(std::string s) {
+    rtrim(s);
+    return s;
+}
+// Trim from both ends (copying)
+std::string trim_copy(std::string s) {
+    trim(s);
+    return s;
 }

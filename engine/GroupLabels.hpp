@@ -4,5 +4,6 @@ enum groupLabels {
     groupDrones,
     groupBuildings,
     groupBackgroundUI,
-    groupUI
+    groupUI,
+    groupPriorityUI
 };

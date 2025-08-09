@@ -9,6 +9,7 @@
 
 class SceneLobby {
 private:
+std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 SDL_Event* event;
@@ -27,6 +28,9 @@ public:
 
         const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
         const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+        const SDL_Color dp_border_color  = {  20, 150, 200, SDL_ALPHA_OPAQUE };
+
+        createUIDropdown("dropdown", {"base", "option1", "option22"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
 
         createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     }
@@ -53,6 +57,32 @@ public:
             switch(b.button) {
                 case SDL_BUTTON_LEFT: {
                     std::cout << "RELEASE LEFT: " << pos << '\n';
+                    for(auto& pr_ui : this->pr_ui_elements) {
+                        if(pr_ui->hasComponent<TextDropdownComponent>()) {
+                            TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+                            if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
+                                std::string dropdown_id = pr_ui->getIdentifier();
+                                if(dropdown_id == "dropdown") {
+                                    Mix_PlayChannel(-1, this->sound_button, 0);
+                                    pr_ui->getComponent<TextDropdownComponent>().display_dropdown = !(pr_ui->getComponent<TextDropdownComponent>().display_dropdown);
+                                    return;
+                                }
+                            }
+
+                            if(pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
+                                for(int i=0; i<dropdown.options.size(); ++i) {
+                                    TextBoxComponent* option = dropdown.options[i];
+                                    if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
+                                        Mix_PlayChannel(-1, this->sound_button, 0);
+                                        dropdown.selected_option_label = dropdown.options_labels[i];
+                                        dropdown.selected_option->setText(dropdown.padded_labels[i]);
+                                        pr_ui->getComponent<TextDropdownComponent>().display_dropdown = false;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     for(auto& ui : this->ui_elements) {
                         if(ui->hasComponent<TextBoxComponent>()) {
                             TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
@@ -69,7 +99,7 @@ public:
                             }
                             ui->getComponent<TextBoxComponent>().mouse_down = false;
                         }
-                    }
+                    }                    
                 } break;
             }
         }
@@ -124,6 +154,7 @@ public:
 
         for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
         for(auto& ui : this->ui_elements) { ui->draw(); }
+        for(auto& pr_ui : this->pr_ui_elements) { pr_ui->draw(); }
     }
     void clean() {
         Game::manager->clearEntities();

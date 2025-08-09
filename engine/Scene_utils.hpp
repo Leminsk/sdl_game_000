@@ -76,6 +76,23 @@ Entity& createUIMultilineText(
     new_multiline_text.addGroup(groupUI);
     return new_multiline_text;            
 }
+// if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
+Entity& createUIDropdown(
+    const std::string& id,
+    const std::vector<std::string>& labels,
+    int pos_x=0, int pos_y=0,
+    const SDL_Color& text_color=Game::default_text_color, 
+    const SDL_Color& bg_color=Game::default_bg_color, 
+    const SDL_Color& border_color=Game::default_text_color
+) {
+    auto& new_dropdown(Game::manager->addEntity(id));
+    new_dropdown.addComponent<TextDropdownComponent>(
+        labels, pos_x, pos_y,
+        text_color, bg_color, border_color
+    );
+    new_dropdown.addGroup(groupPriorityUI);
+    return new_dropdown;
+}
 Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
     auto& building(Game::manager->addEntity(id));
     building.addComponent<TransformComponent>(world_pos_x, world_pos_y, width, width, 1.0);
