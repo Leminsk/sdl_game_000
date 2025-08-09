@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include "../Colors.hpp"
 #include "../Camera.hpp"
 #include "../TextureManager.hpp"
 #include "ECS.hpp"
@@ -32,7 +33,7 @@ class SpriteComponent : public Component {
         
 
         SpriteComponent() = default;
-        SpriteComponent(SDL_Texture* t, SDL_Color cm={ 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }) {
+        SpriteComponent(SDL_Texture* t, SDL_Color cm=COLORS_WHITE) {
             this->texture = t;
             this->color_modulation = cm;
         }

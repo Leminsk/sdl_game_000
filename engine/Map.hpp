@@ -7,6 +7,7 @@
 #include "Vector2D.hpp"
 #include "Game.hpp"
 #include "TextureManager.hpp"
+#include "Colors.hpp"
 #include "ECS/TileTypes.hpp"
 
 class Map {

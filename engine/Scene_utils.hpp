@@ -2,7 +2,7 @@
 
 #include "Game.hpp"
 #include "ECS/ECS.hpp"
-#include "ECS/MainColors.hpp"
+#include "Colors.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"

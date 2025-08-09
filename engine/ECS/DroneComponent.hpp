@@ -2,12 +2,12 @@
 #include <string>
 #include "../Vector2D.hpp"
 #include "../path_finding.hpp"
+#include "../Colors.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
 #include "Colliders/Collider.hpp"
 #include "Colliders/Collision.hpp"
-#include "MainColors.hpp"
 
 // return a translation vector to be applied to the movable object transform;
 // assumes ALL entities are stationaries EXCEPT for the dynamic_col
@@ -90,16 +90,16 @@ class DroneComponent : public Component {
             this->radius = diameter/2;
             this->color_type = c;
             switch(c) {
-                case MainColors::BLACK  : this->color = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::WHITE  : this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::RED    : this->color = { 0xFF, 0x00, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::GREEN  : this->color = { 0x00, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::BLUE   : this->color = { 0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::YELLOW : this->color = { 0xFF, 0xFF, 0x00, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::CYAN   : this->color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE }; break;
-                case MainColors::MAGENTA: this->color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE }; break;
+                case MainColors::BLACK  : this->color = COLORS_BLACK; break;
+                case MainColors::WHITE  : this->color = COLORS_WHITE; break;
+                case MainColors::RED    : this->color = COLORS_RED; break;
+                case MainColors::GREEN  : this->color = COLORS_GREEN; break;
+                case MainColors::BLUE   : this->color = COLORS_BLUE; break;
+                case MainColors::YELLOW : this->color = COLORS_YELLOW; break;
+                case MainColors::CYAN   : this->color = COLORS_CYAN; break;
+                case MainColors::MAGENTA: this->color = COLORS_MAGENTA; break;
                 default:
-                    this->color = { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE };
+                    this->color = COLORS_WHITE;
             }
             ++Game::UNIT_COUNTER;
         }

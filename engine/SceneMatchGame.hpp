@@ -122,7 +122,7 @@ void LoadMapRender(float tile_scale=1.0f) {
 
 void setScene(SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL_Texture* water_bg, SDL_Texture* water_fg, TextComponent* fps) {
     Mix_HaltMusic();
-    Game::default_bg_color = { 50, 5, 10, SDL_ALPHA_OPAQUE };
+    Game::default_bg_color = COLORS_ROUGH;
 
     this->plain_terrain_texture = plain;
     this->rough_terrain_texture = rough;
@@ -132,7 +132,7 @@ void setScene(SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL
     this->fps_text = fps;
 
     this->map = new Map(
-        "assets/test3.bmp", 
+        "assets/maps/test3.bmp", 
         this->plain_terrain_texture,
         this->rough_terrain_texture,
         this->mountain_texture,
@@ -544,7 +544,7 @@ void render() {
             TextureManager::DrawLine(
                 convertWorldToScreen(this->path_to_draw[i]), 
                 convertWorldToScreen(this->path_to_draw[i+1]), 
-                {0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE}
+                COLORS_RED
             );
         }
     }
@@ -559,7 +559,6 @@ void render() {
         HexPos current_hex = { 0, 0 };
         Vector2D hex_pos, hex_world_pos;
         float hex_pos_w = 4.0f;
-        SDL_Color hex_center_color = { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE };
         SDL_Color hex_border_color = { 0x00, 0xF0, 0x20, SDL_ALPHA_OPAQUE };
         SDL_FRect hex_center = { hex_pos.x, hex_pos.y, hex_pos_w, hex_pos_w };
         SDL_FRect crop_rect = { (HEX_X_WIDTH/2) - 1, static_cast<float>(HEX_SIDE_LENGTH), this->map->world_layout_width - (HEX_X_WIDTH), this->map->world_layout_height - (HEX_SIDE_LENGTH<<1) };
@@ -602,14 +601,13 @@ void render() {
                     hex_center.y = hex_pos.y - 2.0f;
 
                     TextureManager::DrawWireframe(draw_points, 7, hex_border_color);
-                    TextureManager::DrawRect(&hex_center, hex_center_color);
+                    TextureManager::DrawRect(&hex_center, COLORS_MAGENTA);
                 }                            
             }
         }
 
         // map grid
         Vector2D pivot;
-        SDL_Color grid_line_color = { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE };
         SDL_FRect grid_line;
         pivot.y = 0.0f;
         grid_line.w = 1.0f;
@@ -619,7 +617,7 @@ void render() {
             Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
             grid_line.x = pos.x;
             grid_line.y = pos.y;
-            TextureManager::DrawRect(&grid_line, grid_line_color);
+            TextureManager::DrawRect(&grid_line, COLORS_CYAN);
         }
         pivot.x = 0.0f;
         grid_line.w = this->map->world_layout_width * Game::camera_zoom;
@@ -629,7 +627,7 @@ void render() {
             Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
             grid_line.x = pos.x;
             grid_line.y = pos.y;
-            TextureManager::DrawRect(&grid_line, grid_line_color);
+            TextureManager::DrawRect(&grid_line, COLORS_CYAN);
         }
     }                  
 

@@ -4,7 +4,7 @@
 #include "../Camera.hpp"
 #include "../TextureManager.hpp"
 #include "../GroupLabels.hpp"
-#include "MainColors.hpp"
+#include "../Colors.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
@@ -57,14 +57,14 @@ std::vector<TextBoxComponent*> options = {};
 // for color dropdown selector
 std::vector<SDL_Color> options_colors = {
     { 0xFF, 0xFF, 0xFF, SDL_ALPHA_TRANSPARENT },
-    { 0xFF, 0xFF, 0xFF, SDL_ALPHA_OPAQUE },
-    { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE },
-    { 0xFF, 0x00, 0x00, SDL_ALPHA_OPAQUE },
-    { 0x00, 0xFF, 0x00, SDL_ALPHA_OPAQUE },
-    { 0x00, 0x00, 0xFF, SDL_ALPHA_OPAQUE },
-    { 0xFF, 0xFF, 0x00, SDL_ALPHA_OPAQUE },
-    { 0x00, 0xFF, 0xFF, SDL_ALPHA_OPAQUE },
-    { 0xFF, 0x00, 0xFF, SDL_ALPHA_OPAQUE },
+    COLORS_WHITE,
+    COLORS_BLACK,
+    COLORS_RED,
+    COLORS_GREEN,
+    COLORS_BLUE,
+    COLORS_YELLOW,
+    COLORS_CYAN,
+    COLORS_MAGENTA
 };
 std::vector<Entity*> options_entities = {};
 

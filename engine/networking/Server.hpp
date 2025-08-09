@@ -7,7 +7,7 @@
 #include "../Vector2D.hpp"
 #include "../ECS/DroneComponent.hpp"
 #include "../GroupLabels.hpp"
-#include "../ECS/MainColors.hpp"
+#include "../Colors.hpp"
 
 
 class Server : public olc::net::server_interface<MessageTypes> {

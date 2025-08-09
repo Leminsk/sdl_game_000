@@ -61,27 +61,27 @@ bool Map::LoadMapFile(std::string& path) {
         }
         
         if(
-            current_pixel.r == 0x00 && 
-            current_pixel.g == 0x00 && 
-            current_pixel.b == 0x00
+            current_pixel.r == COLORS_SPAWN.r && 
+            current_pixel.g == COLORS_SPAWN.g && 
+            current_pixel.b == COLORS_SPAWN.b
         ) { // base spawn
             tile_type = TILE_BASE_SPAWN;
         } else if(
-            current_pixel.r == 0xA4 && 
-            current_pixel.g == 0xC2 && 
-            current_pixel.b == 0xF4
+            current_pixel.r == COLORS_NAVIGABLE.r && 
+            current_pixel.g == COLORS_NAVIGABLE.g && 
+            current_pixel.b == COLORS_NAVIGABLE.b
         ) { // navigable terrain
             tile_type = TILE_NAVIGABLE;
         } else if(
-            current_pixel.r == 0xAC && 
-            current_pixel.g == 0xAC && 
-            current_pixel.b == 0xAC
+            current_pixel.r == COLORS_IMPASSABLE.r && 
+            current_pixel.g == COLORS_IMPASSABLE.g && 
+            current_pixel.b == COLORS_IMPASSABLE.b
         ) { // impassable terrain
             tile_type = TILE_IMPASSABLE;
         } else if(
-            current_pixel.r == 0xF9 && 
-            current_pixel.g == 0xCB && 
-            current_pixel.b == 0x9C
+            current_pixel.r == COLORS_ROUGH.r && 
+            current_pixel.g == COLORS_ROUGH.g && 
+            current_pixel.b == COLORS_ROUGH.b
         ) { // rough terrain
             tile_type = TILE_ROUGH;
         } else { // plain terrain

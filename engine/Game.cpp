@@ -3,6 +3,7 @@
 #include "Game.hpp"
 #include "SceneTypes.hpp"
 #include "Scene.hpp"
+#include "Colors.hpp"
 
 std::mt19937* Game::RNG;
 
@@ -23,7 +24,7 @@ float Game::AVERAGE_FPS;
 float Game::FRAME_DELTA = 0.0f;
 int Game::UNIT_COUNTER = 0;
 
-SDL_Color Game::default_bg_color{ 50, 5, 10, SDL_ALPHA_OPAQUE };
+SDL_Color Game::default_bg_color = COLORS_ROUGH;
 TTF_Font *Game::default_font;
 SDL_Color Game::default_text_color{ 249, 211, 0, SDL_ALPHA_OPAQUE };
 
