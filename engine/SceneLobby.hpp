@@ -28,9 +28,10 @@ public:
 
         const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
         const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-        const SDL_Color dp_border_color  = {  20, 150, 200, SDL_ALPHA_OPAQUE };
+        const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
 
-        createUIDropdown("dropdown", {"base", "option1", "option22"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
+        createUIDropdown("dropdown", {"base", "option1", "option 2"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
+        createUIDropdownColors("dropdown_colors", -50, 50, Game::default_text_color, background_color, dp_border_color);
 
         createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     }
@@ -60,9 +61,10 @@ public:
                     for(auto& pr_ui : this->pr_ui_elements) {
                         if(pr_ui->hasComponent<TextDropdownComponent>()) {
                             TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+
                             if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
                                 std::string dropdown_id = pr_ui->getIdentifier();
-                                if(dropdown_id == "dropdown") {
+                                if(dropdown_id == "dropdown" || dropdown_id == "dropdown_colors") {
                                     Mix_PlayChannel(-1, this->sound_button, 0);
                                     pr_ui->getComponent<TextDropdownComponent>().display_dropdown = !(pr_ui->getComponent<TextDropdownComponent>().display_dropdown);
                                     return;

@@ -11,10 +11,8 @@
 class SpriteComponent : public Component {
     private:
         TransformComponent *transform;
-        SDL_Texture *texture;
         SDL_Rect srcRect;
         SDL_FRect destRect;
-        SDL_Color color_modulation;
 
         bool animated = false;
         int frames = 0;
@@ -25,6 +23,9 @@ class SpriteComponent : public Component {
         double rotation = 0;
         int rotation_tick = 1;
         bool rotating = false;
+
+        SDL_Texture *texture;
+        SDL_Color color_modulation;
 
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
         std::map<const char*, SpriteAnimation> animations;

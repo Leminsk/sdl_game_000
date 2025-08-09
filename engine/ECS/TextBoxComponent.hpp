@@ -9,14 +9,10 @@
 // Text with background surrounded by a border
 class TextBoxComponent : public Component {
     private:
-        TransformComponent *transform;
         SDL_Texture *texture = NULL;
         std::vector<SDL_Texture*> textures = {};
         std::vector<int> width_per_line = {};
         SDL_Rect srcRect;
-        SDL_FRect destRect;
-        SDL_FRect bgRect;
-        SDL_FRect borderRect;
         bool single_line = true;
         int lines_amount = 1;
         int line_thickness;
@@ -58,6 +54,10 @@ class TextBoxComponent : public Component {
         }
 
     public:
+        SDL_FRect destRect;
+        SDL_FRect bgRect;
+        SDL_FRect borderRect;
+
         double rotation = 0;
         int rotation_tick = 1;
         bool rotating = false;
