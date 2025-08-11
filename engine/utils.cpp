@@ -128,3 +128,133 @@ std::string trim_copy(std::string s) {
     trim(s);
     return s;
 }
+
+
+
+/*
+Returns a list with all files in the directory. Optional file_format will filter the files and return file names that match the file extension provided.
+Example: file_format="BMP" will only return files which have the ".bmp" extension.
+Trailing slashes for directory are ignored.
+*/
+std::vector<std::string> getFileNamesInDirectory(const std::string& directory, const std::string& file_format) {
+    std::vector<std::string> file_names = {};
+    std::string current_path;
+    const int format_size = file_format.size();
+
+    if(format_size > 0) {
+        const int last_ext = format_size-1;
+        int last_index;
+        bool match_format;
+        for(const auto& entry : std::filesystem::directory_iterator(directory)) {
+            current_path = entry.path().u8string();
+            last_index = current_path.size() - 1;
+            match_format = true;
+            for(int i=0; i<format_size; ++i) {
+                // in theory I shouldn't need to worry about file extensions which are not ASCII-like
+                if( std::tolower(current_path[last_index-i]) != std::tolower(file_format[last_ext-i]) ) {
+                    match_format = false;
+                    break;
+                }
+            }
+            if(match_format) {
+                file_names.push_back( entry.path().u8string() );
+            }        
+        }
+    } else {
+        for(const auto& entry : std::filesystem::directory_iterator(directory)) {
+            file_names.push_back( entry.path().u8string() );
+        }
+    }
+    
+    std::string full_path;
+    int name_begin, name_end;
+    bool check_slashes, check_dot;
+    for(int i=0; i<file_names.size(); ++i) {
+        full_path = file_names[i];
+        std::cout << "full_path:" << full_path << '\n';
+        // search for folder/directory separator and for the '.' extension separator
+        name_begin = 0;
+        check_slashes = true; 
+        check_dot = true;
+        for(int j=full_path.size()-1; j>=0; --j) {
+            if(check_dot && full_path[j] == '.') {
+                name_end = j;
+                check_dot = false;
+            }
+            if(check_slashes && (full_path[j] == '\\' || full_path[j] == '/')) {
+                name_begin = j+1;
+                check_slashes = false;
+            }
+            if(!check_dot && !check_slashes) { break; }
+        }
+        std::cout << "name_begin:" << name_begin << " name_end:" << name_end << '\n';
+        file_names[i] = file_names[i].substr(name_begin, name_end-name_begin);
+    }
+    
+    return file_names;
+}
+
+
+
+/*
+Output writes to a SDL_Color matrix in RGB with alpha OPAQUE. Pixels are stored by "rows" so pixel at position (x,y) is stored in pixels[y][x] (reverse).
+Output writes width and height of the original BMP image.
+Returns true on success, and false on failure.
+This function is very similar to Map::LoadMapFile(), but it's independent from the Map class and from the color values.
+*/ 
+bool getPixelsBMP(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height) {
+    // https://stackoverflow.com/questions/9296059/read-pixel-value-in-bmp-file
+    static constexpr size_t HEADER_SIZE = 54;
+
+    std::ifstream bmp_file(path, std::ios::binary);
+    if(!bmp_file) {
+        std::cout << "Failed to open file: " << path << '\n';
+        return false;
+    }
+
+    std::vector<char> header(HEADER_SIZE);
+    bmp_file.read(header.data(), HEADER_SIZE);
+
+    auto fileSize   = *reinterpret_cast<uint32_t *>(&header[2]);
+    auto dataOffset = *reinterpret_cast<uint32_t *>(&header[10]);
+    *bmp_width      = *reinterpret_cast<uint32_t *>(&header[18]);
+    if(*bmp_width % 4 !=0) {
+        printf("Invalid BMP: width not multiple of 4.\n");
+        return false;
+    }
+    *bmp_height = *reinterpret_cast<uint32_t *>(&header[22]);
+    auto depth  = *reinterpret_cast<uint16_t *>(&header[28]);
+
+    auto dataSize = ((*bmp_width * 3 + 3) & (~3))  *  *bmp_height;
+    std::vector<char> img(dataSize);
+    bmp_file.read(img.data(), img.size());
+    bmp_file.close();
+
+    pixels.resize(*bmp_height);
+
+    char temp;
+    int line_offset = 0;
+    int line_index = *bmp_width;
+    int current_line;
+    SDL_Color current_pixel = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; // just to set alpha to every pixel
+    int tile_type;
+    // reads "bottom" row first
+    for(auto i = 0; i < dataSize; i += 3) {
+        // BMP goes BGR
+        current_pixel.r = img[i+2];
+        current_pixel.g = img[i+1];
+        current_pixel.b = img[i];
+
+        if(line_index == *bmp_width) {
+            ++line_offset;
+            current_line = *bmp_height - line_offset;
+            pixels[current_line].resize(*bmp_width);
+            line_index = 0;
+        }
+
+        pixels[current_line][line_index] = current_pixel;
+        ++line_index;
+    }
+    return true;
+}
+

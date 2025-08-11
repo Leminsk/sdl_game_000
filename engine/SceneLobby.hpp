@@ -6,6 +6,7 @@
 #include "AudioManager.hpp"
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
+#include "utils.hpp"
 
 class SceneLobby {
 private:
@@ -30,8 +31,29 @@ public:
         const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
         const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
 
-        createUIDropdown("dropdown", {"base", "option1", "option 2"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
-        createUIDropdownColors("dropdown_colors", -50, 50, Game::default_text_color, background_color, dp_border_color);
+        // createUIDropdown("dropdown", {"base", "option1", "option 2"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
+        // createUIDropdownColors("dropdown_colors", -50, 50, Game::default_text_color, background_color, dp_border_color);
+        
+        const std::string maps_dir = "assets/maps/";
+        std::vector<std::string> map_names = getFileNamesInDirectory(maps_dir, "BMP");
+
+        std::vector<std::vector<SDL_Color>> map_pixels = {};
+        uint32_t map_width, map_height;
+        for(std::string& map_name : map_names) {
+            std::cout << "Going for this map:" << map_name << '\n';
+            if(getPixelsBMP(maps_dir+map_name+".bmp", map_pixels, &map_width, &map_height)) {
+                std::cout << "Width x Height: " << map_width << "x" << map_height << '\n';
+                std::cout << "Pixel( 0, 0): { " << static_cast<unsigned int>(map_pixels[0][0].r) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[0][0].g) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[0][0].b) << " }\n";
+                std::cout << "Pixel( 1,10): { " << static_cast<unsigned int>(map_pixels[10][1].r) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[10][1].g) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[10][1].b) << " }\n";
+                std::cout << "Pixel(17,12): { " << static_cast<unsigned int>(map_pixels[12][17].r) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[12][17].g) << ", " 
+                                                << static_cast<unsigned int>(map_pixels[12][17].b) << " }\n";
+            }
+        }
 
         createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     }

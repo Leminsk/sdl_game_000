@@ -7,6 +7,9 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <filesystem>
+#include <SDL2/SDL.h>
 
 
 uint8_t readBit(uint8_t byte, uint8_t bit);
@@ -25,3 +28,6 @@ void trim(std::string &s);
 std::string ltrim_copy(std::string s);
 std::string rtrim_copy(std::string s);
 std::string trim_copy(std::string s);
+
+std::vector<std::string> getFileNamesInDirectory(const std::string& directory, const std::string& file_format="");
+bool getPixelsBMP(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* layout_width, uint32_t* layout_height);
