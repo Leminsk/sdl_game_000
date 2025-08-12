@@ -108,6 +108,20 @@ Entity& createUIDropdownColors(
     new_dropdown_colors.addGroup(groupPriorityUI);
     return new_dropdown_colors;
 }
+Entity& createUIMapThumbnail(
+    const std::string& id, 
+    const std::string map_dir="assets/maps/",
+    const std::string map_name="test3",
+    int pos_x=0, int pos_y=0    
+) {
+    auto& new_map_thumbnail(Game::manager->addEntity(id));
+    new_map_thumbnail.addComponent<MapThumbnailComponent>(
+        map_dir, map_name, 
+        pos_x, pos_y
+    );
+    new_map_thumbnail.addGroup(groupUI);
+    return new_map_thumbnail;
+}
 Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
     auto& building(Game::manager->addEntity(id));
     building.addComponent<TransformComponent>(world_pos_x, world_pos_y, width, width, 1.0);

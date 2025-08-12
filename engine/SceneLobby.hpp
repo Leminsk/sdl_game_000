@@ -37,23 +37,7 @@ public:
         const std::string maps_dir = "assets/maps/";
         std::vector<std::string> map_names = getFileNamesInDirectory(maps_dir, "BMP");
 
-        std::vector<std::vector<SDL_Color>> map_pixels = {};
-        uint32_t map_width, map_height;
-        for(std::string& map_name : map_names) {
-            std::cout << "Going for this map:" << map_name << '\n';
-            if(getPixelsBMP(maps_dir+map_name+".bmp", map_pixels, &map_width, &map_height)) {
-                std::cout << "Width x Height: " << map_width << "x" << map_height << '\n';
-                std::cout << "Pixel( 0, 0): { " << static_cast<unsigned int>(map_pixels[0][0].r) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[0][0].g) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[0][0].b) << " }\n";
-                std::cout << "Pixel( 1,10): { " << static_cast<unsigned int>(map_pixels[10][1].r) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[10][1].g) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[10][1].b) << " }\n";
-                std::cout << "Pixel(17,12): { " << static_cast<unsigned int>(map_pixels[12][17].r) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[12][17].g) << ", " 
-                                                << static_cast<unsigned int>(map_pixels[12][17].b) << " }\n";
-            }
-        }
+        createUIMapThumbnail("thumbnail", maps_dir, map_names[0], 50, 50);
 
         createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     }

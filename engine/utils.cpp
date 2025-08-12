@@ -171,7 +171,6 @@ std::vector<std::string> getFileNamesInDirectory(const std::string& directory, c
     bool check_slashes, check_dot;
     for(int i=0; i<file_names.size(); ++i) {
         full_path = file_names[i];
-        std::cout << "full_path:" << full_path << '\n';
         // search for folder/directory separator and for the '.' extension separator
         name_begin = 0;
         check_slashes = true; 
@@ -187,7 +186,6 @@ std::vector<std::string> getFileNamesInDirectory(const std::string& directory, c
             }
             if(!check_dot && !check_slashes) { break; }
         }
-        std::cout << "name_begin:" << name_begin << " name_end:" << name_end << '\n';
         file_names[i] = file_names[i].substr(name_begin, name_end-name_begin);
     }
     

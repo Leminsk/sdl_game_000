@@ -12,3 +12,4 @@
 #include "TextBoxComponent.hpp"
 #include "TextDropdownComponent.hpp"
 #include "DroneComponent.hpp"
+#include "MapThumbnailComponent.hpp"
