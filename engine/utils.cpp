@@ -195,12 +195,35 @@ std::vector<std::string> getFileNamesInDirectory(const std::string& directory, c
 
 
 /*
+Output writes width and height of the original BMP image.
+Returns true on success, and false on failure.
+Similar to getBMPPixels(), but does not parse the pixels.
+*/
+bool getBMPProperties(const std::string& path, uint32_t* bmp_width, uint32_t* bmp_height) {
+    static constexpr size_t HEADER_SIZE = 54;
+    std::ifstream bmp_file(path, std::ios::binary);
+    if(!bmp_file) {
+        std::cout << "Failed to open file: " << path << '\n';
+        return false;
+    }
+    std::vector<char> header(HEADER_SIZE);
+    bmp_file.read(header.data(), HEADER_SIZE);
+    *bmp_width = *reinterpret_cast<uint32_t *>(&header[18]);
+    if(*bmp_width % 4 !=0) {
+        printf("Invalid BMP: width not multiple of 4.\n");
+        return false;
+    }
+    *bmp_height = *reinterpret_cast<uint32_t *>(&header[22]);
+    return true;
+}
+
+/*
 Output writes to a SDL_Color matrix in RGB with alpha OPAQUE. Pixels are stored by "rows" so pixel at position (x,y) is stored in pixels[y][x] (reverse).
 Output writes width and height of the original BMP image.
 Returns true on success, and false on failure.
 This function is very similar to Map::LoadMapFile(), but it's independent from the Map class and from the color values.
 */ 
-bool getPixelsBMP(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height) {
+bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height) {
     // https://stackoverflow.com/questions/9296059/read-pixel-value-in-bmp-file
     static constexpr size_t HEADER_SIZE = 54;
 

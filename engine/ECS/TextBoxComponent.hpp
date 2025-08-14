@@ -196,11 +196,11 @@ class TextBoxComponent : public Component {
 
             if(this->single_line) {
                 // srcRect is the entire screen, destRect is the inner portion of TextBox
-                TextureManager::DrawText(color3, this->texture, this->srcRect, this->destRect, this->rotation, SDL_FLIP_NONE);
+                TextureManager::DrawText(color3, this->texture, &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
             } else {
                 for(int i=0; i<this->lines_amount; ++i) {
                     this->destRect.w = this->width_per_line[i];
-                    TextureManager::DrawText(color3, this->textures[i], this->srcRect, this->destRect, this->rotation, SDL_FLIP_NONE);
+                    TextureManager::DrawText(color3, this->textures[i], &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
                     this->destRect.y += this->line_thickness;
                 }
                 this->destRect.y = this->inner_y + this->v_line_gap;

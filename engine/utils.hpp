@@ -30,4 +30,5 @@ std::string rtrim_copy(std::string s);
 std::string trim_copy(std::string s);
 
 std::vector<std::string> getFileNamesInDirectory(const std::string& directory, const std::string& file_format="");
-bool getPixelsBMP(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* layout_width, uint32_t* layout_height);
+bool getBMPProperties(const std::string& path, uint32_t* bmp_width, uint32_t* bmp_height);
+bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height);

@@ -86,7 +86,7 @@ class SpriteComponent : public Component {
                     while whatever TransformComponent has as its position was the game WORLD coordinates.
                     So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
                 */
-                TextureManager::Draw(this->texture, this->srcRect, this->destRect, this->rotation, this->spriteFlip, this->color_modulation);
+                TextureManager::Draw(this->texture, &this->srcRect, &this->destRect, this->rotation, this->spriteFlip, this->color_modulation);
             }
         }
         void play(const char* name) {

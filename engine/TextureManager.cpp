@@ -46,16 +46,19 @@ SDL_Texture* TextureManager::LoadTextTexture(const char* text, const SDL_Color& 
 
 
 
-
-void TextureManager::Draw(SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip, const SDL_Color& color) {
+/*
+`SDL_Rect *src`: rectangle crop of the original texture to be displayed. If NULL, will display the whole texture
+`SDL_FRect *dest`: rectangle portion of the window on which the texture will be drawn. If NULL, will drawn on the whole window.
+*/
+void TextureManager::Draw(SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, double rotation_degrees, SDL_RendererFlip flip, const SDL_Color& color) {
     SDL_SetTextureColorMod(tex, color.r, color.g, color.b);
     SDL_RenderCopyExF(
-        Game::renderer, tex, &src,
-        &dest, rotation_degrees, NULL, flip
+        Game::renderer, tex, src,
+        dest, rotation_degrees, NULL, flip
     );
 }
 
-void TextureManager::DrawText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect src, SDL_FRect dest, double rotation_degrees, SDL_RendererFlip flip) {
+void TextureManager::DrawText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, double rotation_degrees, SDL_RendererFlip flip) {
     SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
     TextureManager::Draw(tex, src, dest, rotation_degrees, flip);
     SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);

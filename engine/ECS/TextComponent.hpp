@@ -116,7 +116,7 @@ class TextComponent : public Component {
                     destRect is the SCREEN coordinates
                     TransformComponent's position is the WORLD coordinates
                 */
-                TextureManager::DrawText(this->color, this->texture, this->srcRect, this->destRect, this->rotation, SDL_FLIP_NONE);
+                TextureManager::DrawText(this->color, this->texture, &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
             }
         }
 };
