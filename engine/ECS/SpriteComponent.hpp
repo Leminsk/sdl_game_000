@@ -52,17 +52,17 @@ class SpriteComponent : public Component {
         void init() override {
             this->transform = &entity->getComponent<TransformComponent>();
 
-            this->srcRect.x = 0;
-            this->srcRect.y = 0;
-            this->srcRect.w = static_cast<int>(this->transform->width);
-            this->srcRect.h = static_cast<int>(this->transform->height);
+            // this->srcRect.x = 0;
+            // this->srcRect.y = 0;
+            // this->srcRect.w = static_cast<int>(this->transform->width);
+            // this->srcRect.h = static_cast<int>(this->transform->height);
         }
         void update() override {
-            this->srcRect.y = this->animationIndex * static_cast<int>(this->transform->height);
+            // this->srcRect.y = this->animationIndex * static_cast<int>(this->transform->height);
 
-            if (this->animated) {
-                srcRect.x = srcRect.w * static_cast<int>( (SDL_GetTicks() / delay) % this->frames );
-            }
+            // if (this->animated) {
+            //     srcRect.x = srcRect.w * static_cast<int>( (SDL_GetTicks() / delay) % this->frames );
+            // }
 
             if (this->rotating) {
                 this->rotation = (static_cast<int>(this->rotation + this->rotation_tick) % 360);
@@ -86,7 +86,7 @@ class SpriteComponent : public Component {
                     while whatever TransformComponent has as its position was the game WORLD coordinates.
                     So ideally there must be some sort of transformation/translation layer when passing one to the other (WORLD -> SCREEN)
                 */
-                TextureManager::Draw(this->texture, &this->srcRect, &this->destRect, this->rotation, this->spriteFlip, this->color_modulation);
+                TextureManager::Draw(this->texture, NULL, &this->destRect, this->rotation, this->spriteFlip, this->color_modulation);
             }
         }
         void play(const char* name) {
