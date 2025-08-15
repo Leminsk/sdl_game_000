@@ -64,8 +64,10 @@ std::vector<Vector2D> path_to_draw = {};
 std::vector<Entity*>&      buildings = Game::manager->getGroup(groupBuildings);
 std::vector<Entity*>&         drones = Game::manager->getGroup(groupDrones);
 std::vector<Entity*>&          tiles = Game::manager->getGroup(groupTiles);
-std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
+
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
+std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
+std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 
 public:
 
@@ -535,7 +537,9 @@ void render() {
     for(auto& t : this->tiles) { t->draw(); }
     for(auto& b : this->buildings) { b->draw(); }
     for(auto& dr : this->drones) { dr->draw(); }
+    for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }
+    for(auto& pr_ui : this->pr_ui_elements) { pr_ui->draw(); }
 
     // draw the path trajectory for debugging
     if(this->path_to_draw.size() > 0) {

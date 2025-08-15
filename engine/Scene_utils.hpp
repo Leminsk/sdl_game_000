@@ -32,14 +32,15 @@ Entity& createUISimpleText(
     const std::string& id, 
     int pos_x=0, int pos_y=0,
     const std::string& text="SIMPLE_TEXT",
-    const SDL_Color& text_color=Game::default_text_color            
+    const SDL_Color& text_color=Game::default_text_color,
+    groupLabels group=groupUI
 ) {
     auto& new_ui_text(Game::manager->addEntity(id));
     new_ui_text.addComponent<TextComponent>(
         text, pos_x, pos_y,
         Game::default_text_color, true
     );
-    new_ui_text.addGroup(groupUI);
+    new_ui_text.addGroup(group);
     return new_ui_text;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)

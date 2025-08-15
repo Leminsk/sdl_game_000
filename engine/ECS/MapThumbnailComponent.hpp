@@ -11,11 +11,9 @@
 
 class MapThumbnailComponent : public Component {
 private:
-SDL_FRect border_rect;
 SDL_Color border_color = Game::default_text_color;
 SDL_Texture *map_texture;
-TextComponent *map_title;
-TextComponent *map_dimensions_subtitle;
+
 
 public:
 const int text_height = 32;
@@ -27,7 +25,10 @@ uint32_t map_width, map_height;
 std::vector<std::vector<SDL_Color>> map_pixels = {};
 std::string map_name = "Placeholder";
 SDL_FRect map_rect;
+SDL_FRect border_rect;
 float origin_x, origin_y;
+TextComponent *map_title;
+TextComponent *map_dimensions_subtitle;
 
 MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y) {
     const std::string file_path = map_dir+map_name+".bmp";
