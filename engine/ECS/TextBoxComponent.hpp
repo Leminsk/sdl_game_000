@@ -100,6 +100,9 @@ class TextBoxComponent : public Component {
         }
         ~TextBoxComponent() {
             SDL_DestroyTexture(this->texture);
+            for(SDL_Texture* t : this->textures) {
+                if(t != NULL) { SDL_DestroyTexture(t); }
+            }
         }
 
         void setText(std::string text="", const char* path=nullptr) {

@@ -57,6 +57,10 @@ MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, f
     );
 }
 ~MapThumbnailComponent() {
+    this->map_title->~TextComponent();
+    this->map_title = nullptr;
+    this->map_dimensions_subtitle->~TextComponent();
+    this->map_dimensions_subtitle = nullptr;
     SDL_DestroyTexture(this->map_texture);
 }
 
