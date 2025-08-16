@@ -25,7 +25,7 @@
 #include "networking/Server.hpp"
 
 #include "Scene_utils.hpp"
-#include "SceneLobby.hpp"
+#include "SceneMapSelection.hpp"
 #include "SceneMainMenu.hpp"
 #include "SceneSettings.hpp"
 #include "SceneMatchGame.hpp"
@@ -33,7 +33,7 @@
 // Scene is a helper class to initialize Managers and globals
 class Scene {
 private:
-SceneType st;
+SceneType st = SceneType::MAIN_MENU;
 SDL_Event event;
 bool load_textures = true;
 
@@ -49,7 +49,7 @@ Mix_Music* music_main_menu = NULL;
 Mix_Chunk* sound_button = NULL;
 
 // ------------------ SCENES ------------------
-SceneLobby* S_Lobby;
+SceneMapSelection* S_MapSelection;
 SceneMainMenu* S_MainMenu;
 SceneSettings* S_Settings;
 SceneMatchGame* S_MatchGame;
@@ -59,7 +59,7 @@ public:
 TextComponent* fps_text;
 
 Scene() {
-    this->S_Lobby = new SceneLobby(&this->event);
+    this->S_MapSelection = new SceneMapSelection(&this->event);
     this->S_MainMenu = new SceneMainMenu(&this->event);
     this->S_Settings = new SceneSettings(&this->event);
     this->S_MatchGame = new SceneMatchGame(&this->event);
@@ -93,6 +93,7 @@ void loadTextures() {
 void setScene(SceneType t) {
     // if this texture is null, all others are also null
     if(Game::unit_tex == nullptr || this->load_textures) { loadTextures(); }
+    SceneType previous_scene = this->st;
     this->st = t;
 
     Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 163, 3, "FPS:000.00", Game::default_text_color, groupPriorityUI);
@@ -108,10 +109,11 @@ void setScene(SceneType t) {
             ); 
         } break;
 
-        case SceneType::LOBBY: { 
-            this->S_Lobby->setScene(
+        case SceneType::MAP_SELECTION: { 
+            this->S_MapSelection->setScene(
                 this->sound_button, 
-                this->fps_text
+                this->fps_text,
+                previous_scene
             ); 
         } break;
 
@@ -141,7 +143,7 @@ void setScene(SceneType t) {
 void handleEventsPrePoll() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->handleEventsPrePoll(); } break;
-        case SceneType::LOBBY: { this->S_Lobby->handleEventsPrePoll(); } break;
+        case SceneType::MAP_SELECTION: { this->S_MapSelection->handleEventsPrePoll(); } break;
         case SceneType::SETTINGS: { this->S_Settings->handleEventsPrePoll(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPrePoll(); } break;
     }
@@ -157,11 +159,11 @@ void handleEventsPollEvent() {
             }
         } break;
 
-        case SceneType::LOBBY: {
-            this->S_Lobby->handleEventsPollEvent();
-            if(this->S_Lobby->change_to_scene != SceneType::NONE) {                        
-                setScene(this->S_Lobby->change_to_scene);
-                this->S_Lobby->change_to_scene = SceneType::NONE;
+        case SceneType::MAP_SELECTION: {
+            this->S_MapSelection->handleEventsPollEvent();
+            if(this->S_MapSelection->change_to_scene != SceneType::NONE) {                        
+                setScene(this->S_MapSelection->change_to_scene);
+                this->S_MapSelection->change_to_scene = SceneType::NONE;
             }
         } break;
 
@@ -184,7 +186,7 @@ void handleEventsPostPoll() {
     const uint8_t *keystates = SDL_GetKeyboardState(NULL);
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->handleEventsPostPoll(keystates); } break;
-        case SceneType::LOBBY: { this->S_Lobby->handleEventsPostPoll(); } break;
+        case SceneType::MAP_SELECTION: { this->S_MapSelection->handleEventsPostPoll(); } break;
         case SceneType::SETTINGS: { this->S_Settings->handleEventsPostPoll(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPostPoll(keystates); } break;
     }
@@ -193,7 +195,7 @@ void handleEventsPostPoll() {
 void update() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->update(); } break;
-        case SceneType::LOBBY: { this->S_Lobby->update(); } break;
+        case SceneType::MAP_SELECTION: { this->S_MapSelection->update(); } break;
         case SceneType::SETTINGS: { this->S_Settings->update(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->update(); } break;
     }
@@ -203,7 +205,7 @@ void render() {
     this->fps_text->setText("FPS:" + format_decimal(Game::AVERAGE_FPS, 3, 2, false));
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->render(); } break;
-        case SceneType::LOBBY: { this->S_Lobby->render(); } break;
+        case SceneType::MAP_SELECTION: { this->S_MapSelection->render(); } break;
         case SceneType::SETTINGS: { this->S_Settings->render(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->render(); } break;
     }
@@ -212,7 +214,7 @@ void render() {
 void clean() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->clean(); } break;
-        case SceneType::LOBBY: { this->S_Lobby->clean(); } break;
+        case SceneType::MAP_SELECTION: { this->S_MapSelection->clean(); } break;
         case SceneType::SETTINGS: { this->S_Settings->clean(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->clean(); } break;
     }

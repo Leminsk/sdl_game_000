@@ -91,7 +91,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                             std::string button_id = ui->getIdentifier();
                             if(button_id == "button_single_player") {
                                 clean();
-                                this->change_to_scene = SceneType::LOBBY;
+                                this->change_to_scene = SceneType::MAP_SELECTION;
                             } else if(button_id == "button_multiplayer") {
                                 clean();
                                 this->change_to_scene = SceneType::MATCH_GAME;

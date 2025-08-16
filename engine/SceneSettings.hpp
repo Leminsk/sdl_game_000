@@ -80,26 +80,22 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                         if(ui->getComponent<TextBoxComponent>().mouse_down) {
                             std::string button_id = ui->getIdentifier();
                             if(button_id == "button_back") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
-                                clean();
+                                Mix_PlayChannel(-1, this->sound_button, 0);                                
                                 this->change_to_scene = SceneType::MAIN_MENU;
                             } else if(button_id == "button_res_SVGA") {
                                 changeScreenResolution(800, 600);
-                                clean();
                                 this->change_to_scene = SceneType::SETTINGS;
                             } else if(button_id == "button_res_WXGA") {
                                 changeScreenResolution(1280, 720);
-                                clean();
                                 this->change_to_scene = SceneType::SETTINGS;
                             } else if(button_id == "button_res_1.56M3") {
                                 changeScreenResolution(1440, 1080);
-                                clean();
                                 this->change_to_scene = SceneType::SETTINGS;
                             } else if(button_id == "button_res_FHD") {
                                 changeScreenResolution(1920, 1080);
-                                clean();
                                 this->change_to_scene = SceneType::SETTINGS;
                             }
+                            clean();
                             break;
                         }                               
                     }

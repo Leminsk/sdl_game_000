@@ -8,16 +8,15 @@
 #include "Scene_utils.hpp"
 #include "utils.hpp"
 
-class SceneLobby {
+class SceneMapSelection {
 private:
+SceneType parent_scene;
 int thumbnail_width;
 int thumbnail_height;
 const int max_y_title = 20;
 int min_y_title = this->max_y_title;
 Entity* title = nullptr;
 Entity* button_go = nullptr;
-Entity* selected_map = nullptr;
-std::vector<Entity*> maps_thumbnails;
 int maps_amount;
 
 
@@ -30,13 +29,16 @@ public:
 Mix_Chunk* sound_button = NULL;
 TextComponent* fps_text;
 SceneType change_to_scene = SceneType::NONE;
+Entity* selected_map = nullptr;
+std::vector<Entity*> maps_thumbnails;
 
-SceneLobby(SDL_Event* e) { this->event = e; }
-~SceneLobby() {}
+SceneMapSelection(SDL_Event* e) { this->event = e; }
+~SceneMapSelection() {}
 
-void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
+void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->sound_button = sound_b;
     this->fps_text = fps;
+    this->parent_scene = parent;
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
@@ -148,7 +150,7 @@ bool clickedButton(Vector2D& pos) {
                 std::string button_id = ui->getIdentifier();
                 if(button_id == "button_back") {
                     clean();
-                    this->change_to_scene = SceneType::MAIN_MENU;
+                    this->change_to_scene = this->parent_scene;
                 } else if(button_id == "button_go") {
                     // go to other scene to set spawns on selected map: this->change_to_scene = SceneType:???
                 }
@@ -168,22 +170,20 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
             for(auto& pr_ui : this->pr_ui_elements) {
                 if(pr_ui->hasComponent<TextDropdownComponent>()) {
                     TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
-
                     if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
                         std::string dropdown_id = pr_ui->getIdentifier();
                         if(dropdown_id == "dropdown" || dropdown_id == "dropdown_colors") {
                             Mix_PlayChannel(-1, this->sound_button, 0);
-                            pr_ui->getComponent<TextDropdownComponent>().display_dropdown = !(pr_ui->getComponent<TextDropdownComponent>().display_dropdown);
+                            dropdown.display_dropdown = !(dropdown.display_dropdown);
                             return;
                         }
                     }
-
-                    if(pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
+                    if(dropdown.display_dropdown) {
                         for(int i=0; i<dropdown.options.size(); ++i) {
                             TextBoxComponent* option = dropdown.options[i];
                             if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
                                 Mix_PlayChannel(-1, this->sound_button, 0);
-                                pr_ui->getComponent<TextDropdownComponent>().setSelectedOption(i);
+                                dropdown.setSelectedOption(i);
                                 return;
                             }
                         }
