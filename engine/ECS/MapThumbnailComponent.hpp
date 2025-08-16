@@ -29,6 +29,7 @@ SDL_FRect border_rect;
 float origin_x, origin_y;
 TextComponent *map_title;
 TextComponent *map_dimensions_subtitle;
+bool selected = false;
 
 MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y) {
     const std::string file_path = map_dir+map_name+".bmp";
@@ -72,6 +73,20 @@ void update() override {
 
 }
 void draw() override {
+    if(this->selected) {
+        this->border_color = COLORS_MAGENTA;
+        this->map_title->color = COLORS_MAGENTA;
+        this->map_dimensions_subtitle->color = COLORS_MAGENTA;
+        // need to reset the texture to apply new color
+        this->map_title->setText(this->map_title->content);
+        this->map_dimensions_subtitle->setText(this->map_dimensions_subtitle->content);
+    } else {
+        this->border_color = Game::default_text_color;
+        this->map_title->color = Game::default_text_color;
+        this->map_dimensions_subtitle->color = Game::default_text_color;
+        this->map_title->setText(this->map_title->content);
+        this->map_dimensions_subtitle->setText(this->map_dimensions_subtitle->content);
+    }
     this->map_title->draw();
     TextureManager::DrawRect(&this->border_rect, this->border_color);
     TextureManager::Draw(this->map_texture, NULL, &this->map_rect);

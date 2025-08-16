@@ -87,27 +87,21 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
                     if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
                         if(ui->getComponent<TextBoxComponent>().mouse_down) {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
                             std::string button_id = ui->getIdentifier();
                             if(button_id == "button_single_player") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
                                 clean();
                                 this->change_to_scene = SceneType::LOBBY;
-                                break;
                             } else if(button_id == "button_multiplayer") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
                                 clean();
                                 this->change_to_scene = SceneType::MATCH_GAME;
-                                break;
                             } else if(button_id == "button_settings") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
                                 clean();
                                 this->change_to_scene = SceneType::SETTINGS;
-                                break;
                             } else if(button_id == "button_quit") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
                                 Game::isRunning = false;
-                                break;
                             }
+                            break;
                         }                               
                     }
                     ui->getComponent<TextBoxComponent>().mouse_down = false;
