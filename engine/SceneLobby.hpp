@@ -112,129 +112,172 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     }
 }
 
-void handleMouseRelease(SDL_MouseButtonEvent& b) {
-        Vector2D pos = Vector2D(b.x, b.y);
-        switch(b.button) {
-            case SDL_BUTTON_LEFT: {
-                std::cout << "RELEASE LEFT: " << pos << '\n';
-                for(auto& pr_ui : this->pr_ui_elements) {
-                    if(pr_ui->hasComponent<TextDropdownComponent>()) {
-                        TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+bool clickedThumbnail(Vector2D& pos) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<MapThumbnailComponent>()) {
+            MapThumbnailComponent& thumbnail = ui->getComponent<MapThumbnailComponent>();
+            if(Collision::pointInRect(
+                pos.x, pos.y, 
+                thumbnail.map_title->x, thumbnail.map_title->y, 
+                this->thumbnail_width, this->thumbnail_height
+            )) {
+                for(int i=0; i<this->maps_amount; ++i) {
+                    MapThumbnailComponent& t = this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>();
+                    if(t.map_title->x == thumbnail.map_title->x && t.map_title->y == thumbnail.map_title->y) {
+                        t.selected = true;
+                        this->selected_map = this->maps_thumbnails[i];
+                    } else {
+                        t.selected = false;
+                    }                                
+                }
+                return true;
+            }
+        }
+    }
+    return false;
+}
+bool clickedButton(Vector2D& pos) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+            if(
+                Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
+                ui->getComponent<TextBoxComponent>().mouse_down
+            ) {
+                Mix_PlayChannel(-1, this->sound_button, 0);
+                std::string button_id = ui->getIdentifier();
+                if(button_id == "button_back") {
+                    clean();
+                    this->change_to_scene = SceneType::MAIN_MENU;
+                } else if(button_id == "button_go") {
+                    // go to other scene to set spawns on selected map: this->change_to_scene = SceneType:???
+                }
+                return true;
+            }
+            ui->getComponent<TextBoxComponent>().mouse_down = false;
+        }
+    }
+    return false;
+}
 
-                        if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
-                            std::string dropdown_id = pr_ui->getIdentifier();
-                            if(dropdown_id == "dropdown" || dropdown_id == "dropdown_colors") {
+void handleMouseRelease(SDL_MouseButtonEvent& b) {
+    Vector2D pos = Vector2D(b.x, b.y);
+    switch(b.button) {
+        case SDL_BUTTON_LEFT: {
+            std::cout << "RELEASE LEFT: " << pos << '\n';
+            for(auto& pr_ui : this->pr_ui_elements) {
+                if(pr_ui->hasComponent<TextDropdownComponent>()) {
+                    TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+
+                    if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
+                        std::string dropdown_id = pr_ui->getIdentifier();
+                        if(dropdown_id == "dropdown" || dropdown_id == "dropdown_colors") {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
+                            pr_ui->getComponent<TextDropdownComponent>().display_dropdown = !(pr_ui->getComponent<TextDropdownComponent>().display_dropdown);
+                            return;
+                        }
+                    }
+
+                    if(pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
+                        for(int i=0; i<dropdown.options.size(); ++i) {
+                            TextBoxComponent* option = dropdown.options[i];
+                            if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
                                 Mix_PlayChannel(-1, this->sound_button, 0);
-                                pr_ui->getComponent<TextDropdownComponent>().display_dropdown = !(pr_ui->getComponent<TextDropdownComponent>().display_dropdown);
+                                pr_ui->getComponent<TextDropdownComponent>().setSelectedOption(i);
                                 return;
                             }
                         }
+                    }
+                }
+            }
 
-                        if(pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
-                            for(int i=0; i<dropdown.options.size(); ++i) {
-                                TextBoxComponent* option = dropdown.options[i];
-                                if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                                    Mix_PlayChannel(-1, this->sound_button, 0);
-                                    pr_ui->getComponent<TextDropdownComponent>().setSelectedOption(i);
-                                    return;
-                                }
-                            }
-                        }
+            if(!clickedButton(pos)) {
+                if(clickedThumbnail(pos)) {
+                    if(this->button_go == nullptr) {
+                        this->button_go = &createUIButton("button_go", " Go ", -50, -50, Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE });
                     }
-                }
-                bool clicked_on_map = false;
-                bool clicked_button = false;
-                for(auto& ui : this->ui_elements) {
-                    if(ui->hasComponent<MapThumbnailComponent>()) {
-                        MapThumbnailComponent& thumbnail = ui->getComponent<MapThumbnailComponent>();
-                        if(Collision::pointInRect(
-                            pos.x, pos.y, 
-                            thumbnail.map_title->x, thumbnail.map_title->y, 
-                            this->thumbnail_width, this->thumbnail_height
-                        )) {
-                            clicked_on_map = true;
-                            for(int i=0; i<this->maps_amount; ++i) {
-                                MapThumbnailComponent& t = this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>();
-                                if(t.map_title->x == thumbnail.map_title->x && t.map_title->y == thumbnail.map_title->y) {
-                                    t.selected = true;
-                                    this->selected_map = this->maps_thumbnails[i];
-                                } else {
-                                    t.selected = false;
-                                }                                
-                            }
-                        }
-                    } else if(ui->hasComponent<TextBoxComponent>()) {
-                        TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                        if(
-                            Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                            ui->getComponent<TextBoxComponent>().mouse_down
-                        ) {
-                            clicked_button = true;
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            std::string button_id = ui->getIdentifier();
-                            if(button_id == "button_back") {
-                                clean();
-                                this->change_to_scene = SceneType::MAIN_MENU;
-                            } else if(button_id == "button_go") {
-                                // go to other scene to set spawns on selected map: this->change_to_scene = SceneType:???
-                            }
-                            break;
-                        }
-                        ui->getComponent<TextBoxComponent>().mouse_down = false;
-                    }
-                }
-
-                if(!clicked_button) {
-                    if(clicked_on_map) {
-                        if(this->button_go == nullptr) {
-                            this->button_go = &createUIButton("button_go", " Go ", -50, -50, Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE });
-                        }
-                    } else {
-                        this->selected_map = nullptr;
-                        for(int i=0; i<this->maps_amount; ++i) {
-                            this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>().selected = false;                        
-                        }
-                        if(this->button_go != nullptr) {
-                            this->button_go->destroy();
-                            this->button_go = nullptr;
-                        }
-                    }
-                }
-            } break;
-            case SDL_BUTTON_RIGHT: {
-                std::cout << "RELEASE RIGHT: " << pos << '\n';
-                if(this->selected_map != nullptr) {
-                    std::cout << "selected_map: " << this->selected_map->getComponent<MapThumbnailComponent>().map_name << '\n';
                 } else {
-                    printf("no selected_map\n");
+                    this->selected_map = nullptr;
+                    for(int i=0; i<this->maps_amount; ++i) {
+                        this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>().selected = false;                        
+                    }
+                    if(this->button_go != nullptr) {
+                        this->button_go->destroy();
+                        this->button_go = nullptr;
+                    }
                 }
-                
+            }
+        } break;
+        case SDL_BUTTON_RIGHT: {
+            std::cout << "RELEASE RIGHT: " << pos << '\n';
+            if(this->selected_map != nullptr) {
+                std::cout << "selected_map: " << this->selected_map->getComponent<MapThumbnailComponent>().map_name << '\n';
+            } else {
+                printf("no selected_map\n");
+            }
+            
 
-                // was just debugging if it would really delete the entity from the screen (it did)
-                // int destroyed_index = -1;
-                // for(int i=0; i<this->maps_amount; ++i) {
-                //     if(this->maps_thumbnails[i] != nullptr && this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>().selected) {
-                //         this->maps_thumbnails[i]->destroy();
-                //         this->maps_thumbnails[i] = nullptr;
-                //         destroyed_index = i;
-                //         break;
-                //     }
-                // }
-                // if(destroyed_index >= 0) {
-                //     const int last_index = this->maps_amount-1; 
-                //     if(destroyed_index == last_index) {
-                //         this->maps_thumbnails.resize(destroyed_index);
-                //     } else {
-                //         for(int i=destroyed_index; i<last_index; ++i) {
-                //             this->maps_thumbnails[i] = this->maps_thumbnails[i+1];
-                //         }
-                //         this->maps_thumbnails.resize(last_index);
-                //     }
-                //     this->maps_thumbnails.shrink_to_fit();
-                // }
-            } break;
-        }
+            // was just debugging if it would really delete the entity from the screen (it did)
+            // int destroyed_index = -1;
+            // for(int i=0; i<this->maps_amount; ++i) {
+            //     if(this->maps_thumbnails[i] != nullptr && this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>().selected) {
+            //         this->maps_thumbnails[i]->destroy();
+            //         this->maps_thumbnails[i] = nullptr;
+            //         destroyed_index = i;
+            //         break;
+            //     }
+            // }
+            // if(destroyed_index >= 0) {
+            //     const int last_index = this->maps_amount-1; 
+            //     if(destroyed_index == last_index) {
+            //         this->maps_thumbnails.resize(destroyed_index);
+            //     } else {
+            //         for(int i=destroyed_index; i<last_index; ++i) {
+            //             this->maps_thumbnails[i] = this->maps_thumbnails[i+1];
+            //         }
+            //         this->maps_thumbnails.resize(last_index);
+            //     }
+            //     this->maps_thumbnails.shrink_to_fit();
+            // }
+        } break;
     }
+}
+
+void handleMouseWheel(SDL_MouseWheelEvent& e) {
+    int wheel_y = e.y;
+    int scroll_offset = 0;
+    if(wheel_y > 0) { // scroll up
+        scroll_offset = 64;              
+    } else if(wheel_y < 0) { // scroll down
+        scroll_offset = -64;
+    }
+    if(scroll_offset != 0) {
+        TextComponent& title_text = this->title->getComponent<TextComponent>();
+        int potential_new_pos = title_text.y + scroll_offset;
+        if(potential_new_pos <= this->max_y_title && potential_new_pos >= this->min_y_title) {
+            title_text.setRenderPos(title_text.x, potential_new_pos, title_text.w, title_text.h);
+            for(auto& ui : this->ui_elements) {
+                if(ui->getIdentifier().substr(0, 9) == "thumbnail") {
+                    MapThumbnailComponent& thumbnail = ui->getComponent<MapThumbnailComponent>();
+                    thumbnail.map_title->setRenderPos(
+                        thumbnail.map_title->x, 
+                        thumbnail.map_title->y + scroll_offset, 
+                        thumbnail.map_title->w, 
+                        thumbnail.map_title->h
+                    );
+                    thumbnail.border_rect.y += scroll_offset;
+                    thumbnail.map_rect.y += scroll_offset;
+                    thumbnail.map_dimensions_subtitle->setRenderPos(
+                        thumbnail.map_dimensions_subtitle->x,
+                        thumbnail.map_dimensions_subtitle->y + scroll_offset,
+                        thumbnail.map_dimensions_subtitle->w,
+                        thumbnail.map_dimensions_subtitle->h
+                    );
+                }
+            }
+        }
+    }                
+}
 
 void handleEventsPrePoll() {}
 void handleEventsPollEvent() {
@@ -251,39 +294,7 @@ void handleEventsPollEvent() {
                 handleMouseRelease(this->event->button);
             } break;
             case SDL_MOUSEWHEEL: {
-                int wheel_y = this->event->wheel.y;
-                int scroll_offset = 0;
-                if(wheel_y > 0) { // scroll up
-                    scroll_offset = 64;              
-                } else if(wheel_y < 0) { // scroll down
-                    scroll_offset = -64;
-                }
-                if(scroll_offset != 0) {
-                    TextComponent& title_text = this->title->getComponent<TextComponent>();
-                    int potential_new_pos = title_text.y + scroll_offset;
-                    if(potential_new_pos <= this->max_y_title && potential_new_pos >= this->min_y_title) {
-                        title_text.setRenderPos(title_text.x, potential_new_pos, title_text.w, title_text.h);
-                        for(auto& ui : this->ui_elements) {
-                            if(ui->getIdentifier().substr(0, 9) == "thumbnail") {
-                                MapThumbnailComponent& thumbnail = ui->getComponent<MapThumbnailComponent>();
-                                thumbnail.map_title->setRenderPos(
-                                    thumbnail.map_title->x, 
-                                    thumbnail.map_title->y + scroll_offset, 
-                                    thumbnail.map_title->w, 
-                                    thumbnail.map_title->h
-                                );
-                                thumbnail.border_rect.y += scroll_offset;
-                                thumbnail.map_rect.y += scroll_offset;
-                                thumbnail.map_dimensions_subtitle->setRenderPos(
-                                    thumbnail.map_dimensions_subtitle->x,
-                                    thumbnail.map_dimensions_subtitle->y + scroll_offset,
-                                    thumbnail.map_dimensions_subtitle->w,
-                                    thumbnail.map_dimensions_subtitle->h
-                                );
-                            }
-                        }
-                    }
-                }                
+                handleMouseWheel(this->event->wheel);
             } break;
             case SDL_WINDOWEVENT: {
                 switch(this->event->window.event) {
