@@ -40,6 +40,10 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->fps_text = fps;
     this->parent_scene = parent;
 
+    // need to reset these pointers for when the scene is being reset
+    this->button_go = nullptr;
+    this->selected_map = nullptr;
+
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
@@ -152,7 +156,8 @@ bool clickedButton(Vector2D& pos) {
                     clean();
                     this->change_to_scene = this->parent_scene;
                 } else if(button_id == "button_go") {
-                    // go to other scene to set spawns on selected map: this->change_to_scene = SceneType:???
+                    clean();
+                    this->change_to_scene = SceneType::MATCH_SETTINGS;
                 }
                 return true;
             }
