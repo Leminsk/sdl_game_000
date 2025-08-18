@@ -4,6 +4,7 @@
 #include "../TextureManager.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
+#include "../Colors.hpp"
 
 
 class TextComponent : public Component {
@@ -59,6 +60,11 @@ class TextComponent : public Component {
         void setOffset(float x_offset, float y_offset) {
             this->offset.x = x_offset;
             this->offset.y = y_offset;
+        }
+
+        void setColor(const SDL_Color& c) {
+            this->color = c;
+            setText(this->content);
         }
 
         void setText(std::string text="", const char* path=nullptr) {

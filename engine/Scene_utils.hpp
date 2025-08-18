@@ -38,7 +38,7 @@ Entity& createUISimpleText(
     auto& new_ui_text(Game::manager->addEntity(id));
     new_ui_text.addComponent<TextComponent>(
         text, pos_x, pos_y,
-        Game::default_text_color, true
+        text_color, true
     );
     new_ui_text.addGroup(group);
     return new_ui_text;
@@ -113,13 +113,23 @@ Entity& createUIMapThumbnail(
     const std::string& id, 
     const std::string map_dir="assets/maps/",
     const std::string map_name="test3",
-    int pos_x=0, int pos_y=0    
+    int pos_x=0, int pos_y=0, float scale=1.0f,
+    bool custom_dimensions=false,
+    float width=200.0f, float height=200.0f
 ) {
     auto& new_map_thumbnail(Game::manager->addEntity(id));
-    new_map_thumbnail.addComponent<MapThumbnailComponent>(
-        map_dir, map_name, 
-        pos_x, pos_y
-    );
+
+    if(custom_dimensions) {
+        new_map_thumbnail.addComponent<MapThumbnailComponent>(
+            map_dir, map_name, 
+            pos_x, pos_y, width, height
+        );
+    } else {
+        new_map_thumbnail.addComponent<MapThumbnailComponent>(
+            map_dir, map_name, 
+            pos_x, pos_y, scale
+        );
+    }    
     new_map_thumbnail.addGroup(groupUI);
     return new_map_thumbnail;
 }

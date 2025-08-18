@@ -56,7 +56,7 @@ std::string selected_option_label;
 std::vector<TextBoxComponent*> options = {};
 // for color dropdown selector
 std::vector<SDL_Color> options_colors = {
-    { 0xFF, 0xFF, 0xFF, SDL_ALPHA_TRANSPARENT },
+    COLORS_SPAWN,
     COLORS_WHITE,
     COLORS_BLACK,
     COLORS_RED,
@@ -165,6 +165,10 @@ TextDropdownComponent(
 }
 
 ~TextDropdownComponent() {
+    for(auto& o : this->options) { delete o; o = nullptr; }
+    this->options.clear();
+    this->options.shrink_to_fit();
+    delete this->selected_option; this->selected_option = nullptr;
 }
 
 void setSelectedOption(const int option_index=0) {

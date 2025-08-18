@@ -158,11 +158,12 @@ void Game::render() {
 
 void Game::clean() {
     scene->clean();
-    scene->~Scene();
+    delete scene;
     SDL_DestroyTexture(Game::unit_tex);
     SDL_DestroyTexture(Game::building_tex);
     Game::unit_tex = nullptr;
     Game::building_tex = nullptr;
+    delete Game::manager;
     Game::manager = nullptr;
     
     TTF_CloseFont(Game::default_font);

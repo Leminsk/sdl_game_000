@@ -11,9 +11,35 @@
 
 class MapThumbnailComponent : public Component {
 private:
+float pixel_width = 1.0f;
+float pixel_height = 1.0f;
+bool use_texture = true;
 SDL_Color border_color = Game::default_text_color;
-SDL_Texture *map_texture;
+SDL_Texture *map_texture = nullptr;
 
+void setObjects(float pos_x, float pos_y, float w, float h, const std::string& name) {
+    this->origin_x = pos_x;
+    this->origin_y = pos_y;
+    this->map_name = name;
+    this->map_title = new TextComponent(map_name, pos_x, pos_y, Game::default_text_color, true);
+    this->border_rect = {
+        pos_x,
+        pos_y + this->text_height + this->thumbnail_gap,
+        w + this->double_thickness,
+        h + this->double_thickness
+    };
+    this->map_rect = {
+        this->border_rect.x + this->border_thickness, 
+        this->border_rect.y + this->border_thickness,
+        w, h
+    };
+    this->map_dimensions_subtitle = new TextComponent(
+        std::to_string(this->map_width)+" x "+std::to_string(this->map_height),
+        pos_x, 
+        this->border_rect.y + this->border_rect.h + this->thumbnail_gap,
+        Game::default_text_color, true
+    );
+}
 
 public:
 const int text_height = 32;
@@ -31,38 +57,34 @@ TextComponent *map_title;
 TextComponent *map_dimensions_subtitle;
 bool selected = false;
 
-MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y) {
+MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y, float scale=1.0f) {
     const std::string file_path = map_dir+map_name+".bmp";
     this->map_texture = TextureManager::LoadTexture(file_path.c_str());
     getBMPProperties(file_path, &this->map_width, &this->map_height);
-    this->origin_x = pos_x;
-    this->origin_y = pos_y;
-    this->map_name = map_name;
-    this->map_title = new TextComponent(map_name, pos_x, pos_y, Game::default_text_color, true);
-    this->border_rect = {
-        pos_x,
-        pos_y + this->text_height + this->thumbnail_gap,
-        this->thumbnail_side_size + this->double_thickness,
-        this->thumbnail_side_size + this->double_thickness
-    };
-    this->map_rect = {
-        this->border_rect.x + this->border_thickness, 
-        this->border_rect.y + this->border_thickness,
-        this->thumbnail_side_size, this->thumbnail_side_size
-    };
-    this->map_dimensions_subtitle = new TextComponent(
-        std::to_string(this->map_width)+" x "+std::to_string(this->map_height),
-        pos_x, 
-        this->border_rect.y + this->border_rect.h + this->thumbnail_gap,
-        Game::default_text_color, true
-    );
+    const float scaled_size = this->thumbnail_side_size * scale;
+    setObjects(pos_x, pos_y, scaled_size, scaled_size, map_name);
+}
+MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y, float width, float height) {
+    const std::string file_path = map_dir+map_name+".bmp";
+    this->use_texture = false;
+    getBMPPixels(file_path, this->map_pixels, &this->map_width, &this->map_height);
+    setObjects(pos_x, pos_y, width, height, map_name);
+    this->pixel_width = width / static_cast<float>(this->map_width);
+    this->pixel_height = height / static_cast<float>(this->map_height);
 }
 ~MapThumbnailComponent() {
-    this->map_title->~TextComponent();
-    this->map_title = nullptr;
-    this->map_dimensions_subtitle->~TextComponent();
-    this->map_dimensions_subtitle = nullptr;
-    SDL_DestroyTexture(this->map_texture);
+    if(this->map_title) {
+        delete this->map_title;
+        this->map_title = nullptr;
+    }
+    if(this->map_dimensions_subtitle) {
+        delete this->map_dimensions_subtitle;
+        this->map_dimensions_subtitle = nullptr;
+    }
+    if(this->map_texture) {
+        SDL_DestroyTexture(this->map_texture);
+        this->map_texture = nullptr;
+    }
 }
 
 void init() override {
@@ -75,21 +97,30 @@ void update() override {
 void draw() override {
     if(this->selected) {
         this->border_color = COLORS_MAGENTA;
-        this->map_title->color = COLORS_MAGENTA;
-        this->map_dimensions_subtitle->color = COLORS_MAGENTA;
-        // need to reset the texture to apply new color
-        this->map_title->setText(this->map_title->content);
-        this->map_dimensions_subtitle->setText(this->map_dimensions_subtitle->content);
+        this->map_title->setColor(COLORS_MAGENTA);
+        this->map_dimensions_subtitle->setColor(COLORS_MAGENTA);
     } else {
         this->border_color = Game::default_text_color;
-        this->map_title->color = Game::default_text_color;
-        this->map_dimensions_subtitle->color = Game::default_text_color;
-        this->map_title->setText(this->map_title->content);
-        this->map_dimensions_subtitle->setText(this->map_dimensions_subtitle->content);
+        this->map_title->setColor(Game::default_text_color);
+        this->map_dimensions_subtitle->setColor(Game::default_text_color);
     }
     this->map_title->draw();
     TextureManager::DrawRect(&this->border_rect, this->border_color);
-    TextureManager::Draw(this->map_texture, NULL, &this->map_rect);
+
+    if(this->use_texture) {
+        TextureManager::Draw(this->map_texture, NULL, &this->map_rect);
+    } else {
+        SDL_FRect pixel_rect = { 0.0f, 0.0f, this->pixel_width, this->pixel_height };
+        int y, x;
+        for(y=0; y<this->map_height; ++y) {
+            pixel_rect.y = this->map_rect.y + (y * this->pixel_height);
+            for(x=0; x<this->map_width; ++x) {
+                pixel_rect.x = this->map_rect.x + (x * this->pixel_width);
+                TextureManager::DrawRect(&pixel_rect, this->map_pixels[y][x]);
+            }
+        }
+    }
+    
     this->map_dimensions_subtitle->draw(); 
 }
 };

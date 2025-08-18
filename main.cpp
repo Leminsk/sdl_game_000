@@ -19,6 +19,9 @@ int main() {
     SDL_Log("COMPILED against SDL version %u.%u.%u\n", compiled.major, compiled.minor, compiled.patch);
     SDL_Log("  LINKED against SDL version %u.%u.%u\n",   linked.major,   linked.minor,   linked.patch);
 
+    const int WIDTH = 1280;
+    const int HEIGHT = 720;
+
     const bool LIMIT_FPS = true;
     const int MAX_FPS = 60;
     const int MAX_FRAME_DELAY = 1000.0f / MAX_FPS;
@@ -35,7 +38,7 @@ int main() {
     std::mt19937 generator(seed);
 
     game = new Game();
-    game->init("Engine", 800, 600, false);
+    game->init("Bétula Engine", WIDTH, HEIGHT, false);
     game->RNG = &generator;
     game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
     game->CLIENT_PING_RATE = MAX_FPS * 3;
@@ -77,6 +80,7 @@ int main() {
     }
 
     game->clean();
+    delete game;
 
     return 0;
 }

@@ -30,6 +30,7 @@ Mix_Chunk* sound_button = NULL;
 TextComponent* fps_text;
 SceneType change_to_scene = SceneType::NONE;
 Entity* selected_map = nullptr;
+std::string selected_map_name;
 std::vector<Entity*> maps_thumbnails;
 
 SceneMapSelection(SDL_Event* e) { this->event = e; }
@@ -43,13 +44,11 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     // need to reset these pointers for when the scene is being reset
     this->button_go = nullptr;
     this->selected_map = nullptr;
+    this->selected_map_name = "";
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
-
-    // createUIDropdown("dropdown", {"base", "option1", "option 2"}, 50, 50, Game::default_text_color, background_color, dp_border_color);
-    // createUIDropdownColors("dropdown_colors", -50, 50, Game::default_text_color, background_color, dp_border_color);
 
     const int base_x = 70;
     const int base_y = 50;
@@ -62,7 +61,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->maps_thumbnails.resize(this->maps_amount, nullptr);
 
 
-    this->maps_thumbnails[0] = &createUIMapThumbnail("thumbnail_"+map_names[0], maps_dir, map_names[0], base_x, base_y);
+    this->maps_thumbnails[0] = &createUIMapThumbnail("thumbnail_0_"+map_names[0], maps_dir, map_names[0], base_x, base_y);
     MapThumbnailComponent& base_thumbnail = this->maps_thumbnails[0]->getComponent<MapThumbnailComponent>();
     const int margin = 20;
     this->thumbnail_width  = base_thumbnail.border_rect.w + margin;
@@ -132,6 +131,7 @@ bool clickedThumbnail(Vector2D& pos) {
                     if(t.map_title->x == thumbnail.map_title->x && t.map_title->y == thumbnail.map_title->y) {
                         t.selected = true;
                         this->selected_map = this->maps_thumbnails[i];
+                        this->selected_map_name = this->selected_map->getComponent<MapThumbnailComponent>().map_name;
                     } else {
                         t.selected = false;
                     }                                
@@ -172,30 +172,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
             std::cout << "RELEASE LEFT: " << pos << '\n';
-            for(auto& pr_ui : this->pr_ui_elements) {
-                if(pr_ui->hasComponent<TextDropdownComponent>()) {
-                    TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
-                        std::string dropdown_id = pr_ui->getIdentifier();
-                        if(dropdown_id == "dropdown" || dropdown_id == "dropdown_colors") {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            dropdown.display_dropdown = !(dropdown.display_dropdown);
-                            return;
-                        }
-                    }
-                    if(dropdown.display_dropdown) {
-                        for(int i=0; i<dropdown.options.size(); ++i) {
-                            TextBoxComponent* option = dropdown.options[i];
-                            if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
-                                dropdown.setSelectedOption(i);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-
             if(!clickedButton(pos)) {
                 if(clickedThumbnail(pos)) {
                     if(this->button_go == nullptr) {
@@ -203,6 +179,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                     }
                 } else {
                     this->selected_map = nullptr;
+                    this->selected_map_name = "";
                     for(int i=0; i<this->maps_amount; ++i) {
                         this->maps_thumbnails[i]->getComponent<MapThumbnailComponent>().selected = false;                        
                     }
@@ -216,7 +193,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
         case SDL_BUTTON_RIGHT: {
             std::cout << "RELEASE RIGHT: " << pos << '\n';
             if(this->selected_map != nullptr) {
-                std::cout << "selected_map: " << this->selected_map->getComponent<MapThumbnailComponent>().map_name << '\n';
+                std::cout << "selected_map_name: " << this->selected_map_name << '\n';
             } else {
                 printf("no selected_map\n");
             }

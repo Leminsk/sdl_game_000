@@ -50,21 +50,21 @@ Mix_Music* music_main_menu = NULL;
 Mix_Chunk* sound_button = NULL;
 
 // ------------------ SCENES ------------------
-SceneMapSelection* S_MapSelection;
-SceneMainMenu* S_MainMenu;
-SceneSettings* S_Settings;
-SceneMatchGame* S_MatchGame;
-SceneMatchSettings* S_MatchSettings;
+SceneMapSelection  *S_MapSelection;
+SceneMainMenu      *S_MainMenu;
+SceneSettings      *S_Settings;
+SceneMatchGame     *S_MatchGame;
+SceneMatchSettings *S_MatchSettings;
 
 public:
 // frame counter
 TextComponent* fps_text;
 
 Scene() {
-    this->S_MapSelection = new SceneMapSelection(&this->event);
-    this->S_MainMenu = new SceneMainMenu(&this->event);
-    this->S_Settings = new SceneSettings(&this->event);
-    this->S_MatchGame = new SceneMatchGame(&this->event);
+    this->S_MapSelection  = new SceneMapSelection(&this->event);
+    this->S_MainMenu      = new SceneMainMenu(&this->event);
+    this->S_Settings      = new SceneSettings(&this->event);
+    this->S_MatchGame     = new SceneMatchGame(&this->event);
     this->S_MatchSettings = new SceneMatchSettings(&this->event);
 }
 ~Scene() {
@@ -77,6 +77,12 @@ Scene() {
     SDL_DestroyTexture(this->mountain_texture);
     SDL_DestroyTexture(this->water_bg_texture);
     SDL_DestroyTexture(this->water_fg_texture);
+
+    delete  this->S_MapSelection;  this->S_MapSelection = nullptr;
+    delete      this->S_MainMenu;      this->S_MainMenu = nullptr;
+    delete      this->S_Settings;      this->S_Settings = nullptr;
+    delete     this->S_MatchGame;     this->S_MatchGame = nullptr;
+    delete this->S_MatchSettings; this->S_MatchSettings = nullptr;
 }
 
 void loadTextures() {
@@ -119,6 +125,15 @@ void setScene(SceneType t) {
             ); 
         } break;
 
+        case SceneType::MATCH_SETTINGS: {
+            this->S_MatchSettings->setScene(
+                this->sound_button,
+                this->fps_text,
+                SceneType::MAP_SELECTION,
+                this->S_MapSelection->selected_map_name
+            );
+        } break;
+
         case SceneType::SETTINGS: { 
             this->S_Settings->setScene(
                 this->sound_button, 
@@ -134,14 +149,6 @@ void setScene(SceneType t) {
                 this->water_bg_texture,
                 this->water_fg_texture,
                 this->fps_text
-            );
-        } break;
-
-        case SceneType::MATCH_SETTINGS: {
-            this->S_MatchSettings->setScene(
-                this->sound_button,
-                this->fps_text,
-                SceneType::MAP_SELECTION
             );
         } break;
     }

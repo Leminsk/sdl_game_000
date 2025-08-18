@@ -36,7 +36,7 @@ std::vector<Vector2D> hex_tile = { {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0} };
 Vector2D clicked_point;
 Vector2D converted_point;
 
-Map* map;
+Map* map = nullptr;
 
 
 // --------------------------- NETWORKING ------------------------
@@ -75,7 +75,12 @@ public:
 TextComponent* fps_text;
 
 SceneMatchGame(SDL_Event* e) { this->event = e; }
-~SceneMatchGame() {}
+~SceneMatchGame() {
+    if(this->map) {
+        delete this->map;
+        this->map = nullptr;
+    }    
+}
 
 
 Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
@@ -320,7 +325,7 @@ void handleStateFromServer(olc::net::message<MessageTypes>& msg) {
 void destroyServer() {
     printf("Stopping server\n");
     this->is_server = false;
-    this->server->~Server();
+    delete this->server;
     this->server = nullptr;
 }
 void destroyClient() {
@@ -330,7 +335,7 @@ void destroyClient() {
     this->PLAYER_COLOR = MainColors::NONE;
     this->client->WarnDisconnect();
     this->client->Disconnect();
-    this->client->~Client();
+    delete this->client;
     this->client = nullptr;
 }
 
