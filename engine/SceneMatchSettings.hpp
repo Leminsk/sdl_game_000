@@ -74,7 +74,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     for(y=0; y<map_height; ++y) {
         for(x=0; x<map_width; ++x) {
             SDL_Color pixel = map_pixels[y][x];
-            if(pixel.r == COLORS_SPAWN.r && pixel.g == COLORS_SPAWN.g && pixel.b == COLORS_SPAWN.b) {
+            if(isSameColor(pixel, COLORS_SPAWN)) {
                 int base_y = thumbnail.border_rect.y + (spawn_text_offset * spawn_count);
                 spawn_positions.push_back({y,x});
                 createUISimpleText(

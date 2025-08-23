@@ -1,12 +1,6 @@
 #include <fstream>
 #include "Map.hpp"
 
-
-struct simple_pixel {
-    Uint8 r, g, b;
-};
-
-
 bool Map::LoadMapFile(std::string& path) {
     // https://stackoverflow.com/questions/9296059/read-pixel-value-in-bmp-file
     static constexpr size_t HEADER_SIZE = 54;
@@ -44,7 +38,7 @@ bool Map::LoadMapFile(std::string& path) {
     int line_offset = 0;
     int line_index = this->layout_width;
     int current_line;
-    simple_pixel current_pixel;
+    SDL_Color current_pixel;
     int tile_type;
     // reads "bottom" row first
     for(auto i = 0; i < dataSize; i += 3) {
@@ -60,29 +54,13 @@ bool Map::LoadMapFile(std::string& path) {
             line_index = 0;
         }
         
-        if(
-            current_pixel.r == COLORS_SPAWN.r && 
-            current_pixel.g == COLORS_SPAWN.g && 
-            current_pixel.b == COLORS_SPAWN.b
-        ) { // base spawn
+        if(isSameColor(current_pixel, COLORS_SPAWN)) { // base spawn
             tile_type = TILE_BASE_SPAWN;
-        } else if(
-            current_pixel.r == COLORS_NAVIGABLE.r && 
-            current_pixel.g == COLORS_NAVIGABLE.g && 
-            current_pixel.b == COLORS_NAVIGABLE.b
-        ) { // navigable terrain
+        } else if(isSameColor(current_pixel, COLORS_NAVIGABLE)) { // navigable terrain
             tile_type = TILE_NAVIGABLE;
-        } else if(
-            current_pixel.r == COLORS_IMPASSABLE.r && 
-            current_pixel.g == COLORS_IMPASSABLE.g && 
-            current_pixel.b == COLORS_IMPASSABLE.b
-        ) { // impassable terrain
+        } else if(isSameColor(current_pixel, COLORS_IMPASSABLE)) { // impassable terrain
             tile_type = TILE_IMPASSABLE;
-        } else if(
-            current_pixel.r == COLORS_ROUGH.r && 
-            current_pixel.g == COLORS_ROUGH.g && 
-            current_pixel.b == COLORS_ROUGH.b
-        ) { // rough terrain
+        } else if(isSameColor(current_pixel, COLORS_ROUGH)) { // rough terrain
             tile_type = TILE_ROUGH;
         } else { // plain terrain
             tile_type = TILE_PLAIN;

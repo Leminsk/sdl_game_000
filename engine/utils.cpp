@@ -279,3 +279,8 @@ bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& 
     return true;
 }
 
+
+// returns true if the RGBA properties of two SDL_Color variables are the same
+bool isSameColor(const SDL_Color& x, const SDL_Color& y) {
+    return (x.r == y.r && x.g == y.g && x.b == y.b && x.a == y.a);
+}

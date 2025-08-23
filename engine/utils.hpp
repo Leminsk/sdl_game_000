@@ -32,3 +32,5 @@ std::string trim_copy(std::string s);
 std::vector<std::string> getFileNamesInDirectory(const std::string& directory, const std::string& file_format="");
 bool getBMPProperties(const std::string& path, uint32_t* bmp_width, uint32_t* bmp_height);
 bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height);
+
+bool isSameColor(const SDL_Color& x, const SDL_Color& y);
