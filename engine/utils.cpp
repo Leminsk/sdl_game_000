@@ -201,19 +201,20 @@ Similar to getBMPPixels(), but does not parse the pixels.
 */
 bool getBMPProperties(const std::string& path, uint32_t* bmp_width, uint32_t* bmp_height) {
     static constexpr size_t HEADER_SIZE = 54;
-    std::ifstream bmp_file(path, std::ios::binary);
+    std::ifstream bmp_file(std::filesystem::u8path(path), std::ios::binary);
     if(!bmp_file) {
-        std::cout << "Failed to open file: " << path << '\n';
+        std::cout << "getBMPProperties() - Failed to open file: " << path << '\n';
         return false;
     }
     std::vector<char> header(HEADER_SIZE);
     bmp_file.read(header.data(), HEADER_SIZE);
-    *bmp_width = *reinterpret_cast<uint32_t *>(&header[18]);
+    const size_t size32 = sizeof(uint32_t);
+    memcpy(bmp_width, &header[18], size32);
     if(*bmp_width % 4 !=0) {
         printf("Invalid BMP: width not multiple of 4.\n");
         return false;
     }
-    *bmp_height = *reinterpret_cast<uint32_t *>(&header[22]);
+    memcpy(bmp_height, &header[22], size32);
     return true;
 }
 
@@ -227,26 +228,31 @@ bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& 
     // https://stackoverflow.com/questions/9296059/read-pixel-value-in-bmp-file
     static constexpr size_t HEADER_SIZE = 54;
 
-    std::ifstream bmp_file(path, std::ios::binary);
+    std::ifstream bmp_file(std::filesystem::u8path(path), std::ios::binary);
     if(!bmp_file) {
-        std::cout << "Failed to open file: " << path << '\n';
+        std::cout << "getBMPPixels() - Failed to open file: " << path << '\n';
         return false;
     }
 
     std::vector<char> header(HEADER_SIZE);
     bmp_file.read(header.data(), HEADER_SIZE);
 
-    auto fileSize   = *reinterpret_cast<uint32_t *>(&header[2]);
-    auto dataOffset = *reinterpret_cast<uint32_t *>(&header[10]);
-    *bmp_width      = *reinterpret_cast<uint32_t *>(&header[18]);
+    const size_t size32 = sizeof(uint32_t);
+
+    uint32_t fileSize, dataOffset;
+
+    memcpy(  &fileSize, &header[2], size32);
+    memcpy(&dataOffset, &header[10], size32);
+    memcpy(  bmp_width, &header[18], size32);
     if(*bmp_width % 4 !=0) {
         printf("Invalid BMP: width not multiple of 4.\n");
         return false;
     }
-    *bmp_height = *reinterpret_cast<uint32_t *>(&header[22]);
-    auto depth  = *reinterpret_cast<uint16_t *>(&header[28]);
+    memcpy( bmp_height, &header[22], size32);
+    uint16_t depth;
+    memcpy(     &depth, &header[28], sizeof(uint16_t));
 
-    auto dataSize = ((*bmp_width * 3 + 3) & (~3))  *  *bmp_height;
+    uint64_t dataSize = ((*bmp_width * 3 + 3) & (~3))  *  *bmp_height;
     std::vector<char> img(dataSize);
     bmp_file.read(img.data(), img.size());
     bmp_file.close();
@@ -260,7 +266,7 @@ bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& 
     SDL_Color current_pixel = { 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE }; // just to set alpha to every pixel
     int tile_type;
     // reads "bottom" row first
-    for(auto i = 0; i < dataSize; i += 3) {
+    for(size_t i = 0; i < dataSize; i += 3) {
         // BMP goes BGR
         current_pixel.r = img[i+2];
         current_pixel.g = img[i+1];

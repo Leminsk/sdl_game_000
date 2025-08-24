@@ -59,18 +59,24 @@ bool selected = false;
 
 MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y, float scale=1.0f) {
     const std::string file_path = map_dir+map_name+".bmp";
-    this->map_texture = TextureManager::LoadTexture(file_path.c_str());
-    getBMPProperties(file_path, &this->map_width, &this->map_height);
-    const float scaled_size = this->thumbnail_side_size * scale;
-    setObjects(pos_x, pos_y, scaled_size, scaled_size, map_name);
+    if(getBMPProperties(file_path, &this->map_width, &this->map_height)) {
+        this->map_texture = TextureManager::LoadTexture(file_path.c_str());
+        const float scaled_size = this->thumbnail_side_size * scale;
+        setObjects(pos_x, pos_y, scaled_size, scaled_size, map_name);
+    } else {
+        throw std::runtime_error("Failed to get BMP properties for MapThumbnail: " + file_path);
+    }    
 }
 MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, float pos_x, float pos_y, float width, float height) {
     const std::string file_path = map_dir+map_name+".bmp";
-    this->use_texture = false;
-    getBMPPixels(file_path, this->map_pixels, &this->map_width, &this->map_height);
-    setObjects(pos_x, pos_y, width, height, map_name);
-    this->pixel_width = width / static_cast<float>(this->map_width);
-    this->pixel_height = height / static_cast<float>(this->map_height);
+    if(getBMPPixels(file_path, this->map_pixels, &this->map_width, &this->map_height)) {
+        this->use_texture = false;
+        setObjects(pos_x, pos_y, width, height, map_name);
+        this->pixel_width = width / static_cast<float>(this->map_width);
+        this->pixel_height = height / static_cast<float>(this->map_height);
+    } else {
+        throw std::runtime_error("Failed to get BMP properties for MapThumbnail: " + file_path);
+    }
 }
 ~MapThumbnailComponent() {
     if(this->map_title) {
