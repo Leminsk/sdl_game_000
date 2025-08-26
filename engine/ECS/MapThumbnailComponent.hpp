@@ -75,7 +75,7 @@ MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, f
         this->pixel_width = width / static_cast<float>(this->map_width);
         this->pixel_height = height / static_cast<float>(this->map_height);
     } else {
-        throw std::runtime_error("Failed to get BMP properties for MapThumbnail: " + file_path);
+        throw std::runtime_error("Failed to get BMP pixels for MapThumbnail: " + file_path);
     }
 }
 ~MapThumbnailComponent() {

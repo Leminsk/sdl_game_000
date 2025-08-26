@@ -42,6 +42,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->parent_scene = parent;
 
     // need to reset these pointers for when the scene is being reset
+    if(this->button_go != nullptr) { this->button_go->destroy(); }
     this->button_go = nullptr;
     this->selected_map = nullptr;
     this->selected_map_name = "";

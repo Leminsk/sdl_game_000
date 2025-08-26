@@ -16,8 +16,10 @@ Entity* title = nullptr;
 Entity* selected_map = nullptr;
 Entity* button_go = nullptr;
 SceneType parent_scene;
+std::vector<Entity*> spawn_selections = {};
 std::vector<Entity*> spawn_info_entities = {};
 std::vector<std::pair<int,int>> spawn_positions = {};
+int player_spawn_index = -1;
 
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
@@ -38,9 +40,14 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     this->fps_text = fps;
     this->parent_scene = parent;
 
+    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+
     // reset pointers for when scene gets reset
-    this->button_go = nullptr;
+    if(this->selected_map != nullptr) { this->selected_map->destroy(); }
     this->selected_map = nullptr;
+    if(this->button_go != nullptr) { this->button_go->destroy(); }
+    this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, background_color, border_color);
     this->spawn_info_entities.clear();
     this->spawn_info_entities.shrink_to_fit();
 
@@ -52,8 +59,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         500.0f, 500.0f
     );
 
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+    
 
     createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     
@@ -76,24 +82,68 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
             SDL_Color pixel = map_pixels[y][x];
             if(isSameColor(pixel, COLORS_SPAWN)) {
                 int base_y = thumbnail.border_rect.y + (spawn_text_offset * spawn_count);
-                spawn_positions.push_back({y,x});
+                this->spawn_positions.push_back({y,x});
                 createUISimpleText(
                     "spawn_text_"+std::to_string(spawn_count), base_x, base_y,
                     '(' + left_pad_int(x+1, width_max_digits, ' ') + "," + left_pad_int(y+1, heigth_max_digits, ' ') + ')', 
                     COLORS_SPAWN
                 );
-                spawn_info_entities.push_back( 
+                this->spawn_info_entities.push_back( 
                     &createUIDropdownColors(
                         "spawn_dropdown_"+std::to_string(spawn_count), 
                         base_x + spawn_text_length_with_offset, base_y,
                         COLORS_SPAWN, background_color
                     )
                 );
+                this->spawn_selections.push_back(
+                    &createUIDropdown(
+                        "spawn_selection_dropdown_"+std::to_string(spawn_count), { "CPU", "Player" }, 
+                        base_x + spawn_text_length_with_offset + 10 + this->spawn_info_entities[spawn_count]->getComponent<TextDropdownComponent>().w, base_y
+                    )
+                );
                 ++spawn_count;
             }
         }
     }
+    this->players_amount = spawn_count;
+}
 
+bool isValidPlayerSpawn() {
+    int player_count = 0;
+    for(Entity*& e : this->spawn_selections) {
+        if(e->getComponent<TextDropdownComponent>().selected_option_label == "Player") {
+            ++player_count;
+        }
+    }
+    return player_count <= 1;
+}
+
+bool isValidMapSpawns() {
+    MapThumbnailComponent& map_thumbnail = this->selected_map->getComponent<MapThumbnailComponent>();
+    std::vector<std::vector<SDL_Color>>& map_pixels = map_thumbnail.map_pixels;
+    std::vector<SDL_Color> colors_found = {};
+    
+    for(uint32_t y=0; y<map_thumbnail.map_height; ++y) {
+        for(uint32_t x=0; x<map_thumbnail.map_width; ++x) {
+            SDL_Color& curr_pix = map_pixels[y][x];
+            if(isSameColor(curr_pix, COLORS_SPAWN)) { continue; }
+            if(
+                !isSameColor(curr_pix, COLORS_IMPASSABLE) &&
+                !isSameColor(curr_pix, COLORS_NAVIGABLE) &&
+                !isSameColor(curr_pix, COLORS_PLAIN) &&
+                !isSameColor(curr_pix, COLORS_ROUGH)
+            ) {
+                for(int i=0; i<colors_found.size(); ++i) {
+                    if(isSameColor(colors_found[i], curr_pix)) { 
+                        std::cout << "colors_found.size():" << colors_found.size() << " curr_pix: (" << (int)curr_pix.r << ' ' << (int)curr_pix.g << ' ' << (int)curr_pix.b << ")\n";
+                        return false; 
+                    }
+                }
+                colors_found.push_back(curr_pix);
+            }
+        }
+    }
+    return true;
 }
 
 
@@ -114,62 +164,111 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     }
 }
 
+bool clickedDropdown(Vector2D& pos) {
+    for(auto& pr_ui : this->pr_ui_elements) {
+        if(pr_ui->hasComponent<TextDropdownComponent>()) {
+            std::string dropdown_id = pr_ui->getIdentifier();
+            TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+
+            if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
+                if(dropdown_id.substr(0,5) == "spawn") {
+                    Mix_PlayChannel(-1, this->sound_button, 0);
+                    dropdown.display_dropdown = !(dropdown.display_dropdown);
+                    return true;
+                }
+            }
+
+            if(dropdown.display_dropdown) {
+                if(dropdown_id.substr(0,14) == "spawn_dropdown") {
+                    for(int i=0; i<dropdown.options.size(); ++i) {
+                        TextBoxComponent* option = dropdown.options[i];
+                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
+                            dropdown.setSelectedOption(i);
+                            for(int j=0; j<this->spawn_info_entities.size(); ++j) {
+                                if(this->spawn_info_entities[j]->getIdentifier() == dropdown_id) {
+                                    int y = this->spawn_positions[j].first;
+                                    int x = this->spawn_positions[j].second;
+                                    this->selected_map->getComponent<MapThumbnailComponent>().map_pixels[y][x] = dropdown.options_colors[i];
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if(dropdown_id.substr(0,15) == "spawn_selection") {
+                    for(int i=0; i<dropdown.options.size(); ++i) {
+                        TextBoxComponent* option = dropdown.options[i];
+                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
+                            dropdown.setSelectedOption(i);
+                            if(i == 1) { // selecting "Player" means deselect for all others
+                                for(int j=0; j<this->spawn_selections.size(); ++j) {
+                                    if(this->spawn_selections[j]->getIdentifier() == dropdown_id) {
+                                        this->player_spawn_index = j;
+                                    } else {
+                                        this->spawn_selections[j]->getComponent<TextDropdownComponent>().setSelectedOption(0);
+                                    }                                    
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                }
+                Mix_PlayChannel(-1, this->sound_button, 0);
+                dropdown.display_dropdown = false;
+            }   
+        }
+    }
+    return false;
+}
+bool clickedButton(Vector2D& pos) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+            if(
+                Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
+                ui->getComponent<TextBoxComponent>().mouse_down
+            ) { 
+                std::string button_id = ui->getIdentifier();
+                if(button_id == "button_back") {
+                    Mix_PlayChannel(-1, this->sound_button, 0);
+                    clean();                     
+                    this->change_to_scene = this->parent_scene;
+                    return true;
+                } else if(button_id == "button_go") {
+                    Mix_PlayChannel(-1, this->sound_button, 0);
+                    clean();
+                    this->change_to_scene = SceneType::MATCH_GAME;
+                    return true;
+                }
+            }
+            ui->getComponent<TextBoxComponent>().mouse_down = false;
+        }
+    }
+    return false;
+}
+
 void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
             std::cout << "RELEASE LEFT: " << pos << '\n';
-            for(auto& pr_ui : this->pr_ui_elements) {
-                if(pr_ui->hasComponent<TextDropdownComponent>()) {
-                    TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
-                        std::string dropdown_id = pr_ui->getIdentifier();
-                        if(dropdown_id.substr(0,14) == "spawn_dropdown") {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            dropdown.display_dropdown = !(dropdown.display_dropdown);
-                            return;
+            if(!clickedButton(pos)) {
+                if(clickedDropdown(pos)) {
+                    if(isValidMapSpawns() && isValidPlayerSpawn()) {
+                        if(this->button_go == nullptr) {
+                            this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE });
                         }
-                    }
-                    if(dropdown.display_dropdown) {
-                        for(int i=0; i<dropdown.options.size(); ++i) {
-                            TextBoxComponent* option = dropdown.options[i];
-                            if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                                Mix_PlayChannel(-1, this->sound_button, 0);
-                                dropdown.setSelectedOption(i);
-                                for(int j=0; j<this->spawn_info_entities.size(); ++j) {
-                                    if(this->spawn_info_entities[j]->getIdentifier() == pr_ui->getIdentifier()) {
-                                        int y = this->spawn_positions[j].first;
-                                        int x = this->spawn_positions[j].second;
-                                        this->selected_map->getComponent<MapThumbnailComponent>().map_pixels[y][x] = dropdown.options_colors[i];
-                                        break;
-                                    }
-                                }
-                                return;
-                            }
-                        }
-                        Mix_PlayChannel(-1, this->sound_button, 0);
-                        dropdown.display_dropdown = false;
-                    }   
+                    } else if(this->button_go != nullptr) {
+                        this->button_go->destroy();
+                        this->button_go = nullptr;
+                    }                    
                 }
             }
-            for(auto& ui : this->ui_elements) {
-                if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(
-                        Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                        ui->getComponent<TextBoxComponent>().mouse_down
-                    ) { 
-                        std::string button_id = ui->getIdentifier();
-                        if(button_id == "button_back") {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            clean();                     
-                            this->change_to_scene = this->parent_scene;
-                            return;
-                        }
-                    }
-                    ui->getComponent<TextBoxComponent>().mouse_down = false;
-                }
-            }
+        } break;
+        case SDL_BUTTON_RIGHT: {
+            std::cout << "RELEASE RIGHT: " << pos << '\n';
         } break;
     }
 }
