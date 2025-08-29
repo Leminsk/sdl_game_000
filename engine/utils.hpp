@@ -10,6 +10,7 @@
 #include <fstream>
 #include <filesystem>
 #include <SDL2/SDL.h>
+#include "Colors.hpp"
 
 
 uint8_t readBit(uint8_t byte, uint8_t bit);
@@ -34,3 +35,6 @@ bool getBMPProperties(const std::string& path, uint32_t* bmp_width, uint32_t* bm
 bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& pixels, uint32_t* bmp_width, uint32_t* bmp_height);
 
 bool isSameColor(const SDL_Color& x, const SDL_Color& y);
+
+SDL_Color convertMainColorToSDL(const MainColors& mc);
+MainColors convertSDLColorToMainColor(const SDL_Color& sc);

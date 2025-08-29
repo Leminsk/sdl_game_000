@@ -88,7 +88,7 @@ Scene() {
 void loadTextures() {
     // white helps with color modulation
     Game::unit_tex     = TextureManager::LoadTexture("assets/white_circle.png");
-    Game::building_tex = TextureManager::LoadTexture("assets/green_hexagon.png");
+    Game::building_tex = TextureManager::LoadTexture("assets/white_hexagon.png");
 
     this->plain_terrain_texture = TextureManager::LoadTexture("assets/tiles/plain.png");
     this->rough_terrain_texture = TextureManager::LoadTexture("assets/tiles/rough.png");
@@ -143,6 +143,9 @@ void setScene(SceneType t) {
 
         case SceneType::MATCH_GAME: {
             this->S_MatchGame->setScene(
+                this->S_MatchSettings->map_pixels, this->S_MatchSettings->player_sdl_color, 
+                this->S_MatchSettings->spawn_positions[this->S_MatchSettings->player_spawn_index],
+                this->S_MatchSettings->spawn_positions,
                 this->plain_terrain_texture, 
                 this->rough_terrain_texture,
                 this->mountain_texture,

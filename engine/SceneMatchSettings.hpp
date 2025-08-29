@@ -18,8 +18,6 @@ Entity* button_go = nullptr;
 SceneType parent_scene;
 std::vector<Entity*> spawn_selections = {};
 std::vector<Entity*> spawn_info_entities = {};
-std::vector<std::pair<int,int>> spawn_positions = {};
-int player_spawn_index = -1;
 
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
@@ -31,6 +29,10 @@ std::string map_name;
 Mix_Chunk* sound_button = NULL;
 TextComponent* fps_text = nullptr;
 SceneType change_to_scene = SceneType::NONE;
+std::vector<std::pair<int,int>> spawn_positions = {};
+int player_spawn_index = -1;
+SDL_Color player_sdl_color = COLORS_SPAWN;
+std::vector<std::vector<SDL_Color>> map_pixels = {};
 
 SceneMatchSettings(SDL_Event* e) { this->event = e; }
 ~SceneMatchSettings() {}
@@ -68,12 +70,12 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     uint32_t map_width = thumbnail.map_width;
     uint32_t map_height = thumbnail.map_height;
     int width_max_digits = std::to_string(map_width).size();
-    int heigth_max_digits = std::to_string(map_height).size();
+    int height_max_digits = std::to_string(map_height).size();
 
     const int text_height = 32;
     const int v_spacing = 32;
     const int spawn_text_offset  = text_height + v_spacing;
-    const int spawn_text_length_with_offset = ((width_max_digits + heigth_max_digits + 3) * 16) + 5;
+    const int spawn_text_length_with_offset = ((width_max_digits + height_max_digits + 3) * 16) + 5;
     const int base_x = thumbnail.origin_x + thumbnail.border_rect.w + 64;
     int spawn_count = 0;
     int y, x;
@@ -85,7 +87,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
                 this->spawn_positions.push_back({y,x});
                 createUISimpleText(
                     "spawn_text_"+std::to_string(spawn_count), base_x, base_y,
-                    '(' + left_pad_int(x+1, width_max_digits, ' ') + "," + left_pad_int(y+1, heigth_max_digits, ' ') + ')', 
+                    '(' + left_pad_int(x+1, width_max_digits, ' ') + "," + left_pad_int(y+1, height_max_digits, ' ') + ')', 
                     COLORS_SPAWN
                 );
                 this->spawn_info_entities.push_back( 
@@ -238,6 +240,12 @@ bool clickedButton(Vector2D& pos) {
                     return true;
                 } else if(button_id == "button_go") {
                     Mix_PlayChannel(-1, this->sound_button, 0);
+                    this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
+                    this->player_sdl_color = this->map_pixels[
+                        this->spawn_positions[ this->player_spawn_index ].first
+                    ][
+                        this->spawn_positions[ this->player_spawn_index ].second
+                    ];
                     clean();
                     this->change_to_scene = SceneType::MATCH_GAME;
                     return true;

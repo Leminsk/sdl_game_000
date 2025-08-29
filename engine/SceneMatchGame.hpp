@@ -83,7 +83,7 @@ SceneMatchGame(SDL_Event* e) { this->event = e; }
 }
 
 
-Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
+Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout, const std::vector<std::vector<SDL_Color>>& map_pixels = {}) {
     auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
     
     switch(id) {
@@ -103,10 +103,21 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
         break;
         case TILE_BASE_SPAWN: {
             tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
-            createBaseBuilding("base", map_x*width, map_y*width, width);
+            // TODO: assign random color here or get it from somewhere
+            createBaseBuilding(
+                "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
+                map_x*width, map_y*width, width, map_pixels[map_y][map_x]
+            );
+        } break;
+        case TILE_PLAYER: {
+            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
+            createBaseBuilding(
+                "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
+                map_x*width, map_y*width, width, map_pixels[map_y][map_x]
+            );
         } break;
         default: 
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
+            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);            
     }
     
     tile.addGroup(groupTiles);
@@ -121,14 +132,21 @@ void LoadMapRender(float tile_scale=1.0f) {
                 this->map->layout[row][column], 
                 this->map->tile_width * tile_scale,
                 column, row,
-                this->map->layout
+                this->map->layout,
+                this->map->map_pixels
             );
         }
     }
 }
 
-void setScene(SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL_Texture* water_bg, SDL_Texture* water_fg, TextComponent* fps) {
+void setScene(
+    const std::vector<std::vector<SDL_Color>>& map_pixels, const SDL_Color& player_color, const std::pair<int,int>& player_spawn,
+    const std::vector<std::pair<int,int>>& spawn_positions,
+    SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL_Texture* water_bg, SDL_Texture* water_fg, 
+    TextComponent* fps
+) {
     Mix_HaltMusic();
+    this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
     Game::default_bg_color = COLORS_ROUGH;
 
     this->plain_terrain_texture = plain;
@@ -139,7 +157,7 @@ void setScene(SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL
     this->fps_text = fps;
 
     this->map = new Map(
-        "assets/maps/test3.bmp", 
+        map_pixels, 
         this->plain_terrain_texture,
         this->rough_terrain_texture,
         this->mountain_texture,
@@ -153,16 +171,18 @@ void setScene(SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL
         LoadMapRender();
         Game::world_map_layout_width = this->map->world_layout_width;
         Game::world_map_layout_height = this->map->world_layout_height;
+        Game::camera_position = this->map->getWorldPosFromTileCoord(player_spawn.second, player_spawn.first);
 
         this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
         this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
         this->map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
         this->map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
 
-        createDrone(  0,   0, MainColors::WHITE);
-        createDrone(100,   0, MainColors::BLACK);
-        createDrone(  0, 100, MainColors::RED);
-        createDrone(200, 200, MainColors::GREEN);
+        for(const std::pair<int,int>& pos : spawn_positions) {
+            MainColors c = convertSDLColorToMainColor(map_pixels[pos.first][pos.second]);
+            Vector2D world_pos = this->map->getWorldPosFromTileCoord(pos.second, pos.first-1);
+            createDrone(world_pos.x, world_pos.y, c);
+        }
 
         createUISimpleText("crosshair", 0, 0, "Crosshair: (-0000,-0000)");
         createUISimpleText("camera_zoom", 0, 30, "Camera zoom: 0.0");

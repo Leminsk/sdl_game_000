@@ -4,5 +4,6 @@ enum tile_type {
     TILE_ROUGH,
     TILE_IMPASSABLE,
     TILE_NAVIGABLE,
-    TILE_BASE_SPAWN
+    TILE_BASE_SPAWN,
+    TILE_PLAYER
 };

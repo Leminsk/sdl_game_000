@@ -55,299 +55,288 @@ Vector2D staticTranslationCollision(
 
 // "drone" as in a combat unit/soldier
 class DroneComponent : public Component {
-    private:
-        Vector2D starting_position;
-        SDL_Texture *sprite_texture;
-        SDL_Color color; // for texture color modulation
+private:
+Vector2D starting_position;
+SDL_Texture *sprite_texture;
+SDL_Color color; // for texture color modulation
 
-        Vector2D static_translation = Vector2D(0,0);
-        Vector2D dynamic_translation = Vector2D(0,0);
-        Vector2D cum_translation = Vector2D(0,0);
+Vector2D static_translation = Vector2D(0,0);
+Vector2D dynamic_translation = Vector2D(0,0);
+Vector2D cum_translation = Vector2D(0,0);
 
-    public:
-        TransformComponent *transform;
-        SpriteComponent *sprite;
-        Collider *collider;
-        MainColors color_type; // used to distinguish between players
+public:
+TransformComponent *transform;
+SpriteComponent *sprite;
+Collider *collider;
+MainColors color_type; // used to distinguish between players
 
-        bool selected = false;
-        bool preUpdating = false;
-        Vector2D destination_position;
-        std::vector<Vector2D> path = {};
-        std::vector<int> visited_indices = {};
-        int current_path_index = -1;
-        int last_path_index;
-        float radius;
-        float diameter;
+bool selected = false;
+bool preUpdating = false;
+Vector2D destination_position;
+std::vector<Vector2D> path = {};
+std::vector<int> visited_indices = {};
+int current_path_index = -1;
+int last_path_index;
+float radius;
+float diameter;
 
-        float speed_modifier = 1.0f;
+float speed_modifier = 1.0f;
 
 
-        DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, MainColors c) {
-            this->starting_position = starting_position;
-            this->sprite_texture = sprite_texture;
-            this->diameter = diameter;
-            this->radius = diameter/2;
-            this->color_type = c;
-            switch(c) {
-                case MainColors::BLACK  : this->color = COLORS_BLACK; break;
-                case MainColors::WHITE  : this->color = COLORS_WHITE; break;
-                case MainColors::RED    : this->color = COLORS_RED; break;
-                case MainColors::GREEN  : this->color = COLORS_GREEN; break;
-                case MainColors::BLUE   : this->color = COLORS_BLUE; break;
-                case MainColors::YELLOW : this->color = COLORS_YELLOW; break;
-                case MainColors::CYAN   : this->color = COLORS_CYAN; break;
-                case MainColors::MAGENTA: this->color = COLORS_MAGENTA; break;
-                default:
-                    this->color = COLORS_WHITE;
-            }
-            ++Game::UNIT_COUNTER;
-        }
+DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* sprite_texture, MainColors c) {
+    this->starting_position = starting_position;
+    this->sprite_texture = sprite_texture;
+    this->diameter = diameter;
+    this->radius = diameter/2;
+    this->color_type = c;
+    this->color = convertMainColorToSDL(c);
+    ++Game::UNIT_COUNTER;
+}
 
-        ~DroneComponent() {
-            --Game::UNIT_COUNTER;
-        }
+~DroneComponent() {
+    --Game::UNIT_COUNTER;
+}
 
-        // get center (x,y)
-        Vector2D getPosition() {
-            return this->collider->getCenter();
-        }
+// get center (x,y)
+Vector2D getPosition() {
+    return this->collider->getCenter();
+}
 
-        void updateDynamicTranslation(const Vector2D& v) {
-            // on X
-            if(this->dynamic_translation.x >= 0 && v.x >= 0) { this->dynamic_translation.x = std::max(v.x, this->dynamic_translation.x); } 
-            else if(this->dynamic_translation.x < 0 && v.x < 0) { this->dynamic_translation.x = std::min(v.x, this->dynamic_translation.x); } 
-            else { this->dynamic_translation.x += v.x; }
-            // on Y
-            if(this->dynamic_translation.y >= 0 && v.y >= 0) { this->dynamic_translation.y = std::max(v.y, this->dynamic_translation.y); } 
-            else if(this->dynamic_translation.y < 0 && v.y < 0) { this->dynamic_translation.y = std::min(v.y, this->dynamic_translation.y); } 
-            else { this->dynamic_translation.y += v.y; }
-        }
+void updateDynamicTranslation(const Vector2D& v) {
+    // on X
+    if(this->dynamic_translation.x >= 0 && v.x >= 0) { this->dynamic_translation.x = std::max(v.x, this->dynamic_translation.x); } 
+    else if(this->dynamic_translation.x < 0 && v.x < 0) { this->dynamic_translation.x = std::min(v.x, this->dynamic_translation.x); } 
+    else { this->dynamic_translation.x += v.x; }
+    // on Y
+    if(this->dynamic_translation.y >= 0 && v.y >= 0) { this->dynamic_translation.y = std::max(v.y, this->dynamic_translation.y); } 
+    else if(this->dynamic_translation.y < 0 && v.y < 0) { this->dynamic_translation.y = std::min(v.y, this->dynamic_translation.y); } 
+    else { this->dynamic_translation.y += v.y; }
+}
 
-        void moveToPoint(const Vector2D& destination) {
-            std::vector<Vector2D> new_path = find_path(getPosition(), destination);
-            if(new_path.size() == 0) { return; }
-            this->path = new_path;
-            this->cum_translation = Vector2D(0,0);
-            this->destination_position = destination;
-            this->last_path_index = path.size() - 1;
-            this->current_path_index = this->last_path_index;
-            this->visited_indices = {};
-            this->transform->velocity = Vector2D(0,0);
-            preUpdating = true;
-        }
+void moveToPoint(const Vector2D& destination) {
+    std::vector<Vector2D> new_path = find_path(getPosition(), destination);
+    if(new_path.size() == 0) { return; }
+    this->path = new_path;
+    this->cum_translation = Vector2D(0,0);
+    this->destination_position = destination;
+    this->last_path_index = path.size() - 1;
+    this->current_path_index = this->last_path_index;
+    this->visited_indices = {};
+    this->transform->velocity = Vector2D(0,0);
+    preUpdating = true;
+}
 
-        void moveToPointWithPath(const std::vector<Vector2D>& p) {
-            if(p.size() == 0) { return; }
-            this->path = p;
-            this->cum_translation = Vector2D(0,0);
-            this->destination_position = p[0];
-            this->last_path_index = path.size() - 1;
-            this->current_path_index = this->last_path_index;
-            this->visited_indices = {};
-            this->transform->velocity = Vector2D(0,0);
-            preUpdating = true;
-        }
+void moveToPointWithPath(const std::vector<Vector2D>& p) {
+    if(p.size() == 0) { return; }
+    this->path = p;
+    this->cum_translation = Vector2D(0,0);
+    this->destination_position = p[0];
+    this->last_path_index = path.size() - 1;
+    this->current_path_index = this->last_path_index;
+    this->visited_indices = {};
+    this->transform->velocity = Vector2D(0,0);
+    preUpdating = true;
+}
 
-        void init() override {
-            entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
-            entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);
-            entity->addComponent<Collider>(ColliderType::CIRCLE);
-            this->transform = &entity->getComponent<TransformComponent>();
-            this->sprite = &entity->getComponent<SpriteComponent>();
-            this->collider = &entity->getComponent<Collider>();
-        }
+void init() override {
+    entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
+    entity->addComponent<SpriteComponent>(this->sprite_texture, this->color);
+    entity->addComponent<Collider>(ColliderType::CIRCLE);
+    this->transform = &entity->getComponent<TransformComponent>();
+    this->sprite = &entity->getComponent<SpriteComponent>();
+    this->collider = &entity->getComponent<Collider>();
+}
 
-        void preUpdate() override {
-            // no more points to follow
-            if(this->current_path_index == -1 && path.size() > 0 && visited_indices.size() == path.size()) {
-                this->path = {};
-                this->visited_indices = {};
-                this->current_path_index = -1;
-                this->transform->velocity = Vector2D(0,0);
-                preUpdating = false;
-            }
+void preUpdate() override {
+    // no more points to follow
+    if(this->current_path_index == -1 && path.size() > 0 && visited_indices.size() == path.size()) {
+        this->path = {};
+        this->visited_indices = {};
+        this->current_path_index = -1;
+        this->transform->velocity = Vector2D(0,0);
+        preUpdating = false;
+    }
 
-            // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
-            if(
-                this->current_path_index > 0 && 
-                Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius * this->radius)
-            ) {
-                float d;
-                std::vector<int> candidate_indices = {};
+    // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
+    if(
+        this->current_path_index > 0 && 
+        Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius * this->radius)
+    ) {
+        float d;
+        std::vector<int> candidate_indices = {};
 
-                // mark every node inside the circle as visited
-                for(int i=last_path_index; i>=0; --i) {
-                    if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
-                        d = Distance(getPosition(), path[i]);
-                        if(d <= 2*(this->radius * this->radius)) {
-                            visited_indices.push_back(i);
-                            candidate_indices.push_back(i);
-                        }
-                    }
+        // mark every node inside the circle as visited
+        for(int i=last_path_index; i>=0; --i) {
+            if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
+                d = Distance(getPosition(), path[i]);
+                if(d <= 2*(this->radius * this->radius)) {
+                    visited_indices.push_back(i);
+                    candidate_indices.push_back(i);
                 }
-                
-                int min_idx = last_path_index;
-                // get the min index of the nodes inside the circle -> the node which is farther along the path
-                for(int i=0; i<candidate_indices.size(); ++i) {
-                    if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
-                }
-                // the next one should thus be outside the circle and should serve as the next destination
-                this->current_path_index = min_idx - 1;
-                this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
-            } else if(
-                this->current_path_index == 0 && 
-                Distance(getPosition(), path[this->current_path_index]) <= (this->radius * this->radius)
-            ) {
-                float d;
-                std::vector<int> candidate_indices = {};
-
-                // mark every node inside the circle as visited
-                for(int i=last_path_index; i>=0; --i) {
-                    if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
-                        d = Distance(getPosition(), path[i]);
-                        if(d <= (this->radius * this->radius)) {
-                            visited_indices.push_back(i);
-                            candidate_indices.push_back(i);
-                        }
-                    }
-                }
-                
-                int min_idx = last_path_index;
-                // get the min index of the nodes inside the circle -> the node which is farther along the path
-                for(int i=0; i<candidate_indices.size(); ++i) {
-                    if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
-                }
-                // the next one should thus be outside the circle and should serve as the next destination
-                this->current_path_index = min_idx - 1;
-                this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
             }
-        }
-
-        void update() override {
-            // Server is dealing with the preUpdate
-            if(preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius * this->radius)) {
-                this->transform->velocity = Vector2D(0,0);
-            }
-
-            MeshNode current_mesh_node = convertVector2DToMeshNode(getPosition(), 1);
-            if(Game::collision_mesh_1[current_mesh_node.y][current_mesh_node.x] == TILE_ROUGH) {
-                this->speed_modifier = 0.5f;
-            } else {
-                this->speed_modifier = 1.0f;
-            }
-
-            this->transform->speed = Game::DEFAULT_SPEED * this->speed_modifier; 
-        }
-
-        void handleStaticCollisions(const Vector2D& previous_position, const std::vector<Entity*>& tiles, const std::vector<Entity*>& buildings) {
-            // get the closest objects to the drone
-            float distance_2;
-            Collider *current_col;
-            std::vector<std::pair<Collider*, float>> collider_distances = {};
-            Entity *col_entity;
-            for(int i=0; i<tiles.size(); ++i) {
-                col_entity = tiles[i];
-                if(col_entity->hasComponent<Collider>()) {
-                    current_col = &col_entity->getComponent<Collider>();
-                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
-                    if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
-                }        
-            }
-            for(int i=0; i<buildings.size(); ++i) {
-                col_entity = buildings[i];
-                if(col_entity->hasComponent<Collider>()) {
-                    current_col = &col_entity->getComponent<Collider>();
-                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
-                    if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
-                }        
-            }
-            // order by distance
-            std::sort(collider_distances.begin(), collider_distances.end(), 
-                [](
-                    const std::pair<Collider*, float>& a, 
-                    const std::pair<Collider*, float>& b
-                ) {
-                    return a.second < b.second;
-                }
-            );
-            this->static_translation = staticTranslationCollision(*this->collider, collider_distances, previous_position);
-        }
-
-        void handleDynamicCollisions(const std::vector<Entity*>& drones) {
-            float distance_2, r;
-            Collider *current_col;
-            std::vector<std::pair<Collider*, float>> collider_distances = {};
-            Entity *col_entity;
-            for(int i=0; i<drones.size(); ++i) {
-                col_entity = drones[i];
-                if(col_entity->hasComponent<Collider>() && col_entity->getIdentifier() != entity->getIdentifier()) {
-                    current_col = &col_entity->getComponent<Collider>();
-                    distance_2 = Distance(this->getPosition(), current_col->getCenter());
-                    r = current_col->entity->getComponent<CircleCollider>().radius;
-                    // only handle drones which are touching this drone
-                    if(distance_2 <= (this->radius + r) * (this->radius + r)) {
-                        collider_distances.push_back({current_col, distance_2}); 
-                    }
-                }        
-            }
-            // updates dynamic_translation of this collider and all others which it could have collided
-            std::vector<Vector2D> curr_vecs;
-            for(auto& p : collider_distances) {
-                curr_vecs = Collision::CollideDynamic(*this->collider, *p.first, p.second);
-                this->updateDynamicTranslation(curr_vecs[0]);
-                p.first->entity->getComponent<DroneComponent>().updateDynamicTranslation(curr_vecs[1]);
-            }
-        }
-
-        // hopefully when this is called, there should be no new dynamic_translations afterwards
-        void handleCollisionTranslations() {
-            Vector2D translation = Vector2D(0,0);
-            // on X
-            if(this->static_translation.x > 0) {
-                if(this->dynamic_translation.x >= 0) { translation.x = std::max(this->static_translation.x, this->dynamic_translation.x); } 
-                else { translation.x = this->static_translation.x; } 
-            } else if(this->static_translation.x < 0) {
-                if(this->dynamic_translation.x < 0) { translation.x = std::min(this->static_translation.x, this->dynamic_translation.x); } 
-                else { translation.x = this->static_translation.x; }
-            } else {
-                translation.x = this->dynamic_translation.x;
-            }
-            // on Y
-            if(this->static_translation.y > 0) {
-                if(this->dynamic_translation.y >= 0) { translation.y = std::max(this->static_translation.y, this->dynamic_translation.y); } 
-                else { translation.y = this->static_translation.y; } 
-            } else if(this->static_translation.y < 0) {
-                if(this->dynamic_translation.y < 0) { translation.y = std::min(this->static_translation.y, this->dynamic_translation.y); } 
-                else { translation.y = this->static_translation.y; }
-            } else {
-                translation.y = this->dynamic_translation.y;
-            }
-
-            this->transform->position = this->transform->position + translation;
-            this->cum_translation = this->cum_translation + translation;
-
-            // retrace the path if it went VERY off course (purely eyeballed)
-            if(
-                (this->current_path_index != -1 && this->path.size() > 0) && 
-                Distance(this->path[this->current_path_index], this->getPosition()) > 4.5*this->diameter*this->diameter
-            ) {
-                printf("RETRACE\n");
-                this->moveToPoint(this->destination_position);
-            }
-
-            this->static_translation = Vector2D(0,0);
-            this->dynamic_translation = Vector2D(0,0);
-
-            entity->getComponent<TextComponent>().setText(
-                this->transform->position.FormatDecimal(4,0)
-            );
         }
         
-        void handleOutOfBounds(float max_x, float max_y) {
-            if(this->transform->position.x < 0) { this->transform->position.x = 0; }
-            if(this->transform->position.y < 0) { this->transform->position.y = 0; }
-            if(this->transform->position.x + this->transform->width > max_x) { this->transform->position.x = max_x - this->transform->width; }
-            if(this->transform->position.y + this->transform->width > max_y) { this->transform->position.y = max_y - this->transform->height; }
+        int min_idx = last_path_index;
+        // get the min index of the nodes inside the circle -> the node which is farther along the path
+        for(int i=0; i<candidate_indices.size(); ++i) {
+            if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
         }
+        // the next one should thus be outside the circle and should serve as the next destination
+        this->current_path_index = min_idx - 1;
+        this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
+    } else if(
+        this->current_path_index == 0 && 
+        Distance(getPosition(), path[this->current_path_index]) <= (this->radius * this->radius)
+    ) {
+        float d;
+        std::vector<int> candidate_indices = {};
+
+        // mark every node inside the circle as visited
+        for(int i=last_path_index; i>=0; --i) {
+            if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
+                d = Distance(getPosition(), path[i]);
+                if(d <= (this->radius * this->radius)) {
+                    visited_indices.push_back(i);
+                    candidate_indices.push_back(i);
+                }
+            }
+        }
+        
+        int min_idx = last_path_index;
+        // get the min index of the nodes inside the circle -> the node which is farther along the path
+        for(int i=0; i<candidate_indices.size(); ++i) {
+            if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
+        }
+        // the next one should thus be outside the circle and should serve as the next destination
+        this->current_path_index = min_idx - 1;
+        this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
+    }
+}
+
+void update() override {
+    // Server is dealing with the preUpdate
+    if(preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius * this->radius)) {
+        this->transform->velocity = Vector2D(0,0);
+    }
+
+    MeshNode current_mesh_node = convertVector2DToMeshNode(getPosition(), 1);
+    if(Game::collision_mesh_1[current_mesh_node.y][current_mesh_node.x] == TILE_ROUGH) {
+        this->speed_modifier = 0.5f;
+    } else {
+        this->speed_modifier = 1.0f;
+    }
+
+    this->transform->speed = Game::DEFAULT_SPEED * this->speed_modifier; 
+}
+
+void handleStaticCollisions(const Vector2D& previous_position, const std::vector<Entity*>& tiles, const std::vector<Entity*>& buildings) {
+    // get the closest objects to the drone
+    float distance_2;
+    Collider *current_col;
+    std::vector<std::pair<Collider*, float>> collider_distances = {};
+    Entity *col_entity;
+    for(int i=0; i<tiles.size(); ++i) {
+        col_entity = tiles[i];
+        if(col_entity->hasComponent<Collider>()) {
+            current_col = &col_entity->getComponent<Collider>();
+            distance_2 = Distance(this->getPosition(), current_col->getCenter());
+            if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
+        }        
+    }
+    for(int i=0; i<buildings.size(); ++i) {
+        col_entity = buildings[i];
+        if(col_entity->hasComponent<Collider>()) {
+            current_col = &col_entity->getComponent<Collider>();
+            distance_2 = Distance(this->getPosition(), current_col->getCenter());
+            if(distance_2 <= 100000.0f) { collider_distances.push_back({current_col, distance_2}); }
+        }        
+    }
+    // order by distance
+    std::sort(collider_distances.begin(), collider_distances.end(), 
+        [](
+            const std::pair<Collider*, float>& a, 
+            const std::pair<Collider*, float>& b
+        ) {
+            return a.second < b.second;
+        }
+    );
+    this->static_translation = staticTranslationCollision(*this->collider, collider_distances, previous_position);
+}
+
+void handleDynamicCollisions(const std::vector<Entity*>& drones) {
+    float distance_2, r;
+    Collider *current_col;
+    std::vector<std::pair<Collider*, float>> collider_distances = {};
+    Entity *col_entity;
+    for(int i=0; i<drones.size(); ++i) {
+        col_entity = drones[i];
+        if(col_entity->hasComponent<Collider>() && col_entity->getIdentifier() != entity->getIdentifier()) {
+            current_col = &col_entity->getComponent<Collider>();
+            distance_2 = Distance(this->getPosition(), current_col->getCenter());
+            r = current_col->entity->getComponent<CircleCollider>().radius;
+            // only handle drones which are touching this drone
+            if(distance_2 <= (this->radius + r) * (this->radius + r)) {
+                collider_distances.push_back({current_col, distance_2}); 
+            }
+        }        
+    }
+    // updates dynamic_translation of this collider and all others which it could have collided
+    std::vector<Vector2D> curr_vecs;
+    for(auto& p : collider_distances) {
+        curr_vecs = Collision::CollideDynamic(*this->collider, *p.first, p.second);
+        this->updateDynamicTranslation(curr_vecs[0]);
+        p.first->entity->getComponent<DroneComponent>().updateDynamicTranslation(curr_vecs[1]);
+    }
+}
+
+// hopefully when this is called, there should be no new dynamic_translations afterwards
+void handleCollisionTranslations() {
+    Vector2D translation = Vector2D(0,0);
+    // on X
+    if(this->static_translation.x > 0) {
+        if(this->dynamic_translation.x >= 0) { translation.x = std::max(this->static_translation.x, this->dynamic_translation.x); } 
+        else { translation.x = this->static_translation.x; } 
+    } else if(this->static_translation.x < 0) {
+        if(this->dynamic_translation.x < 0) { translation.x = std::min(this->static_translation.x, this->dynamic_translation.x); } 
+        else { translation.x = this->static_translation.x; }
+    } else {
+        translation.x = this->dynamic_translation.x;
+    }
+    // on Y
+    if(this->static_translation.y > 0) {
+        if(this->dynamic_translation.y >= 0) { translation.y = std::max(this->static_translation.y, this->dynamic_translation.y); } 
+        else { translation.y = this->static_translation.y; } 
+    } else if(this->static_translation.y < 0) {
+        if(this->dynamic_translation.y < 0) { translation.y = std::min(this->static_translation.y, this->dynamic_translation.y); } 
+        else { translation.y = this->static_translation.y; }
+    } else {
+        translation.y = this->dynamic_translation.y;
+    }
+
+    this->transform->position = this->transform->position + translation;
+    this->cum_translation = this->cum_translation + translation;
+
+    // retrace the path if it went VERY off course (purely eyeballed)
+    if(
+        (this->current_path_index != -1 && this->path.size() > 0) && 
+        Distance(this->path[this->current_path_index], this->getPosition()) > 4.5*this->diameter*this->diameter
+    ) {
+        printf("RETRACE\n");
+        this->moveToPoint(this->destination_position);
+    }
+
+    this->static_translation = Vector2D(0,0);
+    this->dynamic_translation = Vector2D(0,0);
+
+    entity->getComponent<TextComponent>().setText(
+        this->transform->position.FormatDecimal(4,0)
+    );
+}
+
+void handleOutOfBounds(float max_x, float max_y) {
+    if(this->transform->position.x < 0) { this->transform->position.x = 0; }
+    if(this->transform->position.y < 0) { this->transform->position.y = 0; }
+    if(this->transform->position.x + this->transform->width > max_x) { this->transform->position.x = max_x - this->transform->width; }
+    if(this->transform->position.y + this->transform->width > max_y) { this->transform->position.y = max_y - this->transform->height; }
+}
 };

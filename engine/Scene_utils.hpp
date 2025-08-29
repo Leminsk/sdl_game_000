@@ -133,10 +133,16 @@ Entity& createUIMapThumbnail(
     new_map_thumbnail.addGroup(groupUI);
     return new_map_thumbnail;
 }
-Entity& createBaseBuilding(std::string id, float world_pos_x, float world_pos_y, float width) {
+Entity& createBaseBuilding(
+    std::string id, 
+    float world_pos_x, float world_pos_y, 
+    float width,
+    const SDL_Color& color
+) {
+    std::cout << "createBaseBuilding:" << id << " color:{" << (int)color.r << ' ' << (int)color.g << ' ' << (int)color.b << "} \n";
     auto& building(Game::manager->addEntity(id));
     building.addComponent<TransformComponent>(world_pos_x, world_pos_y, width, width, 1.0);
-    building.addComponent<SpriteComponent>(Game::building_tex);
+    building.addComponent<SpriteComponent>(Game::building_tex, color);
     building.addComponent<Collider>(ColliderType::HEXAGON);
     building.addComponent<Wireframe>();
     building.addGroup(groupBuildings);

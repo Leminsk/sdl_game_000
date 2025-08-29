@@ -290,3 +290,28 @@ bool getBMPPixels(const std::string& path, std::vector<std::vector<SDL_Color>>& 
 bool isSameColor(const SDL_Color& x, const SDL_Color& y) {
     return (x.r == y.r && x.g == y.g && x.b == y.b && x.a == y.a);
 }
+
+SDL_Color convertMainColorToSDL(const MainColors& mc) {
+    switch(mc) {
+        case MainColors::WHITE:   return COLORS_WHITE;
+        case MainColors::BLACK:   return COLORS_BLACK;
+        case MainColors::RED:     return COLORS_RED;
+        case MainColors::GREEN:   return COLORS_GREEN;
+        case MainColors::BLUE:    return COLORS_BLUE;
+        case MainColors::YELLOW:  return COLORS_YELLOW;
+        case MainColors::CYAN:    return COLORS_CYAN;
+        case MainColors::MAGENTA: return COLORS_MAGENTA;
+        default: return { 0x7F, 0x7F, 0x7F, SDL_ALPHA_OPAQUE };
+    }
+}
+MainColors convertSDLColorToMainColor(const SDL_Color& sc) {
+    if(isSameColor(sc, COLORS_WHITE))        { return MainColors::WHITE;   }
+    else if(isSameColor(sc, COLORS_BLACK))   { return MainColors::BLACK;   }
+    else if(isSameColor(sc, COLORS_RED))     { return MainColors::RED;     }
+    else if(isSameColor(sc, COLORS_GREEN))   { return MainColors::GREEN;   }
+    else if(isSameColor(sc, COLORS_BLUE))    { return MainColors::BLUE;    }
+    else if(isSameColor(sc, COLORS_YELLOW))  { return MainColors::YELLOW;  }
+    else if(isSameColor(sc, COLORS_CYAN))    { return MainColors::CYAN;    }
+    else if(isSameColor(sc, COLORS_MAGENTA)) { return MainColors::MAGENTA; }
+    else { return MainColors::NONE; }
+}
