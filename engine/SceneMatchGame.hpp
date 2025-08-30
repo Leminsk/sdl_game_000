@@ -171,7 +171,7 @@ void setScene(
         LoadMapRender();
         Game::world_map_layout_width = this->map->world_layout_width;
         Game::world_map_layout_height = this->map->world_layout_height;
-        Game::camera_position = this->map->getWorldPosFromTileCoord(player_spawn.second, player_spawn.first);
+        Game::camera_position = this->map->getWorldPosFromTileCoord(player_spawn.second, player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
         this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
         this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);

@@ -345,7 +345,12 @@ std::vector<MeshNode> getMeshNeighbors(const int x, const int y, const int width
 bool walkableInMesh(int x, int y, const std::vector<std::vector<uint8_t>>& mesh) {
     // mesh is indexed HEIGHT first
     // FAR FUTURE TODO: change this to receive input of a tech level that unlocks TILE_NAVIGABLE
-    return (mesh[y][x] != TILE_IMPASSABLE && mesh[y][x] != TILE_NAVIGABLE && mesh[y][x] != TILE_BASE_SPAWN);
+    return (
+        mesh[y][x] != TILE_IMPASSABLE && 
+        mesh[y][x] != TILE_NAVIGABLE && 
+        mesh[y][x] != TILE_BASE_SPAWN &&
+        mesh[y][x] != TILE_PLAYER
+    );
 }
 
 bool meshDiagonalOK(const MeshNode& s, const MeshNode& n, const std::vector<std::vector<uint8_t>>& mesh) {
