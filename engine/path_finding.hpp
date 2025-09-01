@@ -77,7 +77,7 @@ MeshNode convertVector2DToMeshNode(const Vector2D& v, const int mesh_density) {
         case 1: 
         default: shift = 0;
     }
-    int factor = (Game::UNIT_SIZE<<1) >> shift;
+    int factor = (Game::DOUBLE_UNIT_SIZE) >> shift;
     return {
         static_cast<int>(std::floor(v.x / factor)),
         static_cast<int>(std::floor(v.y / factor))
@@ -93,7 +93,37 @@ Vector2D convertMeshNodeToVector2D(const MeshNode& n, const int mesh_density) {
         case 1: 
         default: shift = 0;
     }
-    int factor = (Game::UNIT_SIZE<<1) >> shift;
+    int factor = (Game::DOUBLE_UNIT_SIZE) >> shift;
+    return Vector2D(
+        static_cast<float>((n.x * factor) + (factor>>1)),
+        static_cast<float>((n.y * factor) + (factor>>1))
+    );
+}
+
+MeshNode convertVector2DToMacroMeshNode(const Vector2D& v, const int macro_size) {
+    int shift;
+    switch(macro_size) {
+        case 16: shift = 2; break;
+        case 4:  shift = 1; break;
+        case 1: 
+        default: shift = 0;
+    }
+    int factor = (Game::DOUBLE_UNIT_SIZE) << shift;
+    return {
+        static_cast<int>(std::floor(v.x / factor)),
+        static_cast<int>(std::floor(v.y / factor))
+    };
+}
+
+Vector2D convertMacroMeshNodeToVector2D(const MeshNode& n, const int macro_size) {
+    int shift;
+    switch(macro_size) {
+        case 16: shift = 2; break;
+        case 4:  shift = 1; break;
+        case 1:
+        default: shift = 0;
+    }
+    int factor = (Game::DOUBLE_UNIT_SIZE) << shift;
     return Vector2D(
         static_cast<float>((n.x * factor) + (factor>>1)),
         static_cast<float>((n.y * factor) + (factor>>1))
@@ -145,6 +175,18 @@ void update_vertex_mesh(
     }
 }
 
+
+std::vector<Vector2D> reconstruct_path_macro_mesh(const MeshNode& s, std::unordered_map<MeshNode, MeshNode, Node2Hash>& parent, const int macro_size) {
+    std::vector<Vector2D> total_path = { convertMacroMeshNodeToVector2D(s, macro_size) };
+    MeshNode curr_point = s;
+    MeshNode curr_parent = parent[s];
+    while(curr_parent != curr_point) {
+        total_path.push_back(convertMacroMeshNodeToVector2D(curr_parent, macro_size));
+        curr_point = curr_parent;
+        curr_parent = parent[curr_point];
+    }
+    return total_path;
+}
 
 std::vector<Vector2D> reconstruct_path_mesh(const MeshNode& s, std::unordered_map<MeshNode, MeshNode, Node2Hash>& parent, const int mesh_density) {
     std::vector<Vector2D> total_path = { convertMeshNodeToVector2D(s, mesh_density) };
@@ -422,7 +464,7 @@ MeshNode findClosestWalkable(
 std::vector<Vector2D> a_star_mesh(
     const MeshNode& start, const MeshNode& destination, 
     const std::vector<std::vector<uint8_t>>& mesh, const int branching_factor,
-    const int mesh_width_limit, const int mesh_height_limit, const int density,
+    const int mesh_width_limit, const int mesh_height_limit, const int density, const int macro_size,
     const std::chrono::steady_clock::time_point& begin
 ) {
     std::unordered_map<MeshNode, MeshNode, Node2Hash> parent;
@@ -454,6 +496,9 @@ std::vector<Vector2D> a_star_mesh(
         if(s == destination) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::cout << "a_star_mesh() Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            if(macro_size > 0) {
+                return reconstruct_path_macro_mesh(s, parent, macro_size);
+            }
             return reconstruct_path_mesh(s, parent, density);
         }
 
@@ -482,15 +527,20 @@ std::vector<Vector2D> a_star_mesh(
 
 std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destination) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    const float           one_by_one =    8192.0f; //  1x1 tile area
-    const float         four_by_four =  131072.0f; //  4x4 tile area
-    const float threetwo_by_threetwo = 8388608.0f; // 32x32 tile area
+    // really, I'm just eyeballing these differences for now
+    static const float             one_by_one =               8192.0f; //    1x1 tile area
+    static const float           four_by_four =       16 * one_by_one; //    4x4 tile area
+    static const float thirtytwo_by_thirtytwo =     1024 * one_by_one; //   32x32 tile area
+    static const float          macro_4_limit =    65536 * one_by_one; //  256x256 tile area
+    static const float         macro_16_limit = 16777216 * one_by_one; // 4096x4096 tile area in case I need it in the far far future
     const float distance = Distance(start, destination);
     const int branching_factor = 8;
     MeshNode start_node;
     MeshNode dest_node;
     std::vector<std::vector<uint8_t>> *mesh;
     int density, width_limit, height_limit;
+    int macro_size = -1;
+
     if(distance <= one_by_one) { // use very granular mesh (tile -> 64 nodes)
         density = 64; mesh = &Game::collision_mesh_64; 
         width_limit = Game::collision_mesh_64_width-1;
@@ -499,24 +549,77 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
         density = 16; mesh = &Game::collision_mesh_16;
         width_limit = Game::collision_mesh_16_width-1;
         height_limit = Game::collision_mesh_16_height-1;
-    } else if(distance <= threetwo_by_threetwo) { // use standard mesh (tile -> 4 nodes)
+    } else if(distance <= thirtytwo_by_thirtytwo) { // use slightly granular mesh (tile -> 4 nodes)
         density = 4; mesh = &Game::collision_mesh_4;
         width_limit = Game::collision_mesh_4_width-1;
         height_limit = Game::collision_mesh_4_height-1;
-    } else { // use big tile mesh (tile -> 1 node)
+    } else if(distance <= macro_4_limit) { // use original tile mesh (tile -> 1 node)
         density = 1; mesh = &Game::collision_mesh_1;
         width_limit = Game::collision_mesh_1_width-1;
         height_limit = Game::collision_mesh_1_height-1;
+    } else if(Game::collision_mesh_macro_4_width > 0 && distance <= macro_16_limit) { // use macro mesh of 4 (4 tiles -> 1 node)
+        macro_size = 4; mesh = &Game::collision_mesh_macro_4; 
+        width_limit = Game::collision_mesh_macro_4_width-1;
+        height_limit = Game::collision_mesh_macro_4_height-1;
+    } else if(Game::collision_mesh_macro_16_width > 0) { // use macro mesh of 16 (16 tiles -> 1 node)
+        macro_size = 16; mesh = &Game::collision_mesh_macro_16; 
+        width_limit = Game::collision_mesh_macro_16_width-1;
+        height_limit = Game::collision_mesh_macro_16_height-1;
     }
-    start_node = convertVector2DToMeshNode(start, density);
-    dest_node = convertVector2DToMeshNode(destination, density);
+
+    if(macro_size > 0) {
+        start_node = convertVector2DToMacroMeshNode(start, macro_size);
+        dest_node = convertVector2DToMacroMeshNode(destination, macro_size);
+    } else {
+        start_node = convertVector2DToMeshNode(start, density);
+        dest_node = convertVector2DToMeshNode(destination, density);
+    }
+    
     // clamp out of bounds
     if(dest_node.x > width_limit) { dest_node.x = width_limit; }
     else if(dest_node.x < 0) { dest_node.x = 0; }
     if(dest_node.y > height_limit) { dest_node.y = height_limit; }
     else if(dest_node.y < 0) { dest_node.y = 0; }
+    
     if(walkableInMesh(dest_node.x, dest_node.y, *mesh)) {
-        return a_star_mesh(start_node, dest_node, *mesh, branching_factor, width_limit, height_limit, density, begin);
+        std::vector<Vector2D> path = a_star_mesh(
+            start_node, dest_node, 
+            *mesh, branching_factor, width_limit, height_limit, 
+            density, macro_size, begin
+        );
+
+        // I don't think I'll need the macro_size=16 case for now
+        // also maybe instead of doing this, signal to the drone that distance tolerance should be way higher
+        if(macro_size == 4) { // create intermediate points in route
+            int path_size = path.size();
+            Vector2D path_start = path[path_size - 1];
+            std::vector<Vector2D> path_with_more_points;
+            path_with_more_points.reserve( (4*path_size) + 1 );
+            Vector2D intermediate_point, ia, ib;
+            int idx = 0;
+            for(int i=0; i<path_size-1; ++i) {
+                intermediate_point = (path[i] + path[i+1])/2.0f;
+                ia = (path[i] + intermediate_point)/2.0f;
+                ib = (intermediate_point + path[i+1])/2.0f;
+                path_with_more_points.push_back(path[i]);
+                path_with_more_points.push_back(ia);
+                path_with_more_points.push_back(intermediate_point);
+                path_with_more_points.push_back(ib);
+            }
+            intermediate_point = (path_start + start)/2.0f;
+            ia = (path_start + intermediate_point)/2.0f;
+            ib = (intermediate_point + start)/2.0f;
+            path_with_more_points.push_back(path_start);
+            path_with_more_points.push_back(ia);
+            path_with_more_points.push_back(intermediate_point);
+            path_with_more_points.push_back(ib);
+            path_with_more_points.push_back(start);
+
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::cout << "Total with macro size 4 = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;
+            return path_with_more_points;
+        }
+        return path;
     } 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "a_star_mesh() PATH BLOCKED Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[us]" << std::endl;

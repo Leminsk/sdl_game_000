@@ -9,6 +9,7 @@ std::mt19937* Game::RNG;
 
 Manager* Game::manager;
 const int Game::UNIT_SIZE = 32;
+const int Game::DOUBLE_UNIT_SIZE = Game::UNIT_SIZE<<1;
 int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 
@@ -37,6 +38,10 @@ SDL_Texture *Game::building_tex = nullptr;
 float Game::world_map_layout_width;
 float Game::world_map_layout_height;
 
+int Game::collision_mesh_macro_16_height;
+int Game::collision_mesh_macro_16_width;
+int Game::collision_mesh_macro_4_height;
+int Game::collision_mesh_macro_4_width;
 int Game::collision_mesh_1_height;
 int Game::collision_mesh_1_width;        
 int Game::collision_mesh_4_height;
@@ -49,6 +54,8 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_64;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_16;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_4;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_1;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_4;
+std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_16;
 
 
 int Game::SERVER_STATE_SHARE_RATE;

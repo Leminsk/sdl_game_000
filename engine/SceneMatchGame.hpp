@@ -163,7 +163,7 @@ void setScene(
         this->mountain_texture,
         this->water_bg_texture,
         this->water_fg_texture,
-        Game::UNIT_SIZE<<1
+        Game::DOUBLE_UNIT_SIZE
     );
 
     if(this->map->loaded) {
@@ -177,6 +177,7 @@ void setScene(
         this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
         this->map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
         this->map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
+        this->map->generateCollisionMacroMesh( 4, Game::collision_mesh_macro_4,  Game::collision_mesh_macro_4_width,  Game::collision_mesh_macro_4_height);
 
         for(const std::pair<int,int>& pos : spawn_positions) {
             MainColors c = convertSDLColorToMainColor(map_pixels[pos.first][pos.second]);

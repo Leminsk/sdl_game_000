@@ -64,6 +64,18 @@ Vector2D static_translation = Vector2D(0,0);
 Vector2D dynamic_translation = Vector2D(0,0);
 Vector2D cum_translation = Vector2D(0,0);
 
+void setPathToMove(const std::vector<Vector2D>& new_path) {
+    if(new_path.size() == 0) { return; }
+    this->path = new_path;
+    this->cum_translation = Vector2D(0,0);
+    this->destination_position = new_path[0];
+    this->visited_indices = {};
+    this->transform->velocity = Vector2D(0,0);
+    this->last_path_index = this->path.size() - 1;
+    this->current_path_index = this->last_path_index;
+    this->preUpdating = true;
+}
+
 public:
 TransformComponent *transform;
 SpriteComponent *sprite;
@@ -78,6 +90,7 @@ std::vector<int> visited_indices = {};
 int current_path_index = -1;
 int last_path_index;
 float radius;
+float radius_squared;
 float diameter;
 
 float speed_modifier = 1.0f;
@@ -88,6 +101,7 @@ DroneComponent(const Vector2D& starting_position, float diameter, SDL_Texture* s
     this->sprite_texture = sprite_texture;
     this->diameter = diameter;
     this->radius = diameter/2;
+    this->radius_squared = this->radius * this->radius;
     this->color_type = c;
     this->color = convertMainColorToSDL(c);
     ++Game::UNIT_COUNTER;
@@ -115,28 +129,13 @@ void updateDynamicTranslation(const Vector2D& v) {
 
 void moveToPoint(const Vector2D& destination) {
     std::vector<Vector2D> new_path = find_path(getPosition(), destination);
-    if(new_path.size() == 0) { return; }
-    this->path = new_path;
-    this->cum_translation = Vector2D(0,0);
-    this->destination_position = destination;
-    this->last_path_index = path.size() - 1;
-    this->current_path_index = this->last_path_index;
-    this->visited_indices = {};
-    this->transform->velocity = Vector2D(0,0);
-    preUpdating = true;
+    setPathToMove(new_path);
 }
 
 void moveToPointWithPath(const std::vector<Vector2D>& p) {
-    if(p.size() == 0) { return; }
-    this->path = p;
-    this->cum_translation = Vector2D(0,0);
-    this->destination_position = p[0];
-    this->last_path_index = path.size() - 1;
-    this->current_path_index = this->last_path_index;
-    this->visited_indices = {};
-    this->transform->velocity = Vector2D(0,0);
-    preUpdating = true;
+    setPathToMove(p);
 }
+
 
 void init() override {
     entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
@@ -154,29 +153,29 @@ void preUpdate() override {
         this->visited_indices = {};
         this->current_path_index = -1;
         this->transform->velocity = Vector2D(0,0);
-        preUpdating = false;
+        this->preUpdating = false;
     }
 
     // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
     if(
         this->current_path_index > 0 && 
-        Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius * this->radius)
+        Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius_squared)
     ) {
         float d;
         std::vector<int> candidate_indices = {};
 
         // mark every node inside the circle as visited
-        for(int i=last_path_index; i>=0; --i) {
+        for(int i=this->last_path_index; i>=0; --i) {
             if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
                 d = Distance(getPosition(), path[i]);
-                if(d <= 2*(this->radius * this->radius)) {
+                if(d <= 2*(this->radius_squared)) {
                     visited_indices.push_back(i);
                     candidate_indices.push_back(i);
                 }
             }
         }
         
-        int min_idx = last_path_index;
+        int min_idx = this->last_path_index;
         // get the min index of the nodes inside the circle -> the node which is farther along the path
         for(int i=0; i<candidate_indices.size(); ++i) {
             if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
@@ -186,23 +185,23 @@ void preUpdate() override {
         this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
     } else if(
         this->current_path_index == 0 && 
-        Distance(getPosition(), path[this->current_path_index]) <= (this->radius * this->radius)
+        Distance(getPosition(), path[this->current_path_index]) <= (this->radius_squared) // exception distance for last point (destination)
     ) {
         float d;
         std::vector<int> candidate_indices = {};
 
         // mark every node inside the circle as visited
-        for(int i=last_path_index; i>=0; --i) {
+        for(int i=this->last_path_index; i>=0; --i) {
             if(std::find(visited_indices.begin(), visited_indices.end(), i) == visited_indices.end()) {
                 d = Distance(getPosition(), path[i]);
-                if(d <= (this->radius * this->radius)) {
+                if(d <= (this->radius_squared)) {
                     visited_indices.push_back(i);
                     candidate_indices.push_back(i);
                 }
             }
         }
         
-        int min_idx = last_path_index;
+        int min_idx = this->last_path_index;
         // get the min index of the nodes inside the circle -> the node which is farther along the path
         for(int i=0; i<candidate_indices.size(); ++i) {
             if(candidate_indices[i] < min_idx) { min_idx = candidate_indices[i];}
@@ -215,7 +214,7 @@ void preUpdate() override {
 
 void update() override {
     // Server is dealing with the preUpdate
-    if(preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius * this->radius)) {
+    if(this->preUpdating == false && Distance(getPosition(), this->destination_position) <= (this->radius_squared)) {
         this->transform->velocity = Vector2D(0,0);
     }
 

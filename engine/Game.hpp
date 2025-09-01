@@ -33,11 +33,16 @@ class Game {
         static SDL_Color default_bg_color, default_text_color;
         static SDL_Texture *unit_tex, *building_tex;
         static const int UNIT_SIZE;
+        static const int DOUBLE_UNIT_SIZE;
         static int UNIT_COUNTER;
 
         static float world_map_layout_width;
         static float world_map_layout_height;
 
+        static int collision_mesh_macro_16_height;
+        static int collision_mesh_macro_16_width;
+        static int collision_mesh_macro_4_height;
+        static int collision_mesh_macro_4_width;
         static int collision_mesh_1_height;
         static int collision_mesh_1_width;        
         static int collision_mesh_4_height;
@@ -51,6 +56,8 @@ class Game {
         static std::vector<std::vector<uint8_t>> collision_mesh_16;
         static std::vector<std::vector<uint8_t>> collision_mesh_4;
         static std::vector<std::vector<uint8_t>> collision_mesh_1;
+        static std::vector<std::vector<uint8_t>> collision_mesh_macro_4;
+        static std::vector<std::vector<uint8_t>> collision_mesh_macro_16;
 
 
         static Manager* manager;
