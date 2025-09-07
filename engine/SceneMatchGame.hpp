@@ -85,39 +85,77 @@ SceneMatchGame(SDL_Event* e) { this->event = e; }
 
 Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout, const std::vector<std::vector<SDL_Color>>& map_pixels = {}) {
     auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
+    const float world_x = map_x * width;
+    const float world_y = map_y * width;
     
     switch(id) {
         case TILE_ROUGH:  {
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->rough_terrain_texture);
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->rough_terrain_texture);
         } break;
         case TILE_IMPASSABLE: { 
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->mountain_texture);
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->mountain_texture);
             uint8_t* neighbors = &tile.getComponent<RectangleCollider>().adjacent_rectangles;
             SetSolidTileNeighbors(neighbors, map_x, map_y, layout);
         } break;
         case TILE_NAVIGABLE: { 
             // need to be in this order to render the foreground "above" the background
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->water_bg_texture);
-            tile.addComponent<TileFGComponent>(map_x*width, map_y*width, width, width, id, this->water_fg_texture);
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->water_bg_texture);
+            tile.addComponent<TileFGComponent>(world_x, world_y, width, width, id, this->water_fg_texture);
         }
         break;
         case TILE_BASE_SPAWN: {
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);
             // TODO: assign random color here or get it from somewhere
             createBaseBuilding(
                 "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
-                map_x*width, map_y*width, width, map_pixels[map_y][map_x]
+                world_x, world_y, width, map_pixels[map_y][map_x]
             );
         } break;
         case TILE_PLAYER: {
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);
-            createBaseBuilding(
-                "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
-                map_x*width, map_y*width, width, map_pixels[map_y][map_x]
-            );
+            Vector2D tile_xy = Vector2D(map_x, map_y);
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);
+
+            Vector2D tile_center = Vector2D(world_x + width/2, world_y + width/2);
+            HexPos hex_tile = convertWorldToHex(tile_center);
+            std::vector<Vector2D> hex_hull = getPointsFromHexPos(hex_tile);
+            if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
+                Vector2D hex_center = convertHexToWorld(hex_tile);
+                std::cout << "success on first pass: " << hex_center << '\n';
+                createBaseBuilding(
+                    "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
+                    hex_center.x - HEX_SIDE_LENGTH, hex_center.y - HEX_SIDE_LENGTH, width, map_pixels[map_y][map_x]
+                );
+
+            } else {
+                std::cout << "else\n";
+                Vector2D hex_tile_pos = convertHexToWorld(hex_tile);
+                Vector2D neighbor_pos;
+                std::vector<HexPos> hex_neighbors = hexNeighbors(hex_tile, this->map->hex_grid_rect);
+                bool valid_spawn = false;
+                float free_pos_x, free_pos_y;
+                for(HexPos& n : hex_neighbors) {
+                    neighbor_pos = convertHexToWorld(n);
+                    if(this->map->getTileCoordFromWorldPos(hex_tile_pos) == this->map->getTileCoordFromWorldPos(neighbor_pos)) {
+                        hex_hull = getPointsFromHexPos(n);
+                        if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
+                            valid_spawn = true;
+                            free_pos_x = neighbor_pos.x - HEX_SIDE_LENGTH;
+                            free_pos_y = neighbor_pos.y - HEX_SIDE_LENGTH;
+                            break;
+                        }                        
+                    }
+                }
+                if(valid_spawn) {
+                    std::cout << "success on second pass: " << free_pos_x << ", " << free_pos_y << '\n';
+                    createBaseBuilding(
+                        "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
+                        free_pos_x, free_pos_y, width, map_pixels[map_y][map_x]
+                    );
+                }
+            }
         } break;
         default: 
-            tile.addComponent<TileComponent>(map_x*width, map_y*width, width, width, id, this->plain_terrain_texture);            
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);            
     }
     
     tile.addGroup(groupTiles);
@@ -218,8 +256,12 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             this->draw_grids = true;
             std::cout << "MOUSE MIDDLE RIGHT: " << world_pos << '\n';
             HexPos h = convertWorldToHex(world_pos);
+            Vector2D tile_xy = this->map->getTileCoordFromWorldPos(world_pos);
+            std::cout << "getTileCoordFromWorldPos: " << tile_xy << '\n';
             std::cout << "convertWorldToHex: " << h.q << ',' << h.r << '\n';
             std::cout << "convertHexToWorld: " << convertHexToWorld(h) << '\n';
+            std::vector<Vector2D> hex_points = getPointsFromHexPos(h);
+            std::cout << "hexOverlapsInMap: " << (this->map->hexFreeInMap(hex_points, tile_xy) ? "Clear" : "BLOCKED") << '\n';
 
         } break;
 
@@ -581,7 +623,7 @@ void render() {
 
 
     // debugging hex grid
-    if(this->draw_grids) {
+    if(!this->draw_grids) {
         int max_q_axis = (this->map->layout_width<<1) / sqrt_3;
         int max_r_axis = (this->map->layout_height<<1) / 1.5f;
         int min_q_axis = -(max_q_axis>>1);
@@ -591,14 +633,17 @@ void render() {
         float hex_pos_w = 4.0f;
         SDL_Color hex_border_color = { 0x00, 0xF0, 0x20, SDL_ALPHA_OPAQUE };
         SDL_FRect hex_center = { hex_pos.x, hex_pos.y, hex_pos_w, hex_pos_w };
-        SDL_FRect crop_rect = { (HEX_X_WIDTH/2) - 1, static_cast<float>(HEX_SIDE_LENGTH), this->map->world_layout_width - (HEX_X_WIDTH), this->map->world_layout_height - (HEX_SIDE_LENGTH<<1) };
         for(int q=min_q_axis; q<=max_q_axis; ++q) {
             current_hex.q = q;
             for(int r=0; r<=max_r_axis; ++r) {
                 current_hex.r = r;
                 hex_world_pos = convertHexToWorld(current_hex);
 
-                if(Collision::pointInRect(hex_world_pos.x, hex_world_pos.y, crop_rect.x, crop_rect.y, crop_rect.w, crop_rect.h)) { 
+                if(Collision::pointInRect(
+                    hex_world_pos.x, hex_world_pos.y, 
+                    this->map->hex_grid_rect.x, this->map->hex_grid_rect.y, 
+                    this->map->hex_grid_rect.w, this->map->hex_grid_rect.h
+                )) { 
                     float lesser_height = HEX_SIDE_LENGTH>>1;
                     float cos_30_radius = HEX_SIDE_LENGTH * 0.8660254f;
                     float x_gap = HEX_SIDE_LENGTH - cos_30_radius;

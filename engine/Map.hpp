@@ -20,6 +20,9 @@ std::vector<std::vector<SDL_Color>> map_pixels;
 uint32_t layout_width, layout_height;
 float world_layout_width, world_layout_height;
 
+// all hexagons in the hex grid must exist in this rect
+SDL_FRect hex_grid_rect;
+
 SDL_Texture* plain_terrain_texture;
 SDL_Texture* rough_terrain_texture;
 SDL_Texture* mountain_texture;
@@ -67,6 +70,13 @@ Map(
             this->layout[y][x] = t;
         }
     }
+    const float hex_x_width = 1.73205f * Game::UNIT_SIZE;
+    this->hex_grid_rect = {
+        (hex_x_width/2) - 1, 
+        static_cast<float>(Game::UNIT_SIZE),
+        this->world_layout_width - hex_x_width,
+        this->world_layout_height - (Game::UNIT_SIZE<<1)
+    };
     this->loaded = true;
 }
 
@@ -89,9 +99,32 @@ Map(
 bool LoadMapFile(std::string& path);
 
 int getTileFromWorldPos(Vector2D world_pos) {
-    uint32_t x = static_cast<uint32_t>(floorf(world_pos.x / tile_width));
-    uint32_t y = static_cast<uint32_t>(floorf(world_pos.y / tile_width));
+    float pos_x, pos_y;
+    if(world_pos.x < 0) { 
+        pos_x = 0.0f; 
+    } else if(world_pos.x > this->world_layout_width) { 
+        pos_x = this->world_layout_width; 
+    } else { 
+        pos_x = world_pos.x; 
+    }
+    if(world_pos.y < 0) { 
+        pos_y = 0.0f; 
+    } else if(world_pos.y > this->world_layout_height) { 
+        pos_y = this->world_layout_height; 
+    } else { 
+        pos_y = world_pos.y; 
+    }
+
+    uint32_t x = static_cast<uint32_t>(floorf(pos_x / tile_width));
+    uint32_t y = static_cast<uint32_t>(floorf(pos_y / tile_width));
     return this->layout[y][x];
+}
+
+Vector2D getTileCoordFromWorldPos(Vector2D world_pos) {
+    return Vector2D(
+        std::floor(world_pos.x / this->tile_width),
+        std::floor(world_pos.y / this->tile_width)
+    );
 }
 
 Vector2D getWorldPosFromTileCoord(uint32_t x, uint32_t y) {
@@ -99,6 +132,30 @@ Vector2D getWorldPosFromTileCoord(uint32_t x, uint32_t y) {
         (x * this->tile_width) + this->tile_width/2,
         (y * this->tile_width) + this->tile_width/2
     );
+}
+
+// returns true if a hexagon does not overlap with any blocking tile
+bool hexFreeInMap(const std::vector<Vector2D>& hex_points, const Vector2D& own_tile) {
+    std::vector<Vector2D> tile_coords = {
+        getTileCoordFromWorldPos(hex_points[0]),
+        getTileCoordFromWorldPos(hex_points[1]),
+        getTileCoordFromWorldPos(hex_points[2]),
+        getTileCoordFromWorldPos(hex_points[3]),
+        getTileCoordFromWorldPos(hex_points[4]),
+        getTileCoordFromWorldPos(hex_points[5])
+    };
+    std::vector<bool> free_coords = { false, false, false, false, false, false };
+    // TODO: allow TILE_NAVIGABLE later with tech somehow
+    for(int i=0; i<6; ++i) {
+        if(tile_coords[i] == own_tile) {
+            free_coords[i] = true;
+        } else {
+            int tile_id = getTileFromWorldPos(hex_points[i]);
+            free_coords[i] = (tile_id != TILE_IMPASSABLE) && (tile_id != TILE_NAVIGABLE) && (tile_id != TILE_BASE_SPAWN) && (tile_id != TILE_PLAYER);
+        }
+    }
+    
+    return (free_coords[0] && free_coords[1] && free_coords[2] && free_coords[3] && free_coords[4] && free_coords[5]);
 }
 
 // generate collision mesh for path finding where each element is either the original pixel value, or a subsection.

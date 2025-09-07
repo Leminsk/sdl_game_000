@@ -1,8 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <SDL2/SDL.h>
 #include "Game.hpp"
 #include "Vector2D.hpp"
+#include "ECS/Colliders/Collision.hpp"
 
 const int HEX_SIDE_LENGTH = Game::UNIT_SIZE;
 
@@ -11,6 +13,8 @@ const float one_and_half_HEX_SIDE_LENGTH = 1.5f * HEX_SIDE_LENGTH;
 const float      sqrt_3 = 1.73205f;
 const float half_sqrt_3 = 0.86602f;
 const float HEX_X_WIDTH = sqrt_3 * HEX_SIDE_LENGTH;
+
+const float cos_30 = 0.8660254f;
 
 /*
 https://www.redblobgames.com/grids/hexagons/#coordinates-axial
@@ -52,7 +56,42 @@ HexPos convertWorldToHex(const Vector2D& world_pos) {
     return HexPos{ q, r };
 }
 
-// TODO: return positions of hexagon tiles neighboring pos
-std::vector<HexPos> hexNeighbors(const HexPos& hex, const int& grid_x_max, const int& grid_y_max) {
-    return {};
+// get Vector2D world positions of the six points that would compose the hexagon in the grid
+std::vector<Vector2D> getPointsFromHexPos(const HexPos& hex) {
+    Vector2D center = convertHexToWorld(hex);
+    const float x_delta = HEX_SIDE_LENGTH * cos_30;
+    const float y_delta = HEX_SIDE_LENGTH;
+    const float y_delta_small = HEX_SIDE_LENGTH>>1;
+
+    std::vector<Vector2D> points; points.reserve(6);
+    points.push_back({ center.x + x_delta, center.y + y_delta_small });
+    points.push_back({ center.x          , center.y + y_delta       });
+    points.push_back({ center.x - x_delta, center.y + y_delta_small });
+    points.push_back({ center.x - x_delta, center.y - y_delta_small });
+    points.push_back({ center.x          , center.y - y_delta       });
+    points.push_back({ center.x + x_delta, center.y - y_delta_small });
+    return points;
+}
+
+// return positions of hexagon tiles neighboring a given hex
+std::vector<HexPos> hexNeighbors(const HexPos& hex, const SDL_FRect& map_hex_rect) {
+    std::vector<HexPos> candidates = {
+        { hex.q + 1, hex.r     }, // →
+        { hex.q    , hex.r + 1 }, // ↘
+        { hex.q - 1, hex.r + 1 }, // ↙
+        { hex.q - 1, hex.r     }, // ←
+        { hex.q    , hex.r - 1 }, // ↖
+        { hex.q + 1, hex.r - 1 }, // ↗
+    };
+
+    std::vector<HexPos> neighbors = {};
+    for(HexPos& c : candidates) {
+        Vector2D pos = convertHexToWorld(c);
+        // neighbors must be inside the map
+        if(Collision::pointInRect(pos.x, pos.y, map_hex_rect.x, map_hex_rect.y, map_hex_rect.w, map_hex_rect.h)) {
+            neighbors.push_back(c);
+        }
+    }
+
+    return neighbors;
 }
