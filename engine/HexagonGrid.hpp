@@ -28,7 +28,7 @@ struct HexPos {
 // get world coord of the center of a hex grid tile
 Vector2D convertHexToWorld(const HexPos& hex) {
     float x = (sqrt_3 * hex.q) + (half_sqrt_3 * hex.r);
-    float y = 1.5f * hex.r;
+    float y =                             1.5f * hex.r;
     return { x * HEX_SIDE_LENGTH, y * HEX_SIDE_LENGTH };
 }
 
@@ -37,22 +37,29 @@ HexPos convertWorldToHex(const Vector2D& world_pos) {
     float x = world_pos.x / HEX_SIDE_LENGTH;
     float y = world_pos.y / HEX_SIDE_LENGTH;
     float fq = ((sqrt_3 * x) - y)/3.0f;
-    float fr = 0.66666f * y;
+    float fr = 0.6666667f * y;
 
     // axial cube round https://www.redblobgames.com/grids/hexagons/#rounding
+    // axial_to_cube()
+    float fs = -fq-fr;
+
+    // cube_round()
     int q = std::round(fq);
     int r = std::round(fr);
-    float s = -q-r;
-    int q_diff = std::fabs(q - fq);
-    int r_diff = std::fabs(r - fr);
-    int s_diff = std::fabs(std::round(s) - s);
+    int s = std::round(fs);
+
+    float q_diff = std::fabs(q - fq);
+    float r_diff = std::fabs(r - fr);
+    float s_diff = std::fabs(s - fs);
 
     if( q_diff > r_diff && q_diff > s_diff) {
         q = -r-s;
     } else if(r_diff > s_diff) {
         r = -q-s;
+    } else {
+        s = -q-r;
     }
-
+    // cube_to_axial()
     return HexPos{ q, r };
 }
 
@@ -89,9 +96,12 @@ std::vector<HexPos> hexNeighbors(const HexPos& hex, const SDL_FRect& map_hex_rec
         Vector2D pos = convertHexToWorld(c);
         // neighbors must be inside the map
         if(Collision::pointInRect(pos.x, pos.y, map_hex_rect.x, map_hex_rect.y, map_hex_rect.w, map_hex_rect.h)) {
+            std::cout << "neighbor hex:" << " { " << c.q << " , " << c.r << " }\n";
             neighbors.push_back(c);
         }
     }
+
+    std::cout << "ref hex:" << " { " << hex.q << ',' << hex.r << "}\n";
 
     return neighbors;
 }

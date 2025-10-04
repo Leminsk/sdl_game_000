@@ -117,6 +117,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
 
             Vector2D tile_center = Vector2D(world_x + width/2, world_y + width/2);
             HexPos hex_tile = convertWorldToHex(tile_center);
+            std::cout << "TILE_PLAYER placed on hex tile {" << hex_tile.q << " , " << hex_tile.r << " }\n";
             std::vector<Vector2D> hex_hull = getPointsFromHexPos(hex_tile);
             if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
                 Vector2D hex_center = convertHexToWorld(hex_tile);
@@ -133,6 +134,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
                 std::vector<HexPos> hex_neighbors = hexNeighbors(hex_tile, this->map->hex_grid_rect);
                 bool valid_spawn = false;
                 float free_pos_x, free_pos_y;
+                // first pass to prioritize spawn in same tile
                 for(HexPos& n : hex_neighbors) {
                     neighbor_pos = convertHexToWorld(n);
                     if(this->map->getTileCoordFromWorldPos(hex_tile_pos) == this->map->getTileCoordFromWorldPos(neighbor_pos)) {
@@ -145,12 +147,27 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
                         }                        
                     }
                 }
+                // second pass to attempt any other free adjacent tile 
+                if(!valid_spawn) {
+                    for(HexPos& n : hex_neighbors) {
+                        neighbor_pos = convertHexToWorld(n);
+                        hex_hull = getPointsFromHexPos(n);
+                        if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
+                            valid_spawn = true;
+                            free_pos_x = neighbor_pos.x - HEX_SIDE_LENGTH;
+                            free_pos_y = neighbor_pos.y - HEX_SIDE_LENGTH;
+                            break;
+                        }
+                    }
+                }
                 if(valid_spawn) {
                     std::cout << "success on second pass: " << free_pos_x << ", " << free_pos_y << '\n';
                     createBaseBuilding(
                         "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                         free_pos_x, free_pos_y, width, map_pixels[map_y][map_x]
                     );
+                } else {
+                    std::cout << "WARNING: can't create hex building from tile: " << tile_xy << '\n';
                 }
             }
         } break;
@@ -254,7 +271,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             
         case SDL_BUTTON_MIDDLE: {
             this->draw_grids = true;
-            std::cout << "MOUSE MIDDLE RIGHT: " << world_pos << '\n';
+            std::cout << "MOUSE BUTTON MIDDLE: " << world_pos << '\n';
             HexPos h = convertWorldToHex(world_pos);
             Vector2D tile_xy = this->map->getTileCoordFromWorldPos(world_pos);
             std::cout << "getTileCoordFromWorldPos: " << tile_xy << '\n';

@@ -153,6 +153,7 @@ bool hexFreeInMap(const std::vector<Vector2D>& hex_points, const Vector2D& own_t
             int tile_id = getTileFromWorldPos(hex_points[i]);
             free_coords[i] = (tile_id != TILE_IMPASSABLE) && (tile_id != TILE_NAVIGABLE) && (tile_id != TILE_BASE_SPAWN) && (tile_id != TILE_PLAYER);
         }
+        std::cout << "i:"<<i<< "world_pos:" << hex_points[i] << " tile_coords:" << tile_coords[i] << (free_coords[i] ? " free\n" : " BLOCKED\n" );
     }
     
     return (free_coords[0] && free_coords[1] && free_coords[2] && free_coords[3] && free_coords[4] && free_coords[5]);
