@@ -41,25 +41,34 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     this->sound_button = sound_b;
     this->fps_text = fps;
     this->parent_scene = parent;
+    this->map_name = map_name;
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
     // reset pointers for when scene gets reset
-    if(this->selected_map != nullptr) { this->selected_map->destroy(); }
-    this->selected_map = nullptr;
-    if(this->button_go != nullptr) { this->button_go->destroy(); }
+    if(this->button_go != nullptr) { 
+        this->button_go->destroy(); 
+        this->button_go = nullptr; 
+    }
+    // TODO: this will actually crash the game if clicked initially with "Random" colors. IMPLEMENT random color assignment on scene change.
     this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, background_color, border_color);
-    this->spawn_info_entities.clear();
-    this->spawn_info_entities.shrink_to_fit();
 
-    this->map_name = map_name;
+    if(this->selected_map != nullptr) { this->selected_map->destroy(); }
     this->selected_map = &createUIMapThumbnail(
         "map_preview_" + this->map_name, "assets/maps/", this->map_name, 
         20, 20, 
         1.0f, true, 
         500.0f, 500.0f
     );
+
+    if(!this->spawn_info_entities.empty()) {
+        for(Entity*& e : this->spawn_info_entities) { e->destroy(); e = nullptr; }
+        for(Entity*& e : this->spawn_selections) { e->destroy(); e = nullptr; }
+        this->spawn_info_entities = {};        
+        this->spawn_selections = {};
+        this->spawn_positions = {};
+    }
 
     
 
