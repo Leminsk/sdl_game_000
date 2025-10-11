@@ -6,6 +6,7 @@
 #include "AudioManager.hpp"
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
+#include "json.hpp"
 
 class SceneSettings {
 private:
@@ -16,6 +17,8 @@ SDL_Event* event;
 Entity* fps_dropdown = nullptr;
 std::vector<unsigned int> fps_values = { 30, 40, 50, 60, 70, 80, 90, 100, 110, 120 };
 std::vector<std::string> frame_rates = { " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", "100 Hz", "110 Hz", "120 Hz" };
+std::ifstream config_file;
+nlohmann::json config_json;
 
 public:
 Mix_Chunk* sound_button = NULL;
@@ -28,6 +31,11 @@ SceneSettings(SDL_Event* e) { this->event = e; }
 void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
     this->sound_button = sound_b;
     this->fps_text = fps;
+
+    if(this->config_file.is_open()) { this->config_file.close(); }
+    this->config_file.open("config.json");
+    if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
+    this->config_json = nlohmann::json::parse(config_file);
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
@@ -95,6 +103,10 @@ bool clickedButton(Vector2D& pos) {
                         for(int i=0; i<this->frame_rates.size(); ++i) {
                             if(this->frame_rates[i] == fps_option) {
                                 changeFPS(this->fps_values[i]);
+                                this->config_json["FRAME_RATE"] = this->fps_values[i];
+                                std::ofstream o("config.json");
+                                o << this->config_json.dump(4);
+                                o.close();
                                 break;
                             }
                         }
@@ -103,18 +115,23 @@ bool clickedButton(Vector2D& pos) {
                         if(button_id == "button_back") {
                             Mix_PlayChannel(-1, this->sound_button, 0);
                             this->change_to_scene = SceneType::MAIN_MENU;
-                        } else if(button_id == "button_res_SVGA") {
-                            changeScreenResolution(800, 600);
-                            this->change_to_scene = SceneType::SETTINGS;
-                        } else if(button_id == "button_res_WXGA") {
-                            changeScreenResolution(1280, 720);
-                            this->change_to_scene = SceneType::SETTINGS;
-                        } else if(button_id == "button_res_1.56M3") {
-                            changeScreenResolution(1440, 1080);
-                            this->change_to_scene = SceneType::SETTINGS;
-                        } else if(button_id == "button_res_FHD") {
-                            changeScreenResolution(1920, 1080);
-                            this->change_to_scene = SceneType::SETTINGS;
+                        } else {
+                            int new_width = -1;
+                            int new_height = -1;
+                            if(button_id == "button_res_SVGA") {        new_width =  800; new_height =  600; } 
+                            else if(button_id == "button_res_WXGA") {   new_width = 1280; new_height =  720; } 
+                            else if(button_id == "button_res_1.56M3") { new_width = 1440; new_height = 1080; } 
+                            else if(button_id == "button_res_FHD") {    new_width = 1920; new_height = 1080; }
+
+                            if(new_width > 0 && new_height > 0) {
+                                this->config_json["SCREEN_WIDTH"] = new_width;
+                                this->config_json["SCREEN_HEIGHT"] = new_height;
+                                std::ofstream o("config.json");
+                                o << this->config_json.dump(4);
+                                o.close();
+                                changeScreenResolution(new_width, new_height);
+                                this->change_to_scene = SceneType::SETTINGS;
+                            }                            
                         }
                         clean();
                     }

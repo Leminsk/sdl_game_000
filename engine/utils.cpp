@@ -160,33 +160,33 @@ std::vector<std::string> getFileNamesInDirectory(const std::string& directory, c
                 file_names.push_back( entry.path().u8string() );
             }        
         }
+
+        std::string full_path;
+        int name_begin, name_end;
+        bool check_slashes, check_dot;
+        for(int i=0; i<file_names.size(); ++i) {
+            full_path = file_names[i];
+            // search for folder/directory separator and for the '.' extension separator
+            name_begin = 0;
+            check_slashes = true; 
+            check_dot = true;
+            for(int j=full_path.size()-1; j>=0; --j) {
+                if(check_dot && full_path[j] == '.') {
+                    name_end = j;
+                    check_dot = false;
+                }
+                if(check_slashes && (full_path[j] == '\\' || full_path[j] == '/')) {
+                    name_begin = j+1;
+                    check_slashes = false;
+                }
+                if(!check_dot && !check_slashes) { break; }
+            }
+            file_names[i] = file_names[i].substr(name_begin, name_end-name_begin);
+        }
     } else {
         for(const auto& entry : std::filesystem::directory_iterator(directory)) {
             file_names.push_back( entry.path().u8string() );
         }
-    }
-    
-    std::string full_path;
-    int name_begin, name_end;
-    bool check_slashes, check_dot;
-    for(int i=0; i<file_names.size(); ++i) {
-        full_path = file_names[i];
-        // search for folder/directory separator and for the '.' extension separator
-        name_begin = 0;
-        check_slashes = true; 
-        check_dot = true;
-        for(int j=full_path.size()-1; j>=0; --j) {
-            if(check_dot && full_path[j] == '.') {
-                name_end = j;
-                check_dot = false;
-            }
-            if(check_slashes && (full_path[j] == '\\' || full_path[j] == '/')) {
-                name_begin = j+1;
-                check_slashes = false;
-            }
-            if(!check_dot && !check_slashes) { break; }
-        }
-        file_names[i] = file_names[i].substr(name_begin, name_end-name_begin);
     }
     
     return file_names;
