@@ -78,7 +78,6 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
@@ -182,7 +181,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "RELEASE LEFT: " << pos << '\n';
             if(!clickedButton(pos)) {
                 clickedDropdown(pos);
             }

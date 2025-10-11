@@ -165,9 +165,10 @@ TextDropdownComponent(
 }
 
 ~TextDropdownComponent() {
+    for(auto& o : this->options_entities) { o->destroy(); o = nullptr; }
     for(auto& o : this->options) { delete o; o = nullptr; }
-    this->options.clear();
-    this->options.shrink_to_fit();
+    this->options_entities = {};
+    this->options = {};
     delete this->selected_option; this->selected_option = nullptr;
 }
 

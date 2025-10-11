@@ -31,7 +31,7 @@ TextComponent* fps_text;
 SceneType change_to_scene = SceneType::NONE;
 Entity* selected_map = nullptr;
 std::string selected_map_name;
-std::vector<Entity*> maps_thumbnails;
+std::vector<Entity*> maps_thumbnails = {};
 
 SceneMapSelection(SDL_Event* e) { this->event = e; }
 ~SceneMapSelection() {}
@@ -40,11 +40,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->sound_button = sound_b;
     this->fps_text = fps;
     this->parent_scene = parent;
-
-    // need to reset these pointers for when the scene is being reset
-    if(this->button_go != nullptr) { this->button_go->destroy(); }
-    this->button_go = nullptr;
-    this->selected_map = nullptr;
+    
     this->selected_map_name = "";
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
@@ -105,7 +101,6 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
@@ -172,7 +167,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "RELEASE LEFT: " << pos << '\n';
             if(!clickedButton(pos)) {
                 if(clickedThumbnail(pos)) {
                     if(this->button_go == nullptr) {
@@ -192,7 +186,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
             }
         } break;
         case SDL_BUTTON_RIGHT: {
-            std::cout << "RELEASE RIGHT: " << pos << '\n';
             if(this->selected_map != nullptr) {
                 std::cout << "selected_map_name: " << this->selected_map_name << '\n';
             } else {
@@ -319,5 +312,9 @@ void render() {
 }
 void clean() {
     Game::manager->clearEntities();
+    this->button_go = nullptr;
+    this->selected_map = nullptr;    
+    this->maps_thumbnails = {};
+    this->title = nullptr;
 }
 };

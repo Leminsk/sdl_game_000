@@ -46,31 +46,18 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
-    // reset pointers for when scene gets reset
-    if(this->button_go != nullptr) { 
-        this->button_go->destroy(); 
-        this->button_go = nullptr; 
-    }
     // TODO: this will actually crash the game if clicked initially with "Random" colors. IMPLEMENT random color assignment on scene change.
     this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, background_color, border_color);
 
-    if(this->selected_map != nullptr) { this->selected_map->destroy(); }
     this->selected_map = &createUIMapThumbnail(
         "map_preview_" + this->map_name, "assets/maps/", this->map_name, 
         20, 20, 
         1.0f, true, 
         500.0f, 500.0f
     );
-
-    if(!this->spawn_info_entities.empty()) {
-        for(Entity*& e : this->spawn_info_entities) { e->destroy(); e = nullptr; }
-        for(Entity*& e : this->spawn_selections) { e->destroy(); e = nullptr; }
-        this->spawn_info_entities = {};        
-        this->spawn_selections = {};
-        this->spawn_positions = {};
-    }
-
     
+    // can't be reset on clean() it's shared with MatchGame
+    this->spawn_positions = {};
 
     createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
     
@@ -162,7 +149,6 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "MOUSE BUTTON LEFT: " << pos << '\n';
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
@@ -270,7 +256,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "RELEASE LEFT: " << pos << '\n';
             if(!clickedButton(pos)) {
                 if(clickedDropdown(pos)) {
                     if(isValidMapSpawns() && isValidPlayerSpawn()) {
@@ -284,9 +269,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                 }
             }
         } break;
-        case SDL_BUTTON_RIGHT: {
-            std::cout << "RELEASE RIGHT: " << pos << '\n';
-        } break;
+        case SDL_BUTTON_RIGHT: break;
     }
 }
 
@@ -338,5 +321,9 @@ void render() {
 }
 void clean() {
     Game::manager->clearEntities();
+    this->button_go = nullptr;
+    this->selected_map = nullptr;
+    this->spawn_info_entities = {};        
+    this->spawn_selections = {};
 }
 };
