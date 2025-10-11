@@ -5,6 +5,8 @@
 #include "Scene.hpp"
 #include "Colors.hpp"
 
+int Game::MAX_FPS;
+int Game::MAX_FRAME_DELAY;
 std::mt19937* Game::RNG;
 
 Manager* Game::manager;
@@ -77,8 +79,14 @@ Game::~Game() {
  * title: window name
  * width and height: window proportions in pixels
  * fullscreen: force fullscreen (true fullscreen)
+ * max_fps: maximum frames to be rendered per second
+ * server_broadcast_rate: the amount of frames inbetween sending broadcast TCP packages
+ * rng_generator: base random function pre-seeded to generate further RNG values
 */
-void Game::init(const char* title, int width, int height, bool fullscreen) {
+void Game::init(
+    const char* title, int width, int height, bool fullscreen,
+    int max_fps, int server_broadcast_rate, std::mt19937* rng_generator
+) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         SDL_Log("SDL could not initialize. SDL Error: %s\n", SDL_GetError());
         Game::isRunning = false;
@@ -135,6 +143,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen) {
     Game::camera_position = Vector2D(0,0);
     Game::camera_velocity = Vector2D(0,0);
     Game::camera_zoom = 1.0f;
+
+    // Game::LIMIT_FPS = true;
+    Game::MAX_FPS = max_fps;
+    Game::MAX_FRAME_DELAY = 1000.0f / max_fps;
+    Game::SERVER_STATE_SHARE_RATE = max_fps / server_broadcast_rate;
+    Game::CLIENT_PING_RATE = max_fps * 3;
+    Game::RNG = rng_generator;
 
     Game::manager = new Manager();
 

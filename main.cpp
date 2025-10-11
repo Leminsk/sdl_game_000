@@ -11,22 +11,12 @@
 Game *game = nullptr;
 
 int main() {
-    SDL_version compiled;
-    SDL_version linked;
+    SDL_version compiled, linked;
 
     SDL_VERSION(&compiled);
     SDL_GetVersion(&linked);
     SDL_Log("COMPILED against SDL version %u.%u.%u\n", compiled.major, compiled.minor, compiled.patch);
     SDL_Log("  LINKED against SDL version %u.%u.%u\n",   linked.major,   linked.minor,   linked.patch);
-
-    const int WIDTH = 1280;
-    const int HEIGHT = 720;
-
-    const bool LIMIT_FPS = true;
-    const int MAX_FPS = 60;
-    const int MAX_FRAME_DELAY = 1000.0f / MAX_FPS;
-
-    const int SERVER_BROADCAST_RATE = 20;
     
     uint64_t time_spent_on_frame;
     uint64_t elapsed_time;
@@ -38,10 +28,7 @@ int main() {
     std::mt19937 generator(seed);
 
     game = new Game();
-    game->init("Bétula Engine", WIDTH, HEIGHT, false);
-    game->RNG = &generator;
-    game->SERVER_STATE_SHARE_RATE = MAX_FPS / SERVER_BROADCAST_RATE;
-    game->CLIENT_PING_RATE = MAX_FPS * 3;
+    game->init("Bétula Engine", 1280, 720, false, 60, 20, &generator);
 
     int small_frame_counter = 0;
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -68,15 +55,15 @@ int main() {
         game->update();
         game->render();
 
-        if(LIMIT_FPS) {
-            time_spent_on_frame = SDL_GetTicks64() - elapsed_time;
-
-            if(time_spent_on_frame < MAX_FRAME_DELAY) {
-                SDL_Delay(MAX_FRAME_DELAY - time_spent_on_frame);
-            }
-        }
         ++frame;
         ++small_frame_counter;
+
+        // if(LIMIT_FPS) {
+        time_spent_on_frame = SDL_GetTicks64() - elapsed_time;
+        if(time_spent_on_frame < game->MAX_FRAME_DELAY) {
+            SDL_Delay(game->MAX_FRAME_DELAY - time_spent_on_frame);
+        }
+        // }
     }
 
     game->clean();

@@ -12,6 +12,9 @@
 
 class Game {
     public:
+        // static bool LIMIT_FPS; // leaving this commented in case I want to re-enable this
+        static int MAX_FPS;
+        static int MAX_FRAME_DELAY;
         static std::mt19937 *RNG;
         static int SCREEN_WIDTH, SCREEN_HEIGHT;
         // camera
@@ -71,7 +74,10 @@ class Game {
         Game();
         ~Game();
 
-        void init(const char* title, int width, int height, bool fullscreen);
+        void init(
+            const char* title, int width, int height, bool fullscreen,
+            int max_fps, int server_broadcast_rate, std::mt19937* rng_generator
+        );
 
         void handleEvents();
         void update();

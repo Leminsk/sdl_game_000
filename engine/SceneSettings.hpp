@@ -13,6 +13,9 @@ std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 SDL_Event* event;
+Entity* fps_dropdown = nullptr;
+std::vector<unsigned int> fps_values = { 30, 40, 50, 60, 70, 80, 90, 100, 110, 120 };
+std::vector<std::string> frame_rates = { " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", "100 Hz", "110 Hz", "120 Hz" };
 
 public:
 Mix_Chunk* sound_button = NULL;
@@ -35,6 +38,10 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
     createUIButton("button_res_1.56M3", "1440 x 1080",  50, 178, Game::default_text_color, background_color, border_color);
     createUIButton("button_res_FHD",    "1920 x 1080",  50, 242, Game::default_text_color, background_color, border_color);
 
+    fps_dropdown = &createUIDropdown("fps_dropdown", frame_rates, 300, 50, Game::default_text_color, background_color, border_color);
+
+    createUIButton("button_apply_fps", "Apply FPS", 450, 50, Game::default_text_color, background_color, border_color);
+
     createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
 }
 
@@ -48,6 +55,15 @@ void changeScreenResolution(unsigned int width, unsigned int height) {
     Game::SCREEN_WIDTH = width;
     Game::SCREEN_HEIGHT = height;
     Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+}
+
+void changeFPS(unsigned int new_fps) {
+    Mix_PlayChannel(-1, this->sound_button, 0);
+    int previous_broadcast_rate = (1/static_cast<float>(Game::SERVER_STATE_SHARE_RATE)) * Game::MAX_FPS;
+    Game::MAX_FPS = new_fps;
+    Game::MAX_FRAME_DELAY = 1000.0f / new_fps;
+    Game::SERVER_STATE_SHARE_RATE = new_fps / previous_broadcast_rate;
+    Game::CLIENT_PING_RATE = new_fps * 3;
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -67,40 +83,91 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     }
 }
 
+bool clickedButton(Vector2D& pos) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
+            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
+                if(ui->getComponent<TextBoxComponent>().mouse_down) {
+                    std::string button_id = ui->getIdentifier();
+                    if(button_id == "button_apply_fps") {
+                        std::string fps_option = this->fps_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
+                        for(int i=0; i<this->frame_rates.size(); ++i) {
+                            if(this->frame_rates[i] == fps_option) {
+                                changeFPS(this->fps_values[i]);
+                                break;
+                            }
+                        }
+
+                    } else {
+                        if(button_id == "button_back") {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
+                            this->change_to_scene = SceneType::MAIN_MENU;
+                        } else if(button_id == "button_res_SVGA") {
+                            changeScreenResolution(800, 600);
+                            this->change_to_scene = SceneType::SETTINGS;
+                        } else if(button_id == "button_res_WXGA") {
+                            changeScreenResolution(1280, 720);
+                            this->change_to_scene = SceneType::SETTINGS;
+                        } else if(button_id == "button_res_1.56M3") {
+                            changeScreenResolution(1440, 1080);
+                            this->change_to_scene = SceneType::SETTINGS;
+                        } else if(button_id == "button_res_FHD") {
+                            changeScreenResolution(1920, 1080);
+                            this->change_to_scene = SceneType::SETTINGS;
+                        }
+                        clean();
+                    }
+                    
+                    return true;
+                }                               
+            }
+            ui->getComponent<TextBoxComponent>().mouse_down = false;
+        }
+    }
+    return false;
+}
+
+bool clickedDropdown(Vector2D& pos) {
+    for(auto& pr_ui : this->pr_ui_elements) {
+        if(pr_ui->hasComponent<TextDropdownComponent>()) {
+            std::string dropdown_id = pr_ui->getIdentifier();
+            TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
+
+            if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
+                if(dropdown_id == "fps_dropdown") {
+                    Mix_PlayChannel(-1, this->sound_button, 0);
+                    dropdown.display_dropdown = !(dropdown.display_dropdown);
+                    return true;
+                }
+            }
+
+            if(dropdown.display_dropdown) {
+                if(dropdown_id == "fps_dropdown") {
+                    for(int i=0; i<dropdown.options.size(); ++i) {
+                        TextBoxComponent* option = dropdown.options[i];
+                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
+                            Mix_PlayChannel(-1, this->sound_button, 0);
+                            dropdown.setSelectedOption(i);
+                            return true;
+                        }
+                    }
+                }
+                Mix_PlayChannel(-1, this->sound_button, 0);
+                dropdown.display_dropdown = false;
+            }   
+        }
+    }
+    return false;
+}
 
 void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
             std::cout << "RELEASE LEFT: " << pos << '\n';
-            for(auto& ui : this->ui_elements) {
-                if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
-                        if(ui->getComponent<TextBoxComponent>().mouse_down) {
-                            std::string button_id = ui->getIdentifier();
-                            if(button_id == "button_back") {
-                                Mix_PlayChannel(-1, this->sound_button, 0);                                
-                                this->change_to_scene = SceneType::MAIN_MENU;
-                            } else if(button_id == "button_res_SVGA") {
-                                changeScreenResolution(800, 600);
-                                this->change_to_scene = SceneType::SETTINGS;
-                            } else if(button_id == "button_res_WXGA") {
-                                changeScreenResolution(1280, 720);
-                                this->change_to_scene = SceneType::SETTINGS;
-                            } else if(button_id == "button_res_1.56M3") {
-                                changeScreenResolution(1440, 1080);
-                                this->change_to_scene = SceneType::SETTINGS;
-                            } else if(button_id == "button_res_FHD") {
-                                changeScreenResolution(1920, 1080);
-                                this->change_to_scene = SceneType::SETTINGS;
-                            }
-                            clean();
-                            break;
-                        }                               
-                    }
-                    ui->getComponent<TextBoxComponent>().mouse_down = false;
-                }
+            if(!clickedButton(pos)) {
+                clickedDropdown(pos);
             }
         } break;
     }
