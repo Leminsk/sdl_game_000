@@ -85,6 +85,7 @@ SceneMatchGame(SDL_Event* e) { this->event = e; }
 
 Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout, const std::vector<std::vector<SDL_Color>>& map_pixels = {}) {
     auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
+    tile.reserveComponents(3);
     const float world_x = map_x * width;
     const float world_y = map_y * width;
     
@@ -181,11 +182,12 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
 void LoadMapRender(float tile_scale=1.0f) {
     uint64_t row, column;
     SDL_Texture** tex = nullptr;
+    const float scaled_width = this->map->tile_width * tile_scale;
     for(row = 0; row < this->map->layout_height; ++row) {
         for(column = 0; column < this->map->layout_width; ++column) {
             AddTileOnMap(
                 this->map->layout[row][column], 
-                this->map->tile_width * tile_scale,
+                scaled_width,
                 column, row,
                 this->map->layout,
                 this->map->map_pixels
@@ -223,6 +225,9 @@ void setScene(
 
     if(this->map->loaded) {
         printf("Map  x: %d  by  y: %d\n", this->map->layout_width, this->map->layout_height);
+        const int tiles_amount = this->map->layout_width * this->map->layout_height;
+        Game::manager->reserveEntities(tiles_amount);
+        this->tiles.reserve(tiles_amount);
         LoadMapRender();
         Game::world_map_layout_width = this->map->world_layout_width;
         Game::world_map_layout_height = this->map->world_layout_height;
@@ -270,7 +275,6 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         } break;
             
         case SDL_BUTTON_MIDDLE: {
-            this->draw_grids = true;
             std::cout << "MOUSE BUTTON MIDDLE: " << world_pos << '\n';
             HexPos h = convertWorldToHex(world_pos);
             Vector2D tile_xy = this->map->getTileCoordFromWorldPos(world_pos);
@@ -308,7 +312,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
 }
 void handleMouseRelease(SDL_MouseButtonEvent& b) {
     if(b.button == SDL_BUTTON_MIDDLE) {
-        this->draw_grids = false;
+        this->draw_grids = !this->draw_grids;
     }
 }
 // --------------------------------- ===== ----------------------------------------
@@ -509,9 +513,9 @@ void handleEventsPollEvent() {
         if(this->event->type == SDL_MOUSEWHEEL) {
             int wheel_y = this->event->wheel.y;
             if(wheel_y > 0) { // zoom in
-                Game::camera_zoom = std::min(Game::camera_zoom + 0.5f, 5.0f);
+                Game::camera_zoom = std::min(Game::camera_zoom + 0.25f, 4.0f);
             } else if(wheel_y < 0) { // zoom out
-                Game::camera_zoom = std::max(Game::camera_zoom - 0.5f, 0.5f);
+                Game::camera_zoom = std::max(Game::camera_zoom - 0.25f, 0.5f);
             }
         }
 
@@ -640,7 +644,7 @@ void render() {
 
 
     // debugging hex grid
-    if(!this->draw_grids) {
+    if(this->draw_grids) {
         int max_q_axis = (this->map->layout_width<<1) / sqrt_3;
         int max_r_axis = (this->map->layout_height<<1) / 1.5f;
         int min_q_axis = -(max_q_axis>>1);

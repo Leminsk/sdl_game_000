@@ -29,7 +29,7 @@ class SpriteComponent : public Component {
         SDL_Color color_modulation;
 
         SDL_RendererFlip spriteFlip = SDL_FLIP_NONE;
-        std::map<const char*, SpriteAnimation> animations;
+        // std::map<const char*, SpriteAnimation> animations;
         
 
         SpriteComponent() = default;
@@ -90,8 +90,8 @@ class SpriteComponent : public Component {
             }
         }
         void play(const char* name) {
-            this->animationIndex = this->animations[name].index;
-            this->frames = this->animations[name].frames;
-            this->delay = this->animations[name].delay;
+            // this->animationIndex = this->animations[name].index;
+            // this->frames = this->animations[name].frames;
+            // this->delay = this->animations[name].delay;
         }
 };

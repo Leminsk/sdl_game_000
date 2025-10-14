@@ -59,7 +59,7 @@ void changeScreenResolution(unsigned int width, unsigned int height) {
     SDL_DestroyRenderer(Game::renderer);
     const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
     Game::window = SDL_CreateWindow("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
-    Game::renderer = SDL_CreateRenderer(Game::window, -1, 0);
+    Game::renderer = SDL_CreateRenderer(Game::window, -1, SDL_RENDERER_ACCELERATED);
     Game::SCREEN_WIDTH = width;
     Game::SCREEN_HEIGHT = height;
     Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);

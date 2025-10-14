@@ -129,13 +129,34 @@ void Game::init(
     
     Game::window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
     if (Game::window) {
-        std::cout << "Window created\n";
+        SDL_Log("Window created\n");
     }
 
-    Game::renderer = SDL_CreateRenderer(Game::window, -1, 0);
+    Game::renderer = SDL_CreateRenderer(Game::window, -1, SDL_RENDERER_ACCELERATED);
     if (Game::renderer) {
         SDL_SetRenderDrawColor(Game::renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-        std::cout << "Renderer created\n";
+        SDL_Log("Renderer created\n");
+    }
+
+    SDL_RendererInfo info;
+    if(SDL_GetRendererInfo(Game::renderer, &info) == 0) {
+        SDL_Log("Renderer Name: %s\n", info.name);
+        std::cout << "Texture Formats Supported: ";
+        for(uint32_t i=0; i<info.num_texture_formats; ++i) {
+            std::cout << SDL_GetPixelFormatName(info.texture_formats[i]) << ' ';
+        }
+        std::cout << "\nMax Texture Size: " << info.max_texture_width << "x" << info.max_texture_height << '\n';
+        if(info.flags & SDL_RENDERER_ACCELERATED) {
+            SDL_Log("Renderer is hardware accelerated.\n");
+        } else {
+            SDL_Log("Renderer is software (CPU blitting)!\n");
+        }
+
+        if(info.flags & SDL_RENDERER_PRESENTVSYNC) {
+            SDL_Log("Renderer supports VSYNC.\n");
+        }        
+    } else {
+        SDL_Log("SDL_GetRendererInfo failed: %s\n", SDL_GetError());
     }
 
     Game::isRunning = true;

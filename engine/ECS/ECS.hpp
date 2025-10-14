@@ -85,6 +85,10 @@ class Entity {
             this->groupBitSet[mGroup] = false;
         }
 
+        void reserveComponents(size_t n) {
+            this->components.reserve(n);
+        }
+
         template <typename T> bool hasComponent() const {
             return this->componentBitSet[getComponentTypeID<T>()];
         }
@@ -122,9 +126,7 @@ class Manager {
 
     public:
         Manager() {}
-        ~Manager() {
-            for(auto& e : this->entities) { delete &e; }
-        }
+        ~Manager() = default;
         void preUpdate() {
             for (auto& e : this->entities) { e->preUpdate(); }
         }
@@ -172,6 +174,10 @@ class Manager {
 
         void AddToGroup(Entity* mEntity, Group mGroup) {
             this->groupedEntities[mGroup].push_back(mEntity);
+        }
+
+        void reserveEntities(size_t n) {
+            this->entities.reserve(n);
         }
 
         std::vector<Entity*>& getGroup(Group mGroup) {
