@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <bitset>
 #include <array>
+#include <functional>
 #include <SDL2/SDL.h>
 
 class Component;

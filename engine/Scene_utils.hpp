@@ -46,16 +46,19 @@ Entity& createUISimpleText(
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
 Entity& createUIButton(
     const std::string& id, 
-    const std::string& text="TEXT_BOX",
+    const std::string& text="UI_BUTTON",
     int pos_x=0, int pos_y=0,
     const SDL_Color& text_color=Game::default_text_color, 
     const SDL_Color& bg_color=Game::default_bg_color, 
-    const SDL_Color& border_color=Game::default_text_color
+    const SDL_Color& border_color=Game::default_text_color,
+    std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
+    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){}
 ) {
     auto& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
-        text_color, bg_color, border_color
+        text_color, bg_color, border_color, 3,
+        onUp, onDown
     );
     new_text_box.addGroup(groupUI);
     return new_text_box;

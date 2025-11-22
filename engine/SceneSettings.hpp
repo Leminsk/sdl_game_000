@@ -41,19 +41,116 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     
     // TODO: store these resolutions in some kind of table or hashmap
-    createUIButton("button_res_SVGA",   " 800 x  600",  50,  50, Game::default_text_color, background_color, border_color);
-    createUIButton("button_res_WXGA",   "1280 x  720",  50, 114, Game::default_text_color, background_color, border_color);
-    createUIButton("button_res_1.56M3", "1440 x 1080",  50, 178, Game::default_text_color, background_color, border_color);
-    createUIButton("button_res_FHD",    "1920 x 1080",  50, 242, Game::default_text_color, background_color, border_color);
+    createUIButton(
+        "button_res_SVGA",
+        " 800 x  600",
+        50,  50, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            this->changeScreenResolution(800, 600);
+            this->change_to_scene = SceneType::SETTINGS;
+            this->clean();
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
+    createUIButton(
+        "button_res_WXGA",
+        "1280 x  720",
+        50, 114,
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            this->changeScreenResolution(1280, 720);
+            this->change_to_scene = SceneType::SETTINGS;
+            this->clean();
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
+    createUIButton(
+        "button_res_1.56M3",
+        "1440 x 1080",
+        50, 178,
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            this->changeScreenResolution(1440, 1080);
+            this->change_to_scene = SceneType::SETTINGS;
+            this->clean();
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
+    createUIButton(
+        "button_res_FHD",
+        "1920 x 1080",
+        50, 242, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            this->changeScreenResolution(1920, 1080);
+            this->change_to_scene = SceneType::SETTINGS;
+            this->clean();            
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
 
     fps_dropdown = &createUIDropdown("fps_dropdown", frame_rates, 300, 50, Game::default_text_color, background_color, border_color);
 
-    createUIButton("button_apply_fps", "Apply FPS", 450, 50, Game::default_text_color, background_color, border_color);
+    createUIButton(
+        "button_apply_fps",
+        "Apply FPS",
+        450, 50,
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            std::string fps_option = this->fps_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
+            for(int i=0; i<this->frame_rates.size(); ++i) {
+                if(this->frame_rates[i] == fps_option) {
+                    changeFPS(this->fps_values[i]);
+                    this->config_json["FRAME_RATE"] = this->fps_values[i];
+                    std::ofstream o("config.json");
+                    o << this->config_json.dump(4);
+                    o.close();
+                    break;
+                }
+            }
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
 
-    createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
+    createUIButton(
+        "button_back", 
+        "Back", 
+        50,  -50, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            this->change_to_scene = SceneType::MAIN_MENU;
+            this->clean();
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
 }
 
 void changeScreenResolution(unsigned int width, unsigned int height) {
+    this->config_json["SCREEN_WIDTH"] = width;
+    this->config_json["SCREEN_HEIGHT"] = height;
+    std::ofstream o("config.json");
+    o << this->config_json.dump(4);
+    o.close();
     Mix_PlayChannel(-1, this->sound_button, 0);
     SDL_DestroyWindow(Game::window);
     SDL_DestroyRenderer(Game::renderer);
@@ -82,7 +179,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
                     if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        ui->getComponent<TextBoxComponent>().mouse_down = true;
+                        text_box.onMouseDown(text_box);
                     }
                 }
             }
@@ -94,51 +191,14 @@ bool clickedButton(Vector2D& pos) {
     for(auto& ui : this->ui_elements) {
         if(ui->hasComponent<TextBoxComponent>()) {
             TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-            if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) { 
-                if(ui->getComponent<TextBoxComponent>().mouse_down) {
-                    std::string button_id = ui->getIdentifier();
-                    if(button_id == "button_apply_fps") {
-                        std::string fps_option = this->fps_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
-                        for(int i=0; i<this->frame_rates.size(); ++i) {
-                            if(this->frame_rates[i] == fps_option) {
-                                changeFPS(this->fps_values[i]);
-                                this->config_json["FRAME_RATE"] = this->fps_values[i];
-                                std::ofstream o("config.json");
-                                o << this->config_json.dump(4);
-                                o.close();
-                                break;
-                            }
-                        }
-
-                    } else {
-                        if(button_id == "button_back") {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            this->change_to_scene = SceneType::MAIN_MENU;
-                        } else {
-                            int new_width = -1;
-                            int new_height = -1;
-                            if(button_id == "button_res_SVGA") {        new_width =  800; new_height =  600; } 
-                            else if(button_id == "button_res_WXGA") {   new_width = 1280; new_height =  720; } 
-                            else if(button_id == "button_res_1.56M3") { new_width = 1440; new_height = 1080; } 
-                            else if(button_id == "button_res_FHD") {    new_width = 1920; new_height = 1080; }
-
-                            if(new_width > 0 && new_height > 0) {
-                                this->config_json["SCREEN_WIDTH"] = new_width;
-                                this->config_json["SCREEN_HEIGHT"] = new_height;
-                                std::ofstream o("config.json");
-                                o << this->config_json.dump(4);
-                                o.close();
-                                changeScreenResolution(new_width, new_height);
-                                this->change_to_scene = SceneType::SETTINGS;
-                            }                            
-                        }
-                        clean();
-                    }
-                    
-                    return true;
-                }                               
+            if(
+                Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
+                text_box.mouse_down
+            ) { 
+                text_box.onMouseUp(text_box);
+                return true;
             }
-            ui->getComponent<TextBoxComponent>().mouse_down = false;
+            text_box.mouse_down = false;
         }
     }
     return false;

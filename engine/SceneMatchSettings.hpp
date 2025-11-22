@@ -47,7 +47,27 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
     // TODO: this will actually crash the game if clicked initially with "Random" colors. IMPLEMENT random color assignment on scene change.
-    this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, background_color, border_color);
+    this->button_go = &createUIButton(
+        "button_go", 
+        "PLAY", 
+        -50, -50, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
+            this->player_sdl_color = this->map_pixels[
+                this->spawn_positions[ this->player_spawn_index ].first
+            ][
+                this->spawn_positions[ this->player_spawn_index ].second
+            ];
+            this->clean();
+            this->change_to_scene = SceneType::MATCH_GAME;
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
 
     this->selected_map = &createUIMapThumbnail(
         "map_preview_" + this->map_name, "assets/maps/", this->map_name, 
@@ -59,7 +79,21 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     // can't be reset on clean() it's shared with MatchGame
     this->spawn_positions = {};
 
-    createUIButton("button_back", "Back", 50,  -50, Game::default_text_color, background_color, border_color);
+    createUIButton(
+        "button_back", 
+        "Back", 
+        50,  -50, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            this->clean();
+            this->change_to_scene = this->parent_scene;
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
     
     MapThumbnailComponent& thumbnail = this->selected_map->getComponent<MapThumbnailComponent>();
     std::vector<std::vector<SDL_Color>>& map_pixels = thumbnail.map_pixels;
@@ -153,7 +187,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
                     if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        ui->getComponent<TextBoxComponent>().mouse_down = true;
+                        text_box.mouse_down = true;
                     }
                 }
             }
@@ -225,28 +259,12 @@ bool clickedButton(Vector2D& pos) {
             TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
             if(
                 Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                ui->getComponent<TextBoxComponent>().mouse_down
+                text_box.mouse_down
             ) { 
-                std::string button_id = ui->getIdentifier();
-                if(button_id == "button_back") {
-                    Mix_PlayChannel(-1, this->sound_button, 0);
-                    clean();                     
-                    this->change_to_scene = this->parent_scene;
-                    return true;
-                } else if(button_id == "button_go") {
-                    Mix_PlayChannel(-1, this->sound_button, 0);
-                    this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
-                    this->player_sdl_color = this->map_pixels[
-                        this->spawn_positions[ this->player_spawn_index ].first
-                    ][
-                        this->spawn_positions[ this->player_spawn_index ].second
-                    ];
-                    clean();
-                    this->change_to_scene = SceneType::MATCH_GAME;
-                    return true;
-                }
+                text_box.onMouseUp(text_box);
+                return true;
             }
-            ui->getComponent<TextBoxComponent>().mouse_down = false;
+            text_box.mouse_down = false;
         }
     }
     return false;
@@ -260,7 +278,27 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                 if(clickedDropdown(pos)) {
                     if(isValidMapSpawns() && isValidPlayerSpawn()) {
                         if(this->button_go == nullptr) {
-                            this->button_go = &createUIButton("button_go", "PLAY", -50, -50, Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE });
+                            this->button_go = &createUIButton(
+                                "button_go", 
+                                "PLAY", 
+                                -50, -50, 
+                                Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
+                                [this](TextBoxComponent& self) {
+                                    self.mouse_down = false;
+                                    Mix_PlayChannel(-1, this->sound_button, 0);
+                                    this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
+                                    this->player_sdl_color = this->map_pixels[
+                                        this->spawn_positions[ this->player_spawn_index ].first
+                                    ][
+                                        this->spawn_positions[ this->player_spawn_index ].second
+                                    ];
+                                    this->clean();
+                                    this->change_to_scene = SceneType::MATCH_GAME;
+                                },
+                                [this](TextBoxComponent& self) {
+                                    self.mouse_down = true;
+                                }
+                            );
                         }
                     } else if(this->button_go != nullptr) {
                         this->button_go->destroy();

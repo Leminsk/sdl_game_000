@@ -73,18 +73,24 @@ class TextBoxComponent : public Component {
         float x = 0.0f; float inner_x;
         float y = 0.0f; float inner_y;
         
+        std::function<void(TextBoxComponent&)> onMouseUp = nullptr;
+        std::function<void(TextBoxComponent&)> onMouseDown = nullptr;
         
         TextBoxComponent(
             const std::string& text, 
             float pos_x, float pos_y,
             const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c,
-            int border_thickness=3, const char* path=nullptr
-        ) {
+            int border_thickness=3,
+            std::function<void(TextBoxComponent&)> onUp = nullptr,
+            std::function<void(TextBoxComponent&)> onDown = nullptr,
+            const char* path=nullptr
+        ) : onMouseUp(onUp), onMouseDown(onDown) {
             setProportions(pos_x, pos_y, { text }, border_thickness);
             setColors(t_c, bg_c, b_c);
             this->font_path = path;            
             setText(text, path);
         }
+        // multiline does not set mouse callbacks by default
         TextBoxComponent(
             const std::vector<std::string>& text_lines, 
             float pos_x, float pos_y,

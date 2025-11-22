@@ -86,7 +86,21 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     }
 
     const int back_button_y = 50;
-    Entity& back_button = createUIButton("button_back", "Back", 50, -back_button_y, Game::default_text_color, background_color, border_color);
+    Entity& back_button = createUIButton(
+        "button_back", 
+        "Back", 
+        50, -back_button_y, 
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            self.mouse_down = false;
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            clean();
+            this->change_to_scene = this->parent_scene;
+        },
+        [this](TextBoxComponent& self) {
+            self.mouse_down = true;
+        }
+    );
 
     int ui_elements_stacked_height = this->max_y_title + this->title->getComponent<TextComponent>().h + ((y_offset+1) * this->thumbnail_height);
     int height_overlap = ui_elements_stacked_height - Game::SCREEN_HEIGHT;
@@ -105,7 +119,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
                 if(ui->hasComponent<TextBoxComponent>()) {
                     TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
                     if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        ui->getComponent<TextBoxComponent>().mouse_down = true;
+                        text_box.onMouseDown(text_box);
                     }
                 }
             }
@@ -144,20 +158,12 @@ bool clickedButton(Vector2D& pos) {
             TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
             if(
                 Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                ui->getComponent<TextBoxComponent>().mouse_down
+                text_box.mouse_down
             ) {
-                Mix_PlayChannel(-1, this->sound_button, 0);
-                std::string button_id = ui->getIdentifier();
-                if(button_id == "button_back") {
-                    clean();
-                    this->change_to_scene = this->parent_scene;
-                } else if(button_id == "button_go") {
-                    clean();
-                    this->change_to_scene = SceneType::MATCH_SETTINGS;
-                }
+                text_box.onMouseUp(text_box);
                 return true;
             }
-            ui->getComponent<TextBoxComponent>().mouse_down = false;
+            text_box.mouse_down = false;
         }
     }
     return false;
@@ -170,7 +176,21 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
             if(!clickedButton(pos)) {
                 if(clickedThumbnail(pos)) {
                     if(this->button_go == nullptr) {
-                        this->button_go = &createUIButton("button_go", " Go ", -50, -50, Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE });
+                        this->button_go = &createUIButton(
+                            "button_go", 
+                            " Go ", 
+                            -50, -50, 
+                            Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
+                            [this](TextBoxComponent& self) {
+                                self.mouse_down = false;
+                                Mix_PlayChannel(-1, this->sound_button, 0);
+                                clean();
+                                this->change_to_scene = SceneType::MATCH_SETTINGS;
+                            },
+                            [this](TextBoxComponent& self) {
+                                self.mouse_down = true;
+                            }                            
+                        );
                     }
                 } else {
                     this->selected_map = nullptr;
