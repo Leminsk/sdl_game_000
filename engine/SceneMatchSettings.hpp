@@ -53,7 +53,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         -50, -50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
             this->player_sdl_color = this->map_pixels[
@@ -61,11 +60,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
             ][
                 this->spawn_positions[ this->player_spawn_index ].second
             ];
-            this->clean();
             this->change_to_scene = SceneType::MATCH_GAME;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
         }
     );
 
@@ -85,13 +80,8 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         50,  -50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->clean();
             this->change_to_scene = this->parent_scene;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
         }
     );
     
@@ -185,9 +175,8 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         case SDL_BUTTON_LEFT: {
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        text_box.mouse_down = true;
+                    if(ui->getComponent<TextBoxComponent>().onMousePress(pos)) {
+                        break;
                     }
                 }
             }
@@ -256,15 +245,9 @@ bool clickedDropdown(Vector2D& pos) {
 bool clickedButton(Vector2D& pos) {
     for(auto& ui : this->ui_elements) {
         if(ui->hasComponent<TextBoxComponent>()) {
-            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-            if(
-                Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                text_box.mouse_down
-            ) { 
-                text_box.onMouseUp(text_box);
+            if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
                 return true;
             }
-            text_box.mouse_down = false;
         }
     }
     return false;
@@ -292,7 +275,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                                     ][
                                         this->spawn_positions[ this->player_spawn_index ].second
                                     ];
-                                    this->clean();
                                     this->change_to_scene = SceneType::MATCH_GAME;
                                 },
                                 [this](TextBoxComponent& self) {

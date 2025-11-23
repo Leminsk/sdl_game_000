@@ -5,6 +5,7 @@
 #include "../TextureManager.hpp"
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
+#include "Colliders/Collision.hpp"
 
 // Text with background surrounded by a border
 class TextBoxComponent : public Component {
@@ -21,6 +22,9 @@ class TextBoxComponent : public Component {
         const int h_line_gap = 2;
         const int v_char_height = 32;
         const int h_char_width = 16;
+
+        std::function<void(TextBoxComponent&)> onMouseUp = nullptr;
+        std::function<void(TextBoxComponent&)> onMouseDown = nullptr;
 
         void setProportions(int pos_x, int pos_y, const std::vector<std::string>& text_lines, int border_thickness) {
             const int double_thickness = border_thickness<<1;
@@ -72,9 +76,6 @@ class TextBoxComponent : public Component {
         float h = 0.0f; float inner_h;
         float x = 0.0f; float inner_x;
         float y = 0.0f; float inner_y;
-        
-        std::function<void(TextBoxComponent&)> onMouseUp = nullptr;
-        std::function<void(TextBoxComponent&)> onMouseDown = nullptr;
         
         TextBoxComponent(
             const std::string& text, 
@@ -157,6 +158,33 @@ class TextBoxComponent : public Component {
                 this->line_thickness = ((this->inner_h - this->v_line_gap) / this->lines_amount);
                 this->destRect.h = this->line_thickness - this->v_line_gap; // bottom/inner gaps
             }
+        }
+
+        // runs callback for onMouseDown if mouse_pos is inside the button area
+        // returns true if callback was run
+        bool onMousePress(const Vector2D& mouse_pos) {
+            bool pressed_on_button = false;
+            if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)) {
+                this->mouse_down = true;
+                this->onMouseDown(*this);
+                pressed_on_button = true;
+            }
+            return pressed_on_button;
+        }
+
+        // runs callback for onMouseUp if mouse_pos is inside the button area
+        // returns true if callback was run
+        bool onMouseRelease(const Vector2D& mouse_pos) {
+            bool released_on_button = false;
+            if(
+                this->mouse_down &&
+                Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)
+            ) {
+                this->onMouseUp(*this);
+                released_on_button = true;
+            }
+            this->mouse_down = false;
+            return released_on_button;
         }
 
         void init() override {

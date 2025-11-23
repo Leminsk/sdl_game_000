@@ -57,13 +57,8 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         50,   50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->clean();
             this->change_to_scene = SceneType::MAP_SELECTION;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
         }
     );
     createUIButton(
@@ -72,13 +67,8 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         50,  114, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->clean();
-            this->change_to_scene = SceneType::MATCH_GAME;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
+            this->change_to_scene = SceneType::MATCH_GAME;            
         }
     );
     createUIButton(
@@ -87,13 +77,8 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         50,  178,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->clean();
             this->change_to_scene = SceneType::SETTINGS;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
         }
     );
 
@@ -103,12 +88,8 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         50,  -50,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
             Game::isRunning = false;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
         }
     );
     createUIMultilineText("multiline", { "first line", "second line", " ", "fourth line" }, -10, 50, Game::default_text_color, background_color, border_color);
@@ -120,9 +101,8 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         case SDL_BUTTON_LEFT: {
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        text_box.onMouseDown(text_box);
+                    if(ui->getComponent<TextBoxComponent>().onMousePress(pos)) {
+                        break;
                     }
                 }
             }
@@ -135,18 +115,11 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "RELEASE LEFT: " << pos << '\n';
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(
-                        Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                        text_box.mouse_down
-                    ) { 
-                        text_box.onMouseUp(text_box);
+                    if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
                         break;
                     }
-                    text_box.mouse_down = false;
                 }
             }
         } break;

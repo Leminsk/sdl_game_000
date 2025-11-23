@@ -92,13 +92,9 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         50, -back_button_y, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            self.mouse_down = false;
             Mix_PlayChannel(-1, this->sound_button, 0);
-            clean();
             this->change_to_scene = this->parent_scene;
-        },
-        [this](TextBoxComponent& self) {
-            self.mouse_down = true;
+            clean();            
         }
     );
 
@@ -117,9 +113,8 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         case SDL_BUTTON_LEFT: {
             for(auto& ui : this->ui_elements) {
                 if(ui->hasComponent<TextBoxComponent>()) {
-                    TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-                    if(Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h)) {
-                        text_box.onMouseDown(text_box);
+                    if(ui->getComponent<TextBoxComponent>().onMousePress(pos)) {
+                        break;
                     }
                 }
             }
@@ -155,15 +150,9 @@ bool clickedThumbnail(Vector2D& pos) {
 bool clickedButton(Vector2D& pos) {
     for(auto& ui : this->ui_elements) {
         if(ui->hasComponent<TextBoxComponent>()) {
-            TextBoxComponent& text_box = ui->getComponent<TextBoxComponent>();
-            if(
-                Collision::pointInRect(pos.x, pos.y, text_box.x, text_box.y, text_box.w, text_box.h) &&
-                text_box.mouse_down
-            ) {
-                text_box.onMouseUp(text_box);
+            if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
                 return true;
             }
-            text_box.mouse_down = false;
         }
     }
     return false;
@@ -182,14 +171,10 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                             -50, -50, 
                             Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
                             [this](TextBoxComponent& self) {
-                                self.mouse_down = false;
                                 Mix_PlayChannel(-1, this->sound_button, 0);
-                                clean();
                                 this->change_to_scene = SceneType::MATCH_SETTINGS;
-                            },
-                            [this](TextBoxComponent& self) {
-                                self.mouse_down = true;
-                            }                            
+                                clean();
+                            }                         
                         );
                     }
                 } else {
@@ -302,10 +287,10 @@ void handleEventsPollEvent() {
                         Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
                         this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
                     } break;
-                    case SDL_WINDOWEVENT_ENTER: std::cout << "Mouse IN\n"; break;
-                    case SDL_WINDOWEVENT_LEAVE: std::cout << "Mouse OUT\n"; break;
-                    case SDL_WINDOWEVENT_FOCUS_GAINED: std::cout << "Keyboard IN\n"; break;
-                    case SDL_WINDOWEVENT_FOCUS_LOST: std::cout << "Keyboard OUT\n"; break;
+                    case SDL_WINDOWEVENT_ENTER: break;
+                    case SDL_WINDOWEVENT_LEAVE: break;
+                    case SDL_WINDOWEVENT_FOCUS_GAINED: break;
+                    case SDL_WINDOWEVENT_FOCUS_LOST: break;
                 }
             } break;
         }                

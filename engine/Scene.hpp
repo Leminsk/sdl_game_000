@@ -39,22 +39,22 @@ SDL_Event event;
 bool load_textures = true;
 
 // ------------------ TEXTURES ------------------
-SDL_Texture* plain_terrain_texture;
-SDL_Texture* rough_terrain_texture;
-SDL_Texture* mountain_texture;
-SDL_Texture* water_bg_texture;
-SDL_Texture* water_fg_texture;
+SDL_Texture* plain_terrain_texture = nullptr;
+SDL_Texture* rough_terrain_texture = nullptr;
+SDL_Texture* mountain_texture = nullptr;
+SDL_Texture* water_bg_texture = nullptr;
+SDL_Texture* water_fg_texture = nullptr;
 
 // ------------------ AUDIO ------------------
 Mix_Music* music_main_menu = NULL;
 Mix_Chunk* sound_button = NULL;
 
 // ------------------ SCENES ------------------
-SceneMapSelection  *S_MapSelection;
-SceneMainMenu      *S_MainMenu;
-SceneSettings      *S_Settings;
-SceneMatchGame     *S_MatchGame;
-SceneMatchSettings *S_MatchSettings;
+SceneMapSelection  *S_MapSelection = nullptr;
+SceneMainMenu      *S_MainMenu = nullptr;
+SceneSettings      *S_Settings = nullptr;
+SceneMatchGame     *S_MatchGame = nullptr;
+SceneMatchSettings *S_MatchSettings = nullptr;
 
 public:
 // frame counter
@@ -69,14 +69,25 @@ Scene() {
 }
 ~Scene() {
     Mix_HaltMusic();
-    Mix_FreeMusic(this->music_main_menu);
-    Mix_FreeChunk(this->sound_button);
+    Mix_FreeMusic(this->music_main_menu); this->music_main_menu = nullptr;
+    Mix_FreeChunk(this->sound_button);       this->sound_button = nullptr; 
 
-    SDL_DestroyTexture(this->plain_terrain_texture);
-    SDL_DestroyTexture(this->plain_terrain_texture);
-    SDL_DestroyTexture(this->mountain_texture);
-    SDL_DestroyTexture(this->water_bg_texture);
-    SDL_DestroyTexture(this->water_fg_texture);
+    if(this->plain_terrain_texture) {
+        SDL_DestroyTexture(this->plain_terrain_texture);
+        this->plain_terrain_texture = nullptr;
+    }
+    if(this->mountain_texture) {
+        SDL_DestroyTexture(this->mountain_texture);
+        this->mountain_texture = nullptr;
+    }
+    if(this->water_bg_texture) {
+        SDL_DestroyTexture(this->water_bg_texture);
+        this->water_bg_texture = nullptr;
+    }
+    if(this->water_fg_texture) {
+        SDL_DestroyTexture(this->water_fg_texture);
+        this->water_fg_texture = nullptr;
+    }
 
     delete  this->S_MapSelection;  this->S_MapSelection = nullptr;
     delete      this->S_MainMenu;      this->S_MainMenu = nullptr;
@@ -134,7 +145,7 @@ void setScene(SceneType t) {
             );
         } break;
 
-        case SceneType::SETTINGS: { 
+        case SceneType::SETTINGS: {
             this->S_Settings->setScene(
                 this->sound_button, 
                 this->fps_text
@@ -174,7 +185,8 @@ void handleEventsPollEvent() {
     switch(this->st) {
         case SceneType::MAIN_MENU: {
             this->S_MainMenu->handleEventsPollEvent();
-            if(this->S_MainMenu->change_to_scene != SceneType::NONE) {                        
+            if(this->S_MainMenu->change_to_scene != SceneType::NONE) {             
+                this->S_MainMenu->clean();
                 setScene(this->S_MainMenu->change_to_scene);
                 this->S_MainMenu->change_to_scene = SceneType::NONE;
             }
@@ -182,7 +194,8 @@ void handleEventsPollEvent() {
 
         case SceneType::MAP_SELECTION: {
             this->S_MapSelection->handleEventsPollEvent();
-            if(this->S_MapSelection->change_to_scene != SceneType::NONE) {                        
+            if(this->S_MapSelection->change_to_scene != SceneType::NONE) {
+                this->S_MapSelection->clean();
                 setScene(this->S_MapSelection->change_to_scene);
                 this->S_MapSelection->change_to_scene = SceneType::NONE;
             }
@@ -190,7 +203,8 @@ void handleEventsPollEvent() {
 
         case SceneType::MATCH_SETTINGS: {
             this->S_MatchSettings->handleEventsPollEvent();
-            if(this->S_MatchSettings->change_to_scene != SceneType::NONE) {                        
+            if(this->S_MatchSettings->change_to_scene != SceneType::NONE) {
+                this->S_MatchSettings->clean();
                 setScene(this->S_MatchSettings->change_to_scene);
                 this->S_MatchSettings->change_to_scene = SceneType::NONE;
             }
@@ -198,8 +212,8 @@ void handleEventsPollEvent() {
 
         case SceneType::SETTINGS: {
             this->S_Settings->handleEventsPollEvent();
-            if(this->S_Settings->change_to_scene != SceneType::NONE) {                        
-                this->load_textures = true;
+            if(this->S_Settings->change_to_scene != SceneType::NONE) {
+                this->S_Settings->clean();
                 setScene(this->S_Settings->change_to_scene);
                 this->S_Settings->change_to_scene = SceneType::NONE;
             }
