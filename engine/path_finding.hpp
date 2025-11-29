@@ -525,7 +525,7 @@ std::vector<Vector2D> a_star_mesh(
     return {};
 }
 
-std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destination) {
+std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destination, float& offcourse_limit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     // really, I'm just eyeballing these differences for now
     static const float             one_by_one =               8192.0f; //    1x1 tile area
@@ -545,26 +545,32 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
         density = 64; mesh = &Game::collision_mesh_64; 
         width_limit = Game::collision_mesh_64_width-1;
         height_limit = Game::collision_mesh_64_height-1;
+        offcourse_limit = 1.0f;
     } else if(distance <= four_by_four) { // use granular mesh (tile -> 16 nodes)
         density = 16; mesh = &Game::collision_mesh_16;
         width_limit = Game::collision_mesh_16_width-1;
         height_limit = Game::collision_mesh_16_height-1;
+        offcourse_limit = 4.0f;
     } else if(distance <= thirtytwo_by_thirtytwo) { // use slightly granular mesh (tile -> 4 nodes)
         density = 4; mesh = &Game::collision_mesh_4;
         width_limit = Game::collision_mesh_4_width-1;
         height_limit = Game::collision_mesh_4_height-1;
+        offcourse_limit = 8.0f;
     } else if(distance <= macro_4_limit) { // use original tile mesh (tile -> 1 node)
         density = 1; mesh = &Game::collision_mesh_1;
         width_limit = Game::collision_mesh_1_width-1;
         height_limit = Game::collision_mesh_1_height-1;
+        offcourse_limit = 24.0f;
     } else if(Game::collision_mesh_macro_4_width > 0 && distance <= macro_16_limit) { // use macro mesh of 4 (4 tiles -> 1 node)
         macro_size = 4; mesh = &Game::collision_mesh_macro_4; 
         width_limit = Game::collision_mesh_macro_4_width-1;
         height_limit = Game::collision_mesh_macro_4_height-1;
+        offcourse_limit = 32.0f;
     } else if(Game::collision_mesh_macro_16_width > 0) { // use macro mesh of 16 (16 tiles -> 1 node)
         macro_size = 16; mesh = &Game::collision_mesh_macro_16; 
         width_limit = Game::collision_mesh_macro_16_width-1;
         height_limit = Game::collision_mesh_macro_16_height-1;
+        offcourse_limit = 64.0f;
     }
 
     if(macro_size > 0) {

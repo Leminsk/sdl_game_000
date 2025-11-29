@@ -178,6 +178,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     DroneComponent* drone;
                     int drone_counter;
                     int drone_path_size;
+                    float drone_offcourse_limit;
                     std::string drone_id;
                     std::vector<Vector2D> drone_path;
                     Vector2D v;
@@ -185,6 +186,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                     msg >> drone_counter;
                     for(int i=0; i<drone_counter; ++i) {
                         msg >= drone_id;
+                        msg >> drone_offcourse_limit;
                         msg >> drone_path_size;
                         drone_path = {};
                         for(int j=0; j<drone_path_size; ++j) {
@@ -193,7 +195,7 @@ class Server : public olc::net::server_interface<MessageTypes> {
                             drone_path.push_back(v);
                         }
                         drone = &Game::manager->getEntityFromGroup(drone_id, groupDrones)->getComponent<DroneComponent>();
-                        drone->moveToPointWithPath(drone_path);
+                        drone->moveToPointWithPath(drone_path, drone_offcourse_limit);
                         // sync on path / roll forward if needed
                         for(int j=0; j<average_frames_passed; ++j) {
                             previous_pos = drone->transform->position;

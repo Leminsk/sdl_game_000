@@ -64,7 +64,9 @@ Vector2D static_translation = Vector2D(0,0);
 Vector2D dynamic_translation = Vector2D(0,0);
 Vector2D cum_translation = Vector2D(0,0);
 
-void setPathToMove(const std::vector<Vector2D>& new_path) {
+float offcourse_limit_with_diameter;
+
+void setPathToMove(const std::vector<Vector2D>& new_path, const float& new_limit) {
     if(new_path.size() == 0) { return; }
     this->path = new_path;
     this->cum_translation = Vector2D(0,0);
@@ -74,6 +76,8 @@ void setPathToMove(const std::vector<Vector2D>& new_path) {
     this->last_path_index = this->path.size() - 1;
     this->current_path_index = this->last_path_index;
     this->preUpdating = true;
+    this->offcourse_limit = new_limit;
+    this->offcourse_limit_with_diameter = new_limit * this->diameter*this->diameter;
 }
 
 public:
@@ -88,10 +92,11 @@ Vector2D destination_position;
 std::vector<Vector2D> path = {};
 std::vector<int> visited_indices = {};
 int current_path_index = -1;
-int last_path_index;
+int last_path_index = -1;
 float radius;
 float radius_squared;
 float diameter;
+float offcourse_limit;
 
 float speed_modifier = 1.0f;
 
@@ -128,14 +133,14 @@ void updateDynamicTranslation(const Vector2D& v) {
 }
 
 void moveToPoint(const Vector2D& destination) {
-    std::vector<Vector2D> new_path = find_path(getPosition(), destination);
-    setPathToMove(new_path);
+    float new_offcourse_limit;
+    std::vector<Vector2D> new_path = find_path(getPosition(), destination, new_offcourse_limit);
+    setPathToMove(new_path, new_offcourse_limit);
 }
 
-void moveToPointWithPath(const std::vector<Vector2D>& p) {
-    setPathToMove(p);
+void moveToPointWithPath(const std::vector<Vector2D>& new_path, const float& new_limit) {
+    setPathToMove(new_path, new_limit);
 }
-
 
 void init() override {
     entity->addComponent<TransformComponent>(this->starting_position.x, this->starting_position.y, this->diameter, this->diameter, 1.0f);
@@ -155,9 +160,15 @@ void preUpdate() override {
         this->transform->velocity = Vector2D(0,0);
         this->preUpdating = false;
     }
-
-    // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
-    if(
+    
+    if( // edge case for first point
+        this->current_path_index > 0 &&
+        this->current_path_index == this->last_path_index &&
+        Distance(getPosition(), path[this->current_path_index]) > (this->radius_squared) &&
+        this->transform->velocity.x == 0.0f && this->transform->velocity.y == 0.0f
+    ) {
+        this->transform->velocity = (this->path[current_path_index] - getPosition()).Normalize() * 2.0f;
+    } else if( // has reached new point. Leaving these 2* because of the offset when sliding over blocked tiles. Also it kinda makes the trajectory "look smoother"
         this->current_path_index > 0 && 
         Distance(getPosition(), path[this->current_path_index]) <= 2*(this->radius_squared)
     ) {
@@ -318,7 +329,7 @@ void handleCollisionTranslations() {
     // retrace the path if it went VERY off course (purely eyeballed)
     if(
         (this->current_path_index != -1 && this->path.size() > 0) && 
-        Distance(this->path[this->current_path_index], this->getPosition()) > 4.5*this->diameter*this->diameter
+        Distance(this->path[this->current_path_index], this->getPosition()) > this->offcourse_limit_with_diameter
     ) {
         printf("RETRACE\n");
         this->moveToPoint(this->destination_position);

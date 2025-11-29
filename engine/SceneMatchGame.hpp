@@ -294,7 +294,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
                 if(drone->selected) {
                     if(this->is_client) {
                         // store path to send to server, but do not move drone
-                        drone->path = find_path(drone->getPosition(), world_pos);
+                        drone->path = find_path(drone->getPosition(), world_pos, drone->offcourse_limit);
                         drone->destination_position = world_pos;
                         this->path_to_draw = drone->path;
                         if(!this->path_to_draw.empty()) {
@@ -344,6 +344,7 @@ void sendStateToServer() {
                 msg << drone->path[j].x; // 4 B
             } // subtotal: 8 ~ 1024 B (Most paths should be short, but it's technically unbounded)
             msg << drone_path_size; // 4 B
+            msg << drone->offcourse_limit; // 4 B
             msg <= dr->getIdentifier(); // 8 B
             ++drone_counter;
         }
@@ -639,6 +640,9 @@ void render() {
                 convertWorldToScreen(this->path_to_draw[i+1]), 
                 COLORS_RED
             );
+            Vector2D p_pos = convertWorldToScreen(this->path_to_draw[i]);
+            SDL_FRect path_point = { p_pos.x - 2.0f, p_pos.y - 2.0f, 4.0f, 4.0f };
+            TextureManager::DrawRect(&path_point, COLORS_CYAN);
         }
     }
 
