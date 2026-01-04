@@ -15,8 +15,16 @@ std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 SDL_Event* event;
 Entity* fps_dropdown = nullptr;
-std::vector<unsigned int> fps_values = { 30, 40, 50, 60, 70, 80, 90, 100, 110, 120 };
-std::vector<std::string> frame_rates = { " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", "100 Hz", "110 Hz", "120 Hz" };
+std::vector<unsigned int> fps_values = { 
+      1,  10,  20,  30,  40,  50,  60,  70,  80,  90, 
+    100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 
+    200, 210, 220, 230, 240, 250, 260, 270, 280, 290
+};
+std::vector<std::string> frame_rates = { 
+    "  1 Hz", " 10 Hz", " 20 Hz", " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", 
+    "100 Hz", "110 Hz", "120 Hz", "130 Hz", "140 Hz", "150 Hz", "160 Hz", "170 Hz", "180 Hz", "190 Hz", 
+    "200 Hz", "210 Hz", "220 Hz", "230 Hz", "240 Hz", "250 Hz", "260 Hz", "270 Hz", "280 Hz", "290 Hz"
+};
 std::ifstream config_file;
 nlohmann::json config_json;
 

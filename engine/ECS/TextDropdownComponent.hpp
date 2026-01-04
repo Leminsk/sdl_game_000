@@ -43,13 +43,36 @@ private:
 
 
         this->options.resize(options_amount);
+        int last_index = -1;
         for(int i=0; i<options_amount; ++i) {
+            float current_y = this->y + (this->h * (i+1));
+            if(current_y + this->h >= Game::SCREEN_HEIGHT) { // offscreen, deal with it separately
+                last_index = i;
+                break;
+            }
             this->options[i] = new TextBoxComponent(
                 this->padded_labels[i], 
-                this->x, this->y + (this->h * (i+1)), 
+                this->x, current_y, 
                 t_c, bg_c, b_c
             );
             this->options[i]->init();
+        }
+
+        // if got last_index, then some dropdown elements are offscreen, so we need to draw them to the right (assuming we can)
+        if(last_index != -1) {
+            int column_offset = 0;
+            for(int i=last_index; i<options_amount; ++i) {
+                float current_y = this->options[i%last_index]->y;
+                if(i%last_index == 0) { ++column_offset; }
+                float current_x = this->x + (this->w * column_offset);
+
+                this->options[i] = new TextBoxComponent(
+                    this->padded_labels[i], 
+                    current_x, current_y, 
+                    t_c, bg_c, b_c
+                );
+                this->options[i]->init();
+            }
         }
     }
 
