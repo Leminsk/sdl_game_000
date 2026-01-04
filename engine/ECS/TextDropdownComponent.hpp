@@ -25,7 +25,7 @@ private:
         this->selected_option_label = op_vec[0];
         this->selected_option = new TextBoxComponent(
             this->padded_labels[0], 
-            pos_x, pos_y, 
+            pos_x + this->border_thickness, pos_y + this->border_thickness, 
             t_c, bg_c, b_c
         );
         this->selected_option->init();
@@ -34,6 +34,13 @@ private:
         this->h = this->selected_option->h;
         this->x = this->selected_option->x;
         this->y = this->selected_option->y;
+
+        // offset back because of dropdown highlight
+        this->borderRect.x = pos_x;
+        this->borderRect.y = pos_y;
+        this->borderRect.w = this->w + (this->border_thickness<<1);
+        this->borderRect.h = this->h + (this->border_thickness<<1);
+
 
         this->options.resize(options_amount);
         for(int i=0; i<options_amount; ++i) {
@@ -51,6 +58,8 @@ bool is_color_dropdown = false;
 TextBoxComponent* selected_option;
 TransformComponent* selected_option_transform; // only used because of SpriteComponent
 SpriteComponent* selected_option_sprite;
+
+SDL_FRect borderRect;
 
 std::string selected_option_label;
 std::vector<TextBoxComponent*> options = {};
@@ -72,7 +81,7 @@ std::vector<Entity*> options_entities = {};
 std::vector<std::string> options_labels = { "Random", "White", "Black", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta" };
 std::vector<std::string> padded_labels = {};
 
-int border_thickness;
+int border_thickness = 3; // outer border highlighting as dropdown
 
 // SDL_Color text_color, bg_color, border_color;
 // SDL_Color mouse_down_text_color, mouse_down_bg_color, mouse_down_border_color;
@@ -193,6 +202,7 @@ void init() override {
 void update() override {
 }
 void draw() override {
+    TextureManager::DrawRect(&borderRect, COLORS_YELLOW); // using COLORS_YELLOW just for testing, change it later to something less ugly
     this->selected_option->draw();
 
     if(this->is_color_dropdown) {
