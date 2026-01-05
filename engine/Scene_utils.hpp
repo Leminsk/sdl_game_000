@@ -84,30 +84,40 @@ Entity& createUIMultilineText(
 Entity& createUIDropdown(
     const std::string& id,
     const std::vector<std::string>& labels,
+    Mix_Chunk* selection_sound_effect,
     int pos_x=0, int pos_y=0,
     const SDL_Color& text_color=Game::default_text_color, 
     const SDL_Color& bg_color=Game::default_bg_color, 
-    const SDL_Color& border_color=Game::default_text_color
+    const SDL_Color& border_color=Game::default_text_color,
+    std::function<void(TextDropdownComponent&, int)> onUp = [](TextDropdownComponent&, int){},
+    std::function<void(TextDropdownComponent&)> onDown = [](TextDropdownComponent&){}
 ) {
     auto& new_dropdown(Game::manager->addEntity(id));
     new_dropdown.addComponent<TextDropdownComponent>(
         labels, pos_x, pos_y,
-        text_color, bg_color, border_color
+        text_color, bg_color, border_color,
+        selection_sound_effect,
+        onUp, onDown
     );
     new_dropdown.addGroup(groupPriorityUI);
     return new_dropdown;
 }
 Entity& createUIDropdownColors(
     const std::string& id,
+    Mix_Chunk* selection_sound_effect,
     int pos_x=0, int pos_y=0,
     const SDL_Color& text_color=Game::default_text_color, 
     const SDL_Color& bg_color=Game::default_bg_color, 
-    const SDL_Color& border_color=Game::default_text_color
+    const SDL_Color& border_color=Game::default_text_color,
+    std::function<void(TextDropdownComponent&, int)> onUp = [](TextDropdownComponent&, int){},
+    std::function<void(TextDropdownComponent&)> onDown = [](TextDropdownComponent&){}
 ) {
     auto& new_dropdown_colors(Game::manager->addEntity(id));
     new_dropdown_colors.addComponent<TextDropdownComponent>(
         id, pos_x, pos_y,
-        text_color, bg_color, border_color
+        text_color, bg_color, border_color,
+        selection_sound_effect,
+        onUp, onDown
     );
     new_dropdown_colors.addGroup(groupPriorityUI);
     return new_dropdown_colors;

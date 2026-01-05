@@ -1,6 +1,6 @@
 {
-    "FRAME_RATE": 60,
+    "FRAME_RATE": 70,
     "FULLSCREEN": false,
-    "SCREEN_HEIGHT": 720,
-    "SCREEN_WIDTH": 1280
+    "SCREEN_HEIGHT": 768,
+    "SCREEN_WIDTH": 1366
 }

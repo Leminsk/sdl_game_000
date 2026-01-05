@@ -112,15 +112,36 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
                 );
                 this->spawn_info_entities.push_back( 
                     &createUIDropdownColors(
-                        "spawn_dropdown_"+std::to_string(spawn_count), 
+                        "spawn_dropdown_"+std::to_string(spawn_count), this->sound_button,
                         base_x + spawn_text_length_with_offset, base_y,
-                        COLORS_SPAWN, background_color
+                        COLORS_SPAWN, background_color, Game::default_text_color,
+                        [this](TextDropdownComponent& self, int i) {
+                            for(int j=0; j<this->spawn_info_entities.size(); ++j) {
+                                if(this->spawn_info_entities[j]->getIdentifier() == self.entity->getIdentifier()) {
+                                    int y = this->spawn_positions[j].first;
+                                    int x = this->spawn_positions[j].second;
+                                    this->selected_map->getComponent<MapThumbnailComponent>().map_pixels[y][x] = self.options_colors[i];
+                                }
+                            }
+                        }
                     )
                 );
                 this->spawn_selections.push_back(
                     &createUIDropdown(
-                        "spawn_selection_dropdown_"+std::to_string(spawn_count), { "CPU", "Player" }, 
-                        base_x + spawn_text_length_with_offset + 10 + this->spawn_info_entities[spawn_count]->getComponent<TextDropdownComponent>().w, base_y
+                        "spawn_selection_dropdown_"+std::to_string(spawn_count), { "CPU", "Player" }, this->sound_button,
+                        base_x + spawn_text_length_with_offset + 10 + this->spawn_info_entities[spawn_count]->getComponent<TextDropdownComponent>().w, base_y,
+                        Game::default_text_color, Game::default_bg_color, Game::default_text_color,
+                        [this](TextDropdownComponent& self, int i) {
+                            if(i == 1) { // selecting "Player" means deselect for all others
+                                for(int j=0; j<this->spawn_selections.size(); ++j) {
+                                    if(this->spawn_selections[j]->getIdentifier() == self.entity->getIdentifier()) {
+                                        this->player_spawn_index = j;
+                                    } else {
+                                        this->spawn_selections[j]->getComponent<TextDropdownComponent>().setSelectedOption(0);
+                                    }
+                                }
+                            }
+                        }
                     )
                 );
                 ++spawn_count;
@@ -187,57 +208,9 @@ void handleMouse(SDL_MouseButtonEvent& b) {
 bool clickedDropdown(Vector2D& pos) {
     for(auto& pr_ui : this->pr_ui_elements) {
         if(pr_ui->hasComponent<TextDropdownComponent>()) {
-            std::string dropdown_id = pr_ui->getIdentifier();
-            TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
-
-            if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
-                if(dropdown_id.substr(0,5) == "spawn") {
-                    Mix_PlayChannel(-1, this->sound_button, 0);
-                    dropdown.display_dropdown = !(dropdown.display_dropdown);
-                    return true;
-                }
+            if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
+                return true;
             }
-
-            if(dropdown.display_dropdown) {
-                if(dropdown_id.substr(0,14) == "spawn_dropdown") {
-                    for(int i=0; i<dropdown.options.size(); ++i) {
-                        TextBoxComponent* option = dropdown.options[i];
-                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            dropdown.setSelectedOption(i);
-                            for(int j=0; j<this->spawn_info_entities.size(); ++j) {
-                                if(this->spawn_info_entities[j]->getIdentifier() == dropdown_id) {
-                                    int y = this->spawn_positions[j].first;
-                                    int x = this->spawn_positions[j].second;
-                                    this->selected_map->getComponent<MapThumbnailComponent>().map_pixels[y][x] = dropdown.options_colors[i];
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-                if(dropdown_id.substr(0,15) == "spawn_selection") {
-                    for(int i=0; i<dropdown.options.size(); ++i) {
-                        TextBoxComponent* option = dropdown.options[i];
-                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            dropdown.setSelectedOption(i);
-                            if(i == 1) { // selecting "Player" means deselect for all others
-                                for(int j=0; j<this->spawn_selections.size(); ++j) {
-                                    if(this->spawn_selections[j]->getIdentifier() == dropdown_id) {
-                                        this->player_spawn_index = j;
-                                    } else {
-                                        this->spawn_selections[j]->getComponent<TextDropdownComponent>().setSelectedOption(0);
-                                    }                                    
-                                }
-                            }
-                            return true;
-                        }
-                    }
-                }
-                Mix_PlayChannel(-1, this->sound_button, 0);
-                dropdown.display_dropdown = false;
-            }   
         }
     }
     return false;

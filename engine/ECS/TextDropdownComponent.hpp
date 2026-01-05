@@ -14,69 +14,74 @@
 //
 class TextDropdownComponent : public Component {
 private:
-    void setOptions(
-        const std::vector<std::string>& op_vec,
-        const int options_amount,
-        float pos_x, float pos_y,
-        const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c
-    ) {
-        // default is always the first
-        // create one first and let it calculate the correct position for the base of the dropdown
-        this->selected_option_label = op_vec[0];
-        this->selected_option = new TextBoxComponent(
-            this->padded_labels[0], 
-            pos_x + this->border_thickness, pos_y + this->border_thickness, 
+std::function<void(TextDropdownComponent&, int)> onMouseUp = nullptr;
+std::function<void(TextDropdownComponent&)> onMouseDown = nullptr;
+
+void setOptions(
+    const std::vector<std::string>& op_vec,
+    const int options_amount,
+    float pos_x, float pos_y,
+    const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c
+) {
+    // default is always the first
+    // create one first and let it calculate the correct position for the base of the dropdown
+    this->selected_option_label = op_vec[0];
+    this->selected_option = new TextBoxComponent(
+        this->padded_labels[0], 
+        pos_x + this->border_thickness, pos_y + this->border_thickness, 
+        t_c, bg_c, b_c
+    );
+    this->selected_option->init();
+
+    this->w = this->selected_option->w;
+    this->h = this->selected_option->h;
+    this->x = this->selected_option->x;
+    this->y = this->selected_option->y;
+
+    // offset back because of dropdown highlight
+    this->borderRect.x = pos_x;
+    this->borderRect.y = pos_y;
+    this->borderRect.w = this->w + (this->border_thickness<<1);
+    this->borderRect.h = this->h + (this->border_thickness<<1);
+
+
+    this->options.resize(options_amount);
+    int last_index = -1;
+    for(int i=0; i<options_amount; ++i) {
+        float current_y = this->y + (this->h * (i+1));
+        if(current_y + this->h >= Game::SCREEN_HEIGHT) { // offscreen, deal with it separately
+            last_index = i;
+            break;
+        }
+        this->options[i] = new TextBoxComponent(
+            this->padded_labels[i], 
+            this->x, current_y, 
             t_c, bg_c, b_c
         );
-        this->selected_option->init();
+        this->options[i]->init();
+    }
 
-        this->w = this->selected_option->w;
-        this->h = this->selected_option->h;
-        this->x = this->selected_option->x;
-        this->y = this->selected_option->y;
+    // if got last_index, then some dropdown elements are offscreen, so we need to draw them to the right (assuming we can)
+    if(last_index != -1) {
+        int column_offset = 0;
+        for(int i=last_index; i<options_amount; ++i) {
+            float current_y = this->options[i%last_index]->y;
+            if(i%last_index == 0) { ++column_offset; }
+            float current_x = this->x + (this->w * column_offset);
 
-        // offset back because of dropdown highlight
-        this->borderRect.x = pos_x;
-        this->borderRect.y = pos_y;
-        this->borderRect.w = this->w + (this->border_thickness<<1);
-        this->borderRect.h = this->h + (this->border_thickness<<1);
-
-
-        this->options.resize(options_amount);
-        int last_index = -1;
-        for(int i=0; i<options_amount; ++i) {
-            float current_y = this->y + (this->h * (i+1));
-            if(current_y + this->h >= Game::SCREEN_HEIGHT) { // offscreen, deal with it separately
-                last_index = i;
-                break;
-            }
             this->options[i] = new TextBoxComponent(
                 this->padded_labels[i], 
-                this->x, current_y, 
+                current_x, current_y, 
                 t_c, bg_c, b_c
             );
             this->options[i]->init();
         }
-
-        // if got last_index, then some dropdown elements are offscreen, so we need to draw them to the right (assuming we can)
-        if(last_index != -1) {
-            int column_offset = 0;
-            for(int i=last_index; i<options_amount; ++i) {
-                float current_y = this->options[i%last_index]->y;
-                if(i%last_index == 0) { ++column_offset; }
-                float current_x = this->x + (this->w * column_offset);
-
-                this->options[i] = new TextBoxComponent(
-                    this->padded_labels[i], 
-                    current_x, current_y, 
-                    t_c, bg_c, b_c
-                );
-                this->options[i]->init();
-            }
-        }
     }
+}
 
 public:
+Mix_Chunk* selection_sound = nullptr;
+bool mouse_down = false;
 bool is_color_dropdown = false;
 TextBoxComponent* selected_option;
 TransformComponent* selected_option_transform; // only used because of SpriteComponent
@@ -118,8 +123,12 @@ float y = 0.0f;
 TextDropdownComponent(
     const std::string& id,
     float pos_x, float pos_y,
-    const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c
-) {
+    const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c,
+    Mix_Chunk* sound_effect,
+    std::function<void(TextDropdownComponent&, int)> onUp = nullptr,
+    std::function<void(TextDropdownComponent&)> onDown = nullptr
+) : onMouseUp(onUp), onMouseDown(onDown) {
+    this->selection_sound = sound_effect;
     this->is_color_dropdown = true;
     const int options_amount = this->options_labels.size();
     const int max_chars = 7;
@@ -175,8 +184,12 @@ TextDropdownComponent(
 TextDropdownComponent(
     const std::vector<std::string>& labels,
     float pos_x, float pos_y,
-    const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c
-) {
+    const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c,
+    Mix_Chunk* sound_effect,
+    std::function<void(TextDropdownComponent&, int)> onUp = nullptr,
+    std::function<void(TextDropdownComponent&)> onDown = nullptr
+) : onMouseUp(onUp), onMouseDown(onDown) {
+    this->selection_sound = sound_effect;
     this->options_labels = labels;
 
     // padding the labels is easier than recalculating the correct texture rendering widths. but maybe it is computationally worse
@@ -216,8 +229,47 @@ void setSelectedOption(const int option_index=0) {
         }        
         this->selected_option_label = this->options_labels[option_index];
         this->selected_option->setText(this->padded_labels[option_index]);
+    }
+}
+
+// runs callback if mouse_pos is inside the button area
+// returns true if callback was run
+// TODO: review this, as TextDropdownComponent is currently only running onMouseRelease
+bool onMousePress(const Vector2D& mouse_pos) {
+    bool pressed_on_button = false;
+    if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)) {
+        this->mouse_down = true;
+        pressed_on_button = true;
+    }
+    return pressed_on_button;
+}
+
+// runs callback if mouse_pos is inside the button area
+// returns true if callback was run
+bool onMouseRelease(const Vector2D& mouse_pos) {
+    bool released_on_button = false;
+    if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)) {
+        Mix_PlayChannel(-1, this->selection_sound, 0);
+        released_on_button = true;
+        this->display_dropdown = !(this->display_dropdown);
+    } else {
+        if(this->display_dropdown) { 
+            Mix_PlayChannel(-1, this->selection_sound, 0);
+            for(int i=0; i<this->options.size(); ++i) {
+                TextBoxComponent* option = this->options[i];
+                if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, option->x, option->y, option->w, option->h)) {
+                    this->setSelectedOption(i);
+                    this->onMouseUp(*this, i);
+                    released_on_button = true;
+                    break;
+                }
+            }
+        }
+        
         this->display_dropdown = false;
     }
+    this->mouse_down = false;
+    return released_on_button;
 }
 
 void init() override {

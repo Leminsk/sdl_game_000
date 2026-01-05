@@ -20,11 +20,34 @@ std::vector<unsigned int> fps_values = {
     100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 
     200, 210, 220, 230, 240, 250, 260, 270, 280, 290
 };
-std::vector<std::string> frame_rates = { 
+std::vector<std::string> fps_labels = { 
     "  1 Hz", " 10 Hz", " 20 Hz", " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", 
     "100 Hz", "110 Hz", "120 Hz", "130 Hz", "140 Hz", "150 Hz", "160 Hz", "170 Hz", "180 Hz", "190 Hz", 
     "200 Hz", "210 Hz", "220 Hz", "230 Hz", "240 Hz", "250 Hz", "260 Hz", "270 Hz", "280 Hz", "290 Hz"
 };
+Entity* resolution_dropdown = nullptr;
+std::vector<std::pair<unsigned int, unsigned int>> resolution_values = {
+    {  800,  600 },
+    { 1280,  720 },
+    { 1366,  768 },
+    { 1536,  864 },
+    { 1440,  900 },
+    { 1920, 1080 },
+    { 2560, 1440 },
+    { 3840, 2160 }
+};
+std::vector<std::string> resolution_labels = {
+    " 800 x  600",
+    "1280 x  720",
+    "1366 x  768",
+    "1536 x  864",
+    "1440 x  900",
+    "1920 x 1080",
+    "2560 x 1440",
+    "3840 x 2160"
+};
+
+
 std::ifstream config_file;
 nlohmann::json config_json;
 
@@ -47,60 +70,45 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
 
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    
-    // TODO: store these resolutions in some kind of table or hashmap
-    createUIButton(
-        "button_res_SVGA",
-        " 800 x  600",
-        50,  50, 
-        Game::default_text_color, background_color, border_color,
-        [this](TextBoxComponent& self) {
-            this->changeScreenResolution(800, 600);
-            this->change_to_scene = SceneType::SETTINGS;            
-        }
+
+    this->resolution_dropdown = &createUIDropdown(
+        "resolution_dropdown", resolution_labels, this->sound_button,
+        50, 50, 
+        Game::default_text_color, background_color, border_color
     );
+    TextDropdownComponent& res_dropdown = this->resolution_dropdown->getComponent<TextDropdownComponent>();
     createUIButton(
-        "button_res_WXGA",
-        "1280 x  720",
-        50, 114,
+        "button_apply_resolution",
+        "Apply Resolution",
+        res_dropdown.borderRect.x + res_dropdown.borderRect.w + 30, res_dropdown.y,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            this->changeScreenResolution(1280, 720);
-            this->change_to_scene = SceneType::SETTINGS;            
-        }
-    );
-    createUIButton(
-        "button_res_1.56M3",
-        "1440 x 1080",
-        50, 178,
-        Game::default_text_color, background_color, border_color,
-        [this](TextBoxComponent& self) {
-            this->changeScreenResolution(1440, 1080);
-            this->change_to_scene = SceneType::SETTINGS;            
-        }
-    );
-    createUIButton(
-        "button_res_FHD",
-        "1920 x 1080",
-        50, 242, 
-        Game::default_text_color, background_color, border_color,
-        [this](TextBoxComponent& self) {
-            this->changeScreenResolution(1920, 1080);
-            this->change_to_scene = SceneType::SETTINGS;            
+            std::string resolution_option = this->resolution_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
+            for(int i=0; i<this->resolution_labels.size(); ++i) {
+                if(this->resolution_labels[i] == resolution_option) {
+                    this->changeScreenResolution(this->resolution_values[i].first, this->resolution_values[i].second);
+                    this->change_to_scene = SceneType::SETTINGS;
+                    break;
+                }
+            }
         }
     );
 
-    fps_dropdown = &createUIDropdown("fps_dropdown", frame_rates, 300, 50, Game::default_text_color, background_color, border_color);
-
+    this->fps_dropdown = &createUIDropdown(
+        "fps_dropdown", fps_labels, this->sound_button,
+        res_dropdown.borderRect.x, res_dropdown.borderRect.y + res_dropdown.borderRect.h + 20, 
+        Game::default_text_color, background_color, border_color
+    );
+    TextDropdownComponent& fps_dropdown_comp = this->fps_dropdown->getComponent<TextDropdownComponent>();
     createUIButton(
         "button_apply_fps",
         "Apply FPS",
-        450, 50,
+        fps_dropdown_comp.borderRect.x + fps_dropdown_comp.borderRect.w + 30, fps_dropdown_comp.y,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             std::string fps_option = this->fps_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
-            for(int i=0; i<this->frame_rates.size(); ++i) {
-                if(this->frame_rates[i] == fps_option) {
+            for(int i=0; i<this->fps_labels.size(); ++i) {
+                if(this->fps_labels[i] == fps_option) {
                     changeFPS(this->fps_values[i]);
                     this->config_json["FRAME_RATE"] = this->fps_values[i];
                     std::ofstream o("config.json");
@@ -122,6 +130,23 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
             this->change_to_scene = SceneType::MAIN_MENU;
         }
     );
+
+    // set labels according to current loaded values
+    for(int i=0; i<resolution_values.size(); ++i) {
+        if(
+            resolution_values[i].first == Game::SCREEN_WIDTH &&
+            resolution_values[i].second == Game::SCREEN_HEIGHT
+        ) {
+            res_dropdown.setSelectedOption(i);
+            break;
+        }
+    }
+    for(int i=0; i<fps_values.size(); ++i) {
+        if(fps_values[i] == Game::MAX_FPS) {
+            fps_dropdown_comp.setSelectedOption(i);
+            break;
+        }
+    }
 }
 
 void changeScreenResolution(unsigned int width, unsigned int height) {
@@ -131,8 +156,15 @@ void changeScreenResolution(unsigned int width, unsigned int height) {
     o << this->config_json.dump(4);
     o.close();
     Mix_PlayChannel(-1, this->sound_button, 0);
+    // soft destroy
+    SDL_DestroyTexture(Game::unit_tex);
+    SDL_DestroyTexture(Game::building_tex);
+    Game::unit_tex = nullptr;
+    Game::building_tex = nullptr;
+
     SDL_DestroyWindow(Game::window);
     SDL_DestroyRenderer(Game::renderer);
+
     const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
     Game::window = SDL_CreateWindow("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
     Game::renderer = SDL_CreateRenderer(Game::window, -1, SDL_RENDERER_ACCELERATED);
@@ -179,31 +211,9 @@ bool clickedButton(Vector2D& pos) {
 bool clickedDropdown(Vector2D& pos) {
     for(auto& pr_ui : this->pr_ui_elements) {
         if(pr_ui->hasComponent<TextDropdownComponent>()) {
-            std::string dropdown_id = pr_ui->getIdentifier();
-            TextDropdownComponent& dropdown = pr_ui->getComponent<TextDropdownComponent>();
-
-            if(Collision::pointInRect(pos.x, pos.y, dropdown.x, dropdown.y, dropdown.w, dropdown.h)) {
-                if(dropdown_id == "fps_dropdown") {
-                    Mix_PlayChannel(-1, this->sound_button, 0);
-                    dropdown.display_dropdown = !(dropdown.display_dropdown);
-                    return true;
-                }
+            if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
+                return true;
             }
-
-            if(dropdown.display_dropdown) {
-                if(dropdown_id == "fps_dropdown") {
-                    for(int i=0; i<dropdown.options.size(); ++i) {
-                        TextBoxComponent* option = dropdown.options[i];
-                        if(Collision::pointInRect(pos.x, pos.y, option->x, option->y, option->w, option->h)) {
-                            Mix_PlayChannel(-1, this->sound_button, 0);
-                            dropdown.setSelectedOption(i);
-                            return true;
-                        }
-                    }
-                }
-                Mix_PlayChannel(-1, this->sound_button, 0);
-                dropdown.display_dropdown = false;
-            }   
         }
     }
     return false;
@@ -271,7 +281,16 @@ void render() {
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }
-    for(auto& pr_ui : this->pr_ui_elements) { pr_ui->draw(); }
+    
+    std::vector<Entity*> opened_dropdowns = {};
+    for(auto& pr_ui : this->pr_ui_elements) { 
+        if(pr_ui->hasComponent<TextDropdownComponent>() && pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
+            opened_dropdowns.push_back(pr_ui);
+        } else {
+            pr_ui->draw();
+        }
+    }
+    for(Entity*& drop_down : opened_dropdowns) { drop_down->draw(); }
 }
 void clean() {
     Game::manager->clearEntities();
