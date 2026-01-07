@@ -32,6 +32,8 @@ Mix_Chunk* sound_button = NULL;
 
 
 bool draw_grids = false;
+bool pressed_toggle_collision_mesh_crosshair = false;
+int toggle_collision_mesh_crosshair = -1;
 std::vector<Vector2D> hex_tile = { {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0} };
 Vector2D clicked_point;
 Vector2D converted_point;
@@ -503,6 +505,12 @@ void handleEventsPollEvent() {
             return;
         }
 
+        if(this->event->type == SDL_KEYUP) {
+            if(this->event->key.keysym.scancode == SDL_SCANCODE_F) {
+                this->pressed_toggle_collision_mesh_crosshair = true;
+            }
+        }
+
         if(this->event->type == SDL_MOUSEBUTTONDOWN) {
             handleMouse(this->event->button);
         }
@@ -564,6 +572,13 @@ void handleEventsPostPoll(const uint8_t *keystates) {
         }
 
 
+        if(this->pressed_toggle_collision_mesh_crosshair && keystates[SDL_SCANCODE_F]) { 
+            ++this->toggle_collision_mesh_crosshair;
+            if(this->toggle_collision_mesh_crosshair >= 5) {
+                this->toggle_collision_mesh_crosshair = -1;
+            }
+            this->pressed_toggle_collision_mesh_crosshair = false;
+        }
 
 
         if(keystates[SDL_SCANCODE_W]) { Game::camera_velocity.y =  -2.0f / Game::camera_zoom; }
@@ -730,6 +745,74 @@ void render() {
             TextureManager::DrawRect(&grid_line, COLORS_CYAN);
         }
     }                  
+
+    // debugging collision meshes
+    int debug_mesh_height = -1;
+    int debug_mesh_width = -1;
+    std::vector<std::vector<uint8_t>>* debug_collision_mesh = nullptr;
+    int mesh_density;
+    switch(this->toggle_collision_mesh_crosshair) {
+        case 0: 
+            mesh_density = 1;
+            debug_collision_mesh = &Game::collision_mesh_1;
+            debug_mesh_height = Game::collision_mesh_1_height;
+            debug_mesh_width  = Game::collision_mesh_1_width;
+            break;
+        case 1:
+            mesh_density = 4;
+            debug_collision_mesh = &Game::collision_mesh_4;
+            debug_mesh_height = Game::collision_mesh_4_height;
+            debug_mesh_width  = Game::collision_mesh_4_width;
+            break;
+        case 2:
+            mesh_density = 16;
+            debug_collision_mesh = &Game::collision_mesh_16;
+            debug_mesh_height = Game::collision_mesh_16_height;
+            debug_mesh_width  = Game::collision_mesh_16_width;
+            break;
+        case 3:
+            mesh_density = 64;
+            debug_collision_mesh = &Game::collision_mesh_64;
+            debug_mesh_height = Game::collision_mesh_64_height;
+            debug_mesh_width  = Game::collision_mesh_64_width;
+            break;
+        case 4:
+            mesh_density = 4;
+            debug_collision_mesh = &Game::collision_mesh_macro_4;
+            debug_mesh_height = Game::collision_mesh_macro_4_height;
+            debug_mesh_width  = Game::collision_mesh_macro_4_width;
+            break;
+    }
+    if(debug_collision_mesh != nullptr) {
+        for(int y=0; y<debug_mesh_height; ++y) {
+            for(int x=0; x<debug_mesh_width; ++x) {
+                Vector2D p_center;
+                switch(this->toggle_collision_mesh_crosshair) {
+                    case 0: 
+                    case 1:
+                    case 2:
+                    case 3:
+                        p_center = convertWorldToScreen( convertMeshNodeToVector2D({x, y}, mesh_density) ); break;
+                    case 4:
+                        p_center = convertWorldToScreen( convertMacroMeshNodeToVector2D({x, y}, mesh_density) ); break;
+                }
+                Vector2D line_horizontal[2] = { Vector2D(p_center.x-1, p_center.y  ), Vector2D(p_center.x+1, p_center.y  ) };
+                Vector2D line_vertical[2]   = { Vector2D(p_center.x,   p_center.y-1), Vector2D(p_center.x,   p_center.y+1) };
+                if(
+                    (*debug_collision_mesh)[y][x] != TILE_IMPASSABLE && 
+                    (*debug_collision_mesh)[y][x] != TILE_NAVIGABLE && 
+                    (*debug_collision_mesh)[y][x] != TILE_BASE_SPAWN &&
+                    (*debug_collision_mesh)[y][x] != TILE_PLAYER
+                ) {
+                    TextureManager::DrawLine(line_horizontal[0], line_horizontal[1], COLORS_GREEN);
+                    TextureManager::DrawLine(  line_vertical[0],   line_vertical[1], COLORS_GREEN);
+                } else {
+                    TextureManager::DrawLine(line_horizontal[0], line_horizontal[1], COLORS_MAGENTA);
+                    TextureManager::DrawLine(  line_vertical[0],   line_vertical[1], COLORS_MAGENTA);
+                }         
+            }
+        }
+    }
 
     // crosshair
     float line_length = 10;
