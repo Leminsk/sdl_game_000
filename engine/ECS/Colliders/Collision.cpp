@@ -8,7 +8,37 @@
 #include "HexagonCollider.hpp"
 #include "CircleCollider.hpp"
 
+// returns true if line [a,b] intersects line [p,q]
+// https://stackoverflow.com/a/62625458
+bool linesIntersect(const Vector2D& a, const Vector2D& b, const Vector2D& p, const Vector2D& q) {
+    float dx0 = b.x - a.x;
+    float dx1 = q.x - p.x;
+    float dy0 = b.y - a.y;
+    float dy1 = q.y - p.y;
+    float p0 = dy1*(q.x-a.x) - dx1*(q.y-a.y);
+    float p1 = dy1*(q.x-b.x) - dx1*(q.y-b.y);
+    float p2 = dy0*(b.x-p.x) - dx0*(b.y-p.y);
+    float p3 = dy0*(b.x-q.x) - dx0*(b.y-q.y);
+    return (p0*p1 <= 0.0f) && (p2*p3 <= 0.0f);
+}
+
 // https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+float distancePointToLine(const Vector2D& p, const Vector2D& line_start, const Vector2D& line_end) {
+    float distance_2 = Distance(line_start, line_end);
+    if(distance_2 == 0.0f) {
+        return Distance(p, line_start);
+    }
+    Vector2D line_vec = line_end - line_start;
+    float t = std::max(
+        0.0f, 
+        std::min(
+            1.0f,
+            (DotProd((p - line_start), line_vec) / distance_2)
+        )
+    );
+    Vector2D projection = line_start + (line_vec * t);
+    return Distance(p, projection);
+}
 bool lineIntersectCircle(const CircleCollider& cir, const Vector2D& line_start, const Vector2D& line_end) {
     float radius_2 = cir.radius * cir.radius;
     float distance_2 = Distance(line_start, line_end);
@@ -75,6 +105,43 @@ bool Collision::AABB(const Collider& colA, const Collider& colB) {
             colA.entity->getComponent<RectangleCollider>(), 
             colB.entity->getComponent<RectangleCollider>()
         );
+    }
+
+    return false;
+}
+
+bool Collision::pointInHex(const Vector2D& p, const HexagonCollider& hex) {
+    std::vector<Vector2D> hull = hex.hull;
+    // trivial case
+    for(const Vector2D& v : hull) {
+        if(v == p) { return true; }
+    }
+    // easy checks for axis aligned point up hexagon
+    if(
+        p.y < hull[4].y || p.y > hull[1].y ||
+        p.x < hull[3].x || p.x > hull[5].x        
+    ) {
+        return false;
+    }
+
+    std::vector<std::vector<Vector2D>> sides = std::vector<std::vector<Vector2D>>(3);
+    Vector2D line_end;
+    if(p.x >= hex.center.x) { // right side 4, 5, 0, 1
+        sides[0] = { hull[4], hull[5] };
+        sides[1] = { hull[5], hull[0] };
+        sides[2] = { hull[0], hull[1] };
+        line_end = Vector2D(p.x + hex.radius, p.y);
+    } else { // left side 1, 2, 3, 4
+        sides[0] = { hull[1], hull[2] };
+        sides[1] = { hull[2], hull[3] };
+        sides[2] = { hull[3], hull[4] };
+        line_end = Vector2D(p.x - hex.radius, p.y);
+    }
+
+    for(int i=0; i<3; ++i) {
+        if(linesIntersect(sides[i][0], sides[i][1], p, line_end)) {
+            return true;
+        }
     }
 
     return false;

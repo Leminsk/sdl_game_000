@@ -10,6 +10,7 @@
 #include "TextureManager.hpp"
 #include "Colors.hpp"
 #include "ECS/TileTypes.hpp"
+#include "ECS/Colliders/Collision.hpp"
 
 class Map {
 public:
@@ -161,7 +162,7 @@ bool hexFreeInMap(const std::vector<Vector2D>& hex_points, const Vector2D& own_t
 
 // generate collision mesh for path finding where each element is either the original pixel value, or a subsection.
 // out_mesh will be overwritten entirely with the new mesh
-void generateCollisionMesh(const int subdivisions, std::vector<std::vector<uint8_t>>& out_mesh, int& out_width, int& out_height) {
+void generateCollisionMesh(const int subdivisions, std::vector<std::vector<uint8_t>>& out_mesh, int& out_width, int& out_height, const std::vector<Entity*>& buildings) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     int factor;
     switch(subdivisions) {
@@ -171,6 +172,7 @@ void generateCollisionMesh(const int subdivisions, std::vector<std::vector<uint8
         case 1: 
         default: factor = 0; break;
     }
+    int tile_factor = (Game::DOUBLE_UNIT_SIZE) >> factor;
     out_height = this->layout_height << factor;
     out_width = this->layout_width << factor;
 
@@ -182,7 +184,20 @@ void generateCollisionMesh(const int subdivisions, std::vector<std::vector<uint8
         out_mesh[row].reserve(out_width);
         shifted_row = row>>factor;
         for(column=0; column<out_width; ++column) {
-            out_mesh[row].push_back( this->layout[ shifted_row ][ column>>factor ] );
+            Vector2D world_pos = Vector2D(
+                static_cast<float>((column * tile_factor) + (tile_factor>>1)), 
+                static_cast<float>((row    * tile_factor) + (tile_factor>>1))
+            );
+            uint8_t mesh_value = this->layout[ shifted_row ][ column>>factor ];
+            // if the mesh node is inside any building, mark it as blocking
+            for(const Entity* b_entity : buildings) {
+                HexagonCollider& hex = b_entity->getComponent<HexagonCollider>();
+                if(Collision::pointInHex(world_pos, hex)) {
+                    mesh_value = tile_type::TILE_PLAYER;
+                    break;
+                }
+            }
+            out_mesh[row].push_back(mesh_value);
         }
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

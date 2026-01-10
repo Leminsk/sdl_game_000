@@ -47,8 +47,7 @@ bool isValidConfigJson(const json& json_data, std::vector<std::string>& error_me
     
     try {
         if(static_cast<int>(json_data["FRAME_RATE"]) < 30) {
-            error_messages.push_back("FRAME_RATE cannot be less than 30.");
-            valid = false;
+            printf("WARNING: game not designed to run with FRAME_RATE under 30");
         }
     } catch(...) {
         error_messages.push_back("FRAME_RATE must be a number (without quotation marks).");

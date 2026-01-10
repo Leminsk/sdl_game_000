@@ -53,10 +53,11 @@ class HexagonCollider : public Component {
 
         void init() override {
             this->radius = this->transform->width/2 * this->transform->scale;
+            setHull();
         }
 
         void update() override {
-            setHull();
+            // setHull();
         }
 
         void draw() override {

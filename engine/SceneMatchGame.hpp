@@ -85,7 +85,7 @@ SceneMatchGame(SDL_Event* e) { this->event = e; }
 }
 
 
-Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vector<std::vector<int>>& layout, const std::vector<std::vector<SDL_Color>>& map_pixels = {}) {
+Entity& AddTileOnMap(int id, float width, int map_x, int map_y, std::vector<std::vector<int>>& layout, const std::vector<std::vector<SDL_Color>>& map_pixels = {}) {
     auto& tile(Game::manager->addEntity("tile-"+std::to_string(map_x)+','+std::to_string(map_y)));
     tile.reserveComponents(3);
     const float world_x = map_x * width;
@@ -108,24 +108,33 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
         break;
         case TILE_BASE_SPAWN: {
             tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);
-            // TODO: assign random color here or get it from somewhere
+            /*
+            TODO: 
+            - assign random color here or get it from somewhere
+            - deal with spawn collision like in the TILE_PLAYER case
+            */
             createBaseBuilding(
                 "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                 world_x, world_y, width, map_pixels[map_y][map_x]
             );
         } break;
         case TILE_PLAYER: {
-            Vector2D tile_xy = Vector2D(map_x, map_y);
+            // whether it created a building or not, set as TILE_PLAIN regardless
+            layout[map_y][map_x] = tile_type::TILE_PLAIN;
             tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);
 
+            Vector2D tile_xy = Vector2D(map_x, map_y);
             Vector2D tile_center = Vector2D(world_x + width/2, world_y + width/2);
             HexPos hex_tile = convertWorldToHex(tile_center);
             std::cout << "TILE_PLAYER placed on hex tile {" << hex_tile.q << " , " << hex_tile.r << " }\n";
             std::vector<Vector2D> hex_hull = getPointsFromHexPos(hex_tile);
+
+            Entity* created_building = nullptr;
+
             if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
                 Vector2D hex_center = convertHexToWorld(hex_tile);
                 std::cout << "success on first pass: " << hex_center << '\n';
-                createBaseBuilding(
+                created_building = &createBaseBuilding(
                     "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                     hex_center.x - HEX_SIDE_LENGTH, hex_center.y - HEX_SIDE_LENGTH, width, map_pixels[map_y][map_x]
                 );
@@ -165,7 +174,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
                 }
                 if(valid_spawn) {
                     std::cout << "success on second pass: " << free_pos_x << ", " << free_pos_y << '\n';
-                    createBaseBuilding(
+                    created_building = &createBaseBuilding(
                         "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                         free_pos_x, free_pos_y, width, map_pixels[map_y][map_x]
                     );
@@ -175,7 +184,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, const std::vecto
             }
         } break;
         default: 
-            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);            
+            tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture); 
     }
     
     tile.addGroup(groupTiles);
@@ -235,10 +244,10 @@ void setScene(
         Game::world_map_layout_height = this->map->world_layout_height;
         Game::camera_position = this->map->getWorldPosFromTileCoord(player_spawn.second, player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
-        this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height);
-        this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height);
-        this->map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height);
-        this->map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height);
+        this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height,  this->buildings);
+        this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height,  this->buildings);
+        this->map->generateCollisionMesh(16, Game::collision_mesh_16, Game::collision_mesh_16_width, Game::collision_mesh_16_height, this->buildings);
+        this->map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height, this->buildings);
         this->map->generateCollisionMacroMesh( 4, Game::collision_mesh_macro_4,  Game::collision_mesh_macro_4_width,  Game::collision_mesh_macro_4_height);
 
         for(const std::pair<int,int>& pos : spawn_positions) {
@@ -715,8 +724,17 @@ void render() {
                     hex_center.x = hex_pos.x - 2.0f;
                     hex_center.y = hex_pos.y - 2.0f;
 
-                    TextureManager::DrawWireframe(draw_points, 7, hex_border_color);
-                    TextureManager::DrawRect(&hex_center, COLORS_MAGENTA);
+                    bool can_draw = true;
+
+                    for(auto& d : draw_points) {
+                        if(!Collision::pointInRect(d.x, d.y, -100.0f, -100.0f, Game::SCREEN_WIDTH+200, Game::SCREEN_HEIGHT+200)) {
+                            can_draw = false;
+                        }
+                    }
+                    if(can_draw) {
+                        TextureManager::DrawWireframe(draw_points, 7, hex_border_color);
+                        TextureManager::DrawRect(&hex_center, COLORS_MAGENTA);
+                    }                    
                 }                            
             }
         }
@@ -732,7 +750,14 @@ void render() {
             Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
             grid_line.x = pos.x;
             grid_line.y = pos.y;
-            TextureManager::DrawRect(&grid_line, COLORS_CYAN);
+            if(
+                Game::SCREEN_WIDTH >= grid_line.x &&
+                grid_line.x + grid_line.w >= 0.0f &&
+                Game::SCREEN_HEIGHT >= grid_line.y &&
+                grid_line.y + grid_line.h >= 0.0f
+            ) {
+                TextureManager::DrawRect(&grid_line, COLORS_CYAN);
+            }
         }
         pivot.x = 0.0f;
         grid_line.w = this->map->world_layout_width * Game::camera_zoom;
@@ -742,7 +767,14 @@ void render() {
             Vector2D pos = convertWorldToScreen(Vector2D(pivot.x, pivot.y));
             grid_line.x = pos.x;
             grid_line.y = pos.y;
-            TextureManager::DrawRect(&grid_line, COLORS_CYAN);
+            if(
+                Game::SCREEN_WIDTH >= grid_line.x &&
+                grid_line.x + grid_line.w >= 0.0f &&
+                Game::SCREEN_HEIGHT >= grid_line.y &&
+                grid_line.y + grid_line.h >= 0.0f
+            ) {
+                TextureManager::DrawRect(&grid_line, COLORS_CYAN);
+            }
         }
     }                  
 
@@ -795,6 +827,9 @@ void render() {
                         p_center = convertWorldToScreen( convertMeshNodeToVector2D({x, y}, mesh_density) ); break;
                     case 4:
                         p_center = convertWorldToScreen( convertMacroMeshNodeToVector2D({x, y}, mesh_density) ); break;
+                }
+                if(!Collision::pointInRect(p_center.x, p_center.y, 0.0f, 0.0f, Game::SCREEN_WIDTH, Game::SCREEN_HEIGHT)) {
+                    continue;
                 }
                 Vector2D line_horizontal[2] = { Vector2D(p_center.x-1, p_center.y  ), Vector2D(p_center.x+1, p_center.y  ) };
                 Vector2D line_vertical[2]   = { Vector2D(p_center.x,   p_center.y-1), Vector2D(p_center.x,   p_center.y+1) };
