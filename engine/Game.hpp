@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <map>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
@@ -70,13 +71,18 @@ class Game {
         static bool is_server;
         static int SERVER_STATE_SHARE_RATE;
         static int CLIENT_PING_RATE;
+        static std::map<std::string, std::string> USERS_IP;
 
         Game();
         ~Game();
 
         void init(
-            const char* title, int width, int height, bool fullscreen,
-            int max_fps, int server_broadcast_rate, std::mt19937* rng_generator
+            const char* title, 
+            int width, int height, bool fullscreen,
+            int max_fps, 
+            int server_broadcast_rate, 
+            std::map<std::string, std::string>& users_ip,
+            std::mt19937* rng_generator
         );
 
         void handleEvents();

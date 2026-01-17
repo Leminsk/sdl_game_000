@@ -1,5 +1,6 @@
 #include <vector>
 #include <random>
+#include <map>
 #include "Game.hpp"
 #include "SceneTypes.hpp"
 #include "Scene.hpp"
@@ -62,6 +63,7 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_16;
 
 int Game::SERVER_STATE_SHARE_RATE;
 int Game::CLIENT_PING_RATE;
+std::map<std::string, std::string> Game::USERS_IP;
 
 Scene* scene;
 
@@ -81,11 +83,16 @@ Game::~Game() {
  * fullscreen: force fullscreen (true fullscreen)
  * max_fps: maximum frames to be rendered per second
  * server_broadcast_rate: the amount of frames inbetween sending broadcast TCP packages
+ * users_ip: map of user_name to its IP string
  * rng_generator: base random function pre-seeded to generate further RNG values
 */
 void Game::init(
-    const char* title, int width, int height, bool fullscreen,
-    int max_fps, int server_broadcast_rate, std::mt19937* rng_generator
+    const char* title, 
+    int width, int height, bool fullscreen,
+    int max_fps, 
+    int server_broadcast_rate, 
+    std::map<std::string, std::string>& users_ip,
+    std::mt19937* rng_generator
 ) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         SDL_Log("SDL could not initialize. SDL Error: %s\n", SDL_GetError());
@@ -170,6 +177,7 @@ void Game::init(
     Game::MAX_FRAME_DELAY = 1000.0f / max_fps;
     Game::SERVER_STATE_SHARE_RATE = max_fps / server_broadcast_rate;
     Game::CLIENT_PING_RATE = max_fps * 3;
+    Game::USERS_IP = users_ip;
     Game::RNG = rng_generator;
 
     Game::manager = new Manager();

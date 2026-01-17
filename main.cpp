@@ -6,6 +6,7 @@
 #include <random>
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_version.h>
 #include "engine/Game.hpp"
@@ -54,6 +55,24 @@ bool isValidConfigJson(const json& json_data, std::vector<std::string>& error_me
         valid = false;
     }
 
+    try {
+        if( !json_data["USERS_IP"].is_object() ) {
+            error_messages.push_back("USERS_IP must be a valid object.");
+            valid = false;
+        } else {
+            for(auto& [user, ip] : json_data["USERS_IP"].items()) {
+                if(!ip.is_string()) {
+                    error_messages.push_back("USERS_IP: ip for user '"+user+"' must be a string.");
+                    valid = false;
+                    break;
+                }
+            }
+        }
+    } catch(...) {
+        error_messages.push_back("USERS_IP is poorly formatted.");
+        valid = false;
+    }
+
     return valid;
 }
 
@@ -77,6 +96,7 @@ int main() {
             {"SCREEN_HEIGHT", 720},
             {"FULLSCREEN", false},
             {"FRAME_RATE", 60},
+            {"USERS_IP", {}}
         };
         std::ofstream o("config.json");
         o << config_data.dump(4);
@@ -111,8 +131,17 @@ int main() {
     uint32_t seed = os_seed();
     std::mt19937 generator(seed);
 
+    std::map<std::string, std::string> users_ip = config_data["USERS_IP"].get< std::map<std::string, std::string> >();
+
     game = new Game();
-    game->init("Bétula Engine", config_data["SCREEN_WIDTH"], config_data["SCREEN_HEIGHT"], config_data["FULLSCREEN"], config_data["FRAME_RATE"], 20, &generator);
+    game->init(
+        "Bétula Engine", 
+        config_data["SCREEN_WIDTH"], config_data["SCREEN_HEIGHT"], config_data["FULLSCREEN"], 
+        config_data["FRAME_RATE"], 
+        20,
+        users_ip,
+        &generator
+    );
 
     int small_frame_counter = 0;
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
