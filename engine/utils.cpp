@@ -315,3 +315,96 @@ MainColors convertSDLColorToMainColor(const SDL_Color& sc) {
     else if(isSameColor(sc, COLORS_MAGENTA)) { return MainColors::MAGENTA; }
     else { return MainColors::NONE; }
 }
+
+// gets an SDL_Event, reads the key presses, then edits the text and/or cursor_pos according to the key pressed
+// 0: non-editable, 1: IP-editable, 2: general-editable
+void handleTextEditing(SDL_Keycode virtual_key, int edit_style, std::string& text, int& cursor_pos, bool& exit_editing) {
+    if(edit_style == 0) { return; }
+
+    const uint8_t *keystates = SDL_GetKeyboardState(NULL);
+
+    std::string left_side = text.substr(0, cursor_pos);
+    std::string right_side = text.substr(cursor_pos);
+
+    // Ctrl+C
+    if((keystates[SDL_SCANCODE_LCTRL] || keystates[SDL_SCANCODE_RCTRL]) && keystates[SDL_SCANCODE_C]) {
+        std::cout << "Ctrl+C\n";
+        SDL_SetClipboardText(text.c_str());
+    }
+    // Ctrl+V
+    else if((keystates[SDL_SCANCODE_LCTRL] || keystates[SDL_SCANCODE_RCTRL]) && keystates[SDL_SCANCODE_V]) {
+        std::string clipboard_text = SDL_GetClipboardText();
+        text = left_side + clipboard_text + right_side;
+        cursor_pos += clipboard_text.size();
+    } else if(keystates[SDL_SCANCODE_ESCAPE]) {
+        exit_editing = true;
+    } else {
+        switch(edit_style) {
+            case 1: { 
+                switch(virtual_key) {
+                    case SDLK_PERIOD: case SDLK_COLON:
+                    case SDLK_0: case SDLK_1: case SDLK_2: case SDLK_3:
+                    case SDLK_4: case SDLK_5: case SDLK_6: case SDLK_7:
+                    case SDLK_8: case SDLK_9: case SDLK_a: case SDLK_b:
+                    case SDLK_c: case SDLK_d: case SDLK_e: case SDLK_f: { 
+                        text = left_side + (char)virtual_key + right_side;
+                        ++cursor_pos;
+                    } break;
+                    case SDLK_BACKSPACE: {
+                        if(cursor_pos > 0) {
+                            left_side.pop_back(); 
+                            text = left_side + right_side;
+                            --cursor_pos;
+                        }                    
+                    } break;
+                    case SDLK_DELETE: {
+                        if(cursor_pos < text.size()) {
+                            text = left_side + right_side.substr(1);
+                        }                    
+                    } break;
+                    case SDLK_PASTE: { 
+                        std::string clipboard_text = SDL_GetClipboardText();
+                        text = left_side + clipboard_text + right_side;
+                        cursor_pos += clipboard_text.size();
+                    } break;
+                    case SDLK_COPY: { 
+                        SDL_SetClipboardText(text.c_str());
+                    } break;
+                    case SDLK_LEFT: { 
+                        if(cursor_pos > 0) { --cursor_pos; }
+                    } break;
+                    case SDLK_RIGHT: { 
+                        if(cursor_pos < text.size()) { ++cursor_pos; }
+                    } break;
+                    case SDLK_HOME: { 
+                        cursor_pos = 0;
+                    } break;
+                    case SDLK_END: { 
+                        cursor_pos = text.size(); 
+                    } break;
+                    case SDLK_RETURN:
+                    case SDLK_ESCAPE: {
+                        exit_editing = true;
+                    } break;
+                    default: break;
+                }
+            } break;
+            case 2: { 
+                
+            } break;
+            default: break;
+        }
+    }
+}
+
+/** returns the amount of milliseconds passed since past_frame up until current_frame
+ * past_frame: past reference frame to check time diff
+ * current_frame: reference frame
+ * max_frame_delay: the amount of milliseconds a single frame should span
+ */
+int timeDiffMs(uint64_t past_frame, uint64_t current_frame, int max_frame_delay) {
+    if(past_frame >= current_frame) { 
+        return 0; 
+    }
+    return (current_frame - past_frame) * max_frame_delay;
+}

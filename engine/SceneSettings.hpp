@@ -121,6 +121,20 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
     );
 
     createUIButton(
+        "button_keyboard",
+        "testing_keyboard",
+        fps_dropdown_comp.borderRect.x, fps_dropdown_comp.borderRect.y + fps_dropdown_comp.borderRect.h + 20,
+        Game::default_text_color, Game::default_bg_color, border_color,
+        [this](TextBoxComponent& self) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            self.editing = true;
+            self.cursor_pos = self.text_content[0].size();
+        },
+        [](TextBoxComponent&) {},
+        1
+    );
+
+    createUIButton(
         "button_back", 
         "Back", 
         50,  -50, 
@@ -166,7 +180,7 @@ void changeScreenResolution(unsigned int width, unsigned int height) {
     SDL_DestroyRenderer(Game::renderer);
 
     const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
-    Game::window = SDL_CreateWindow("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
+    Game::window = SDL_CreateWindow("Bétula Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
     Game::renderer = SDL_CreateRenderer(Game::window, -1, SDL_RENDERER_ACCELERATED);
     Game::SCREEN_WIDTH = width;
     Game::SCREEN_HEIGHT = height;
@@ -207,6 +221,26 @@ bool clickedButton(Vector2D& pos) {
     }
     return false;
 }
+void handleKeyDown(SDL_Keycode key) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleKeyDown(key);
+                return;
+            }
+        }
+    }
+}
+void handleKeyUp() {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleKeyUp();
+                return;
+            }
+        }
+    }
+}
 
 bool clickedDropdown(Vector2D& pos) {
     for(auto& pr_ui : this->pr_ui_elements) {
@@ -223,8 +257,8 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            if(!clickedButton(pos)) {
-                clickedDropdown(pos);
+            if(!clickedDropdown(pos)) {
+                clickedButton(pos);
             }
         } break;
     }
@@ -243,6 +277,12 @@ void handleEventsPollEvent() {
             } break;
             case SDL_MOUSEBUTTONUP: {
                 handleMouseRelease(this->event->button);
+            } break;
+            case SDL_KEYUP: {
+                handleKeyUp();
+            } break;
+            case SDL_KEYDOWN: {
+                handleKeyDown(this->event->key.keysym.sym);
             } break;
             case SDL_WINDOWEVENT: {
                 switch(this->event->window.event) {

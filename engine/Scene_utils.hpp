@@ -52,13 +52,14 @@ Entity& createUIButton(
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color,
     std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
-    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){}
+    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){},
+    int editing_style=0
 ) {
     auto& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
         text_color, bg_color, border_color, 3,
-        onUp, onDown
+        onUp, onDown, editing_style
     );
     new_text_box.addGroup(groupUI);
     return new_text_box;
