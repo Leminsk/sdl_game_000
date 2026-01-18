@@ -7,5 +7,6 @@ enum class SceneType : uint8_t {
     LOBBY,
     MATCH_SETTINGS,
     MATCH_GAME,
-    MAP_SELECTION
+    MAP_SELECTION,
+    MULTIPLAYER_SELECTION
 };

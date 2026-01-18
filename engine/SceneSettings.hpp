@@ -10,6 +10,7 @@
 
 class SceneSettings {
 private:
+SceneType parent_scene;
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
@@ -59,9 +60,10 @@ SceneType change_to_scene = SceneType::NONE;
 SceneSettings(SDL_Event* e) { this->event = e; }
 ~SceneSettings() {}
 
-void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
+void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->sound_button = sound_b;
     this->fps_text = fps;
+    this->parent_scene = parent;
 
     if(this->config_file.is_open()) { this->config_file.close(); }
     this->config_file.open("config.json");
@@ -141,7 +143,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps) {
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->change_to_scene = SceneType::MAIN_MENU;
+            this->change_to_scene = this->parent_scene;
         }
     );
 

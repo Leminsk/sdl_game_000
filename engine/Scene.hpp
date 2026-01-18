@@ -30,6 +30,7 @@
 #include "SceneSettings.hpp"
 #include "SceneMatchGame.hpp"
 #include "SceneMatchSettings.hpp"
+#include "SceneMultiplayerSelection.hpp"
 
 // Scene is a helper class to initialize Managers and globals
 class Scene {
@@ -50,22 +51,24 @@ Mix_Music* music_main_menu = NULL;
 Mix_Chunk* sound_button = NULL;
 
 // ------------------ SCENES ------------------
-SceneMapSelection  *S_MapSelection = nullptr;
-SceneMainMenu      *S_MainMenu = nullptr;
-SceneSettings      *S_Settings = nullptr;
-SceneMatchGame     *S_MatchGame = nullptr;
-SceneMatchSettings *S_MatchSettings = nullptr;
+SceneMainMenu             *S_MainMenu = nullptr;
+SceneMapSelection         *S_MapSelection = nullptr;
+SceneMatchSettings        *S_MatchSettings = nullptr;
+SceneMatchGame            *S_MatchGame = nullptr;
+SceneMultiplayerSelection *S_MultiplayerSelection = nullptr;
+SceneSettings             *S_Settings = nullptr;
 
 public:
 // frame counter
 TextComponent* fps_text;
 
 Scene() {
-    this->S_MapSelection  = new SceneMapSelection(&this->event);
-    this->S_MainMenu      = new SceneMainMenu(&this->event);
-    this->S_Settings      = new SceneSettings(&this->event);
-    this->S_MatchGame     = new SceneMatchGame(&this->event);
-    this->S_MatchSettings = new SceneMatchSettings(&this->event);
+    this->S_MainMenu             = new SceneMainMenu(&this->event);
+    this->S_MapSelection         = new SceneMapSelection(&this->event);
+    this->S_MatchSettings        = new SceneMatchSettings(&this->event);
+    this->S_MatchGame            = new SceneMatchGame(&this->event);
+    this->S_MultiplayerSelection = new SceneMultiplayerSelection(&this->event);
+    this->S_Settings             = new SceneSettings(&this->event);
 }
 ~Scene() {
     Mix_HaltMusic();
@@ -89,11 +92,12 @@ Scene() {
         this->water_fg_texture = nullptr;
     }
 
-    delete  this->S_MapSelection;  this->S_MapSelection = nullptr;
-    delete      this->S_MainMenu;      this->S_MainMenu = nullptr;
-    delete      this->S_Settings;      this->S_Settings = nullptr;
-    delete     this->S_MatchGame;     this->S_MatchGame = nullptr;
-    delete this->S_MatchSettings; this->S_MatchSettings = nullptr;
+    delete             this->S_MainMenu;             this->S_MainMenu = nullptr;
+    delete         this->S_MapSelection;         this->S_MapSelection = nullptr;
+    delete        this->S_MatchSettings;        this->S_MatchSettings = nullptr;
+    delete            this->S_MatchGame;            this->S_MatchGame = nullptr;
+    delete this->S_MultiplayerSelection; this->S_MultiplayerSelection = nullptr;
+    delete             this->S_Settings;             this->S_Settings = nullptr;
 }
 
 void loadTextures() {
@@ -145,13 +149,6 @@ void setScene(SceneType t) {
             );
         } break;
 
-        case SceneType::SETTINGS: {
-            this->S_Settings->setScene(
-                this->sound_button, 
-                this->fps_text
-            ); 
-        } break;
-
         case SceneType::MATCH_GAME: {
             this->S_MatchGame->setScene(
                 this->S_MatchSettings->map_pixels, this->S_MatchSettings->player_sdl_color, 
@@ -165,6 +162,22 @@ void setScene(SceneType t) {
                 this->fps_text
             );
         } break;
+
+        case SceneType::MULTIPLAYER_SELECTION: {
+            this->S_MultiplayerSelection->setScene(
+                this->sound_button, 
+                this->fps_text, 
+                SceneType::MAIN_MENU
+            );
+        } break;
+
+        case SceneType::SETTINGS: {
+            this->S_Settings->setScene(
+                this->sound_button, 
+                this->fps_text,
+                SceneType::MAIN_MENU
+            ); 
+        } break;        
     }
 }
 
@@ -175,9 +188,10 @@ void handleEventsPrePoll() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->handleEventsPrePoll(); } break;
         case SceneType::MAP_SELECTION: { this->S_MapSelection->handleEventsPrePoll(); } break;
-        case SceneType::SETTINGS: { this->S_Settings->handleEventsPrePoll(); } break;
-        case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPrePoll(); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->handleEventsPrePoll(); } break;
+        case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPrePoll(); } break;
+        case SceneType::MULTIPLAYER_SELECTION: {} break;
+        case SceneType::SETTINGS: { this->S_Settings->handleEventsPrePoll(); } break;        
     }
 }
 
@@ -210,6 +224,19 @@ void handleEventsPollEvent() {
             }
         } break;
 
+        case SceneType::MATCH_GAME: {
+            this->S_MatchGame->handleEventsPollEvent();
+        } break;
+
+        case SceneType::MULTIPLAYER_SELECTION: {
+            this->S_MultiplayerSelection->handleEventsPollEvent();
+            if(this->S_MultiplayerSelection->change_to_scene != SceneType::NONE) {
+                this->S_MultiplayerSelection->clean();
+                setScene(this->S_MultiplayerSelection->change_to_scene);
+                this->S_MultiplayerSelection->change_to_scene = SceneType::NONE;
+            }
+        } break;
+
         case SceneType::SETTINGS: {
             this->S_Settings->handleEventsPollEvent();
             if(this->S_Settings->change_to_scene != SceneType::NONE) {
@@ -217,10 +244,6 @@ void handleEventsPollEvent() {
                 setScene(this->S_Settings->change_to_scene);
                 this->S_Settings->change_to_scene = SceneType::NONE;
             }
-        } break;
-
-        case SceneType::MATCH_GAME: {
-            this->S_MatchGame->handleEventsPollEvent();
         } break;
     }
 }
@@ -230,9 +253,10 @@ void handleEventsPostPoll() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->handleEventsPostPoll(keystates); } break;
         case SceneType::MAP_SELECTION: { this->S_MapSelection->handleEventsPostPoll(); } break;
-        case SceneType::SETTINGS: { this->S_Settings->handleEventsPostPoll(); } break;
-        case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPostPoll(keystates); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->handleEventsPostPoll(); } break;
+        case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPostPoll(keystates); } break;
+        case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->handleEventsPostPoll(keystates); } break;
+        case SceneType::SETTINGS: { this->S_Settings->handleEventsPostPoll(); } break;
     }
 }
 
@@ -240,9 +264,10 @@ void update() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->update(); } break;
         case SceneType::MAP_SELECTION: { this->S_MapSelection->update(); } break;
-        case SceneType::SETTINGS: { this->S_Settings->update(); } break;
-        case SceneType::MATCH_GAME: { this->S_MatchGame->update(); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->update(); } break;
+        case SceneType::MATCH_GAME: { this->S_MatchGame->update(); } break;
+        case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->update(); } break;
+        case SceneType::SETTINGS: { this->S_Settings->update(); } break;
     }
 }
 
@@ -251,9 +276,10 @@ void render() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->render(); } break;
         case SceneType::MAP_SELECTION: { this->S_MapSelection->render(); } break;
-        case SceneType::SETTINGS: { this->S_Settings->render(); } break;
-        case SceneType::MATCH_GAME: { this->S_MatchGame->render(); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->render(); } break;
+        case SceneType::MATCH_GAME: { this->S_MatchGame->render(); } break;
+        case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->render(); } break;
+        case SceneType::SETTINGS: { this->S_Settings->render(); } break;
     }
 }
 
@@ -261,9 +287,10 @@ void clean() {
     switch(this->st) {
         case SceneType::MAIN_MENU: { this->S_MainMenu->clean(); } break;
         case SceneType::MAP_SELECTION: { this->S_MapSelection->clean(); } break;
-        case SceneType::SETTINGS: { this->S_Settings->clean(); } break;
-        case SceneType::MATCH_GAME: { this->S_MatchGame->clean(); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->clean(); } break;
+        case SceneType::MATCH_GAME: { this->S_MatchGame->clean(); } break;
+        case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->clean(); } break;
+        case SceneType::SETTINGS: { this->S_Settings->clean(); } break;
     }
 }
 };

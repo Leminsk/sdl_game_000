@@ -25,6 +25,11 @@ std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 SDL_Event* event;
 
+void goBack() {
+    Mix_PlayChannel(-1, this->sound_button, 0);
+    this->change_to_scene = this->parent_scene;
+}
+
 public:
 Mix_Chunk* sound_button = NULL;
 TextComponent* fps_text;
@@ -92,9 +97,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         50, -back_button_y, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            Mix_PlayChannel(-1, this->sound_button, 0);
-            this->change_to_scene = this->parent_scene;
-            clean();            
+            this->goBack();
         }
     );
 
@@ -173,7 +176,6 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                             [this](TextBoxComponent& self) {
                                 Mix_PlayChannel(-1, this->sound_button, 0);
                                 this->change_to_scene = SceneType::MATCH_SETTINGS;
-                                clean();
                             }                         
                         );
                     }
@@ -277,20 +279,9 @@ void handleEventsPollEvent() {
             case SDL_MOUSEWHEEL: {
                 handleMouseWheel(this->event->wheel);
             } break;
-            case SDL_WINDOWEVENT: {
-                switch(this->event->window.event) {
-                    case SDL_WINDOWEVENT_SIZE_CHANGED: {
-                        std::cout << "Window Size Change\n";
-                        Game::SCREEN_WIDTH = this->event->window.data1;
-                        Game::SCREEN_HEIGHT = this->event->window.data2;
-                        Game::camera_focus.x = Game::SCREEN_WIDTH>>1;
-                        Game::camera_focus.y = Game::SCREEN_HEIGHT>>1;
-                        this->fps_text->setRenderPos(Game::SCREEN_WIDTH - (this->fps_text->w+3), 3, this->fps_text->w, this->fps_text->h);
-                    } break;
-                    case SDL_WINDOWEVENT_ENTER: break;
-                    case SDL_WINDOWEVENT_LEAVE: break;
-                    case SDL_WINDOWEVENT_FOCUS_GAINED: break;
-                    case SDL_WINDOWEVENT_FOCUS_LOST: break;
+            case SDL_KEYUP: {
+                if(this->event->key.keysym.sym == SDLK_ESCAPE) {
+                    this->goBack();
                 }
             } break;
         }                

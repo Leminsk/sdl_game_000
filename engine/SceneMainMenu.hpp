@@ -68,7 +68,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            this->change_to_scene = SceneType::MATCH_GAME;            
+            this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
         }
     );
     createUIButton(

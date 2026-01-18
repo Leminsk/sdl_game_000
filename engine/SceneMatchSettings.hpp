@@ -24,6 +24,11 @@ std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 SDL_Event* event;
 
+void goBack() {
+    Mix_PlayChannel(-1, this->sound_button, 0);
+    this->change_to_scene = this->parent_scene;
+}
+
 public:
 std::string map_name;
 Mix_Chunk* sound_button = NULL;
@@ -80,8 +85,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         50,  -50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            Mix_PlayChannel(-1, this->sound_button, 0);
-            this->change_to_scene = this->parent_scene;
+            this->goBack();
         }
     );
     
@@ -279,6 +283,11 @@ void handleEventsPollEvent() {
             } break;
             case SDL_MOUSEBUTTONUP: {
                 handleMouseRelease(this->event->button);
+            } break;
+            case SDL_KEYUP: {
+                if(this->event->key.keysym.sym == SDLK_ESCAPE) {
+                    this->goBack();
+                }
             } break;
         }                
     }
