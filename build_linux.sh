@@ -17,6 +17,8 @@ if [[ "$1" == "show" || "$1" == "tree" ]]; then
 
 elif [[ "$1" == "debug" ]]; then
     make debug=y
+elif [[ "$1" == "clean" ]]; then
+    make clean
 else
     make
 fi

@@ -6,6 +6,7 @@ legacyMakefile
 
 # binaries
 *.exe
+*.o
 
 # misc
 /krita_files

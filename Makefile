@@ -1,9 +1,10 @@
-# specifies which files to compile as part of the project
 MAIN_SOURCE = main.cpp
-SOURCES = engine/*.cpp engine/ECS/*.cpp engine/ECS/Colliders/*.cpp
+SOURCES = $(wildcard engine/*.cpp) $(wildcard engine/ECS/*.cpp) $(wildcard engine/ECS/Colliders/*.cpp)
 
-# specifies which compiler we're using
+OBJECTS = $(MAIN_SOURCE:.cpp=.o) $(SOURCES:.cpp=.o)
+
 COMPILER = g++
+C_FLAGS = -std=c++17
 
 ifeq ($(OS),Windows_NT) # For Windows
     # INCLUDE_PATHS specifies the additional include paths we'll need
@@ -42,23 +43,30 @@ else # For Linux
     MAIN_SDL = -lSDL2
     
     LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lpng -ljpeg -lfreetype -lz -lm
-    COMPILER_FLAGS = -pthread
+    C_FLAGS += -pthread
 
 endif
 
 
 ifeq ($(tree),y)
-	DEPENDENCIES_FLAG = -H -c
+	C_FLAGS += -H
 else ifeq ($(debug),y)
-	DEBUG_FLAG = -g
-	OBJ = -o main
-else 
-	OBJ = -o main
+	C_FLAGS += -g
 endif
 
 
 
 
 #This is the target that compiles our executable. ALSO MAKE SURE THE FIRST CHARACTER IS A TAB AND NOT SPACES
-all : $(MAIN_SOURCE)
-	$(COMPILER) $(DEPENDENCIES_FLAG) $(MAIN_SOURCE) $(SOURCES) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(COMPILER_FLAGS) $(DEBUG_FLAG) $(OBJ)
+all: main
+
+main: $(OBJECTS)
+	$(COMPILER) $(OBJECTS) $(LIBRARY_PATHS) $(LINKER_FLAGS) -o main
+
+%.o: %.cpp 
+	$(COMPILER) $(C_FLAGS) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) -c $< -o $@
+
+clean:
+	rm -f $(OBJECTS) main
+	
+.PHONY: all clean

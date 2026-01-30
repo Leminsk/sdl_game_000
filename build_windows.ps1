@@ -1,6 +1,12 @@
-$display_include_tree=$args[0]
+$build_args=$args[0]
 
-if($display_include_tree -eq 'show' -or $display_include_tree -eq 'tree') {
+if($build_args -eq 'clean') {
+    Remove-Item "*.o"
+    Remove-Item "engine\*.o"
+    Remove-Item "engine\ECS\*.o"
+    Remove-Item "engine\ECS\Colliders\*.o"
+
+} elseif($build_args -eq 'show' -or $build_args -eq 'tree') {
 
     $pattern = "^\.+ (engine|src|include)"
     $makeOutput = & "C:\msys64\usr\bin\bash.exe" -c "make tree=y -n"
@@ -13,7 +19,7 @@ if($display_include_tree -eq 'show' -or $display_include_tree -eq 'tree') {
     Invoke-Expression "$gppCommandLine 2>&1 | Select-String -Pattern '$pattern'"
     Remove-Item "*.o"
 
-} elseif($display_include_tree -eq 'debug') {
+} elseif($build_args -eq 'debug') {
     Start-Process -FilePath "make" -ArgumentList "debug=y" -NoNewWindow -Wait
 } else {
     Start-Process -FilePath "make" -NoNewWindow -Wait
