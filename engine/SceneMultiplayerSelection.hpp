@@ -37,7 +37,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
 
     
     const int back_button_y = 50;

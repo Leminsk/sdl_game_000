@@ -52,18 +52,37 @@ Entity& createUIButton(
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color,
     std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
-    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){},
-    int editing_style=0
+    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){}
 ) {
     auto& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
         text_color, bg_color, border_color, 3,
-        onUp, onDown, editing_style
+        onUp, onDown, 0
     );
     new_text_box.addGroup(groupUI);
     return new_text_box;
 }
+// if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
+Entity& createUITextField(
+    const std::string& id, 
+    const std::string& text="UI_TEXTFIELD",
+    int pos_x=0, int pos_y=0,
+    const SDL_Color& text_color=Game::default_text_color, 
+    const SDL_Color& bg_color=Game::default_bg_color, 
+    const SDL_Color& border_color=Game::default_text_color,
+    std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){}
+) {
+    auto& new_text_box(Game::manager->addEntity(id));
+    new_text_box.addComponent<TextBoxComponent>(
+        text, pos_x, pos_y,
+        text_color, bg_color, border_color, 3,
+        onUp, [](TextBoxComponent&){}, 1
+    );
+    new_text_box.addGroup(groupUI);
+    return new_text_box;
+}
+
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
 Entity& createUIMultilineText(
     const std::string& id, 

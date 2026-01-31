@@ -122,7 +122,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         }
     );
 
-    createUIButton(
+    createUITextField(
         "button_keyboard",
         "testing_keyboard",
         fps_dropdown_comp.borderRect.x, fps_dropdown_comp.borderRect.y + fps_dropdown_comp.borderRect.h + 20,
@@ -131,9 +131,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             self.editing = true;
             self.cursor_pos = self.text_content[0].size();
-        },
-        [](TextBoxComponent&) {},
-        1
+        }
     );
 
     createUIButton(

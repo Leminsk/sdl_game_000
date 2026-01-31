@@ -64,7 +64,9 @@ main: $(OBJECTS)
 	$(COMPILER) $(OBJECTS) $(LIBRARY_PATHS) $(LINKER_FLAGS) -o main
 
 %.o: %.cpp 
-	$(COMPILER) $(C_FLAGS) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) -c $< -o $@
+	$(COMPILER) $(C_FLAGS) $(INCLUDE_PATHS) $(NET_INCLUDE_PATHS) -MMD -MP -c $< -o $@
+
+-include ${OBJECTS:.o=.d}
 
 clean:
 	rm -f $(OBJECTS) main
