@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json.hpp"
 #include "ECS/ECS.hpp"
 #include "Game.hpp"
 #include "Vector2D.hpp"
@@ -16,10 +17,59 @@ std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 SDL_Event* event;
+Entity* table_users_column = nullptr;
+Entity* table_ips_column = nullptr;
+
+std::ifstream config_file;
+nlohmann::json config_json;
 
 void goBack() {
     Mix_PlayChannel(-1, this->sound_button, 0);
     this->change_to_scene = this->parent_scene;
+}
+
+void setUsersIpTable() {
+    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
+    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
+
+    std::vector<std::string> users = {};
+    std::vector<std::string> ips = {};
+    int max_size_user = 0;
+    for(auto const& [user, ip] : Game::USERS_IP) {
+        users.push_back(user);
+        ips.push_back(ip);
+        if(user.size() > max_size_user) { max_size_user = user.size(); }
+    }
+
+    for(std::string& user : users) {
+        int to_pad = max_size_user - user.size();
+        std::string padding = "";
+        for(int i=0; i<to_pad; ++i) { padding += ' '; }
+        user = padding + user;
+        std::cout << "user:"<<user << '\n';
+    }
+    for(std::string& ip : ips) {
+        std::cout << "ip:" << ip << '\n';
+    }
+
+    if(this->table_users_column != nullptr) {
+        this->table_users_column->destroy();
+        this->table_ips_column->destroy();
+        this->table_users_column = nullptr;
+        this->table_ips_column = nullptr;
+    }
+
+    this->table_users_column = &createUIMultilineText(
+        "users_column", users,
+        50, 50,
+        Game::default_text_color, background_color, border_color
+    );
+    TextBoxComponent& left_column = this->table_users_column->getComponent<TextBoxComponent>();
+    this->table_ips_column = &createUIMultilineText(
+        "ips_column", ips,
+        left_column.x + left_column.w - left_column.border_thickness, left_column.y,
+        Game::default_text_color, background_color, border_color
+    );
 }
 
 public:
@@ -38,12 +88,12 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
+    setUsersIpTable();
     
-    const int back_button_y = 50;
-    Entity& back_button = createUIButton(
+    createUIButton(
         "button_back", 
         "Back", 
-        50, -back_button_y, 
+        50, -50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             this->goBack();

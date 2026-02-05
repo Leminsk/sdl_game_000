@@ -169,6 +169,7 @@ void setRenderRects(float x, float y, float width, float height) {
 // runs callback for onMouseDown if mouse_pos is inside the button area
 // returns true if callback was run
 bool onMousePress(const Vector2D& mouse_pos) {
+    if(this->onMouseDown == nullptr) { return false; }
     bool pressed_on_button = false;
     if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)) {
         this->mouse_down = true;
@@ -181,6 +182,7 @@ bool onMousePress(const Vector2D& mouse_pos) {
 // runs callback for onMouseUp if mouse_pos is inside the button area
 // returns true if callback was run
 bool onMouseRelease(const Vector2D& mouse_pos) {
+    if(this->onMouseUp == nullptr) { return false; }
     bool released_on_button = false;
     if(
         this->mouse_down &&
