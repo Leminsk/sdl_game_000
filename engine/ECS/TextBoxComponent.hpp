@@ -8,6 +8,7 @@
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "Colliders/Collision.hpp"
+#include "../TextFieldEditStyle.hpp"
 
 // Text with background surrounded by a border
 class TextBoxComponent : public Component {
@@ -87,7 +88,7 @@ float y = 0.0f; float inner_y;
 
 
 bool editing = false;
-int edit_style = 0; // 0: non-editable, 1: IP-editable, 2: general-editable
+TextFieldEditStyle edit_style = TextFieldEditStyle::NONE;
 int cursor_pos = 0;
 
 TextBoxComponent(
@@ -97,7 +98,7 @@ TextBoxComponent(
     int border_thickness=3,
     std::function<void(TextBoxComponent&)> onUp = nullptr,
     std::function<void(TextBoxComponent&)> onDown = nullptr,
-    int edit_style=0,
+    TextFieldEditStyle edit_style=TextFieldEditStyle::NONE,
     const char* path=nullptr
 ) : onMouseUp(onUp), onMouseDown(onDown) {
     this->edit_style = edit_style;
@@ -201,7 +202,7 @@ bool onMouseRelease(const Vector2D& mouse_pos) {
 // sym uses the virtual code, so it's independent of physical layout
 void handleKeyDown(SDL_Keycode virtual_key) {
     if(this->key_already_pressed) {    
-        if(timeDiffMs(this->key_frame_ref, Game::FRAME_COUNT, Game::MAX_FRAME_DELAY) >= 20) {
+        if(timeDiffMs(this->key_frame_ref, Game::FRAME_COUNT, Game::MAX_FRAME_DELAY) >= 1) {
             this->key_already_pressed = false;
             this->key_frame_ref = Game::FRAME_COUNT;
         }

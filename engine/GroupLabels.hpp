@@ -5,5 +5,7 @@ enum groupLabels {
     groupBuildings,
     groupBackgroundUI,
     groupUI,
-    groupPriorityUI
+    groupPriorityUI,
+    groupModalBackground,
+    groupModalForeground
 };

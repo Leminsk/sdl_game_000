@@ -7,6 +7,8 @@
 #include "ECS/Colliders/Collider.hpp"
 #include "ECS/Colliders/Collision.hpp"
 #include "GroupLabels.hpp"
+#include "ModalContentType.hpp"
+#include "TextFieldEditStyle.hpp"
 
 Entity& createDrone(float pos_x, float pos_y, MainColors c) {
     auto& new_drone(Game::manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
@@ -52,15 +54,16 @@ Entity& createUIButton(
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color,
     std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
-    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){}
+    std::function<void(TextBoxComponent&)> onDown = [](TextBoxComponent&){},
+    groupLabels group=groupUI
 ) {
     auto& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
         text_color, bg_color, border_color, 3,
-        onUp, onDown, 0
+        onUp, onDown
     );
-    new_text_box.addGroup(groupUI);
+    new_text_box.addGroup(group);
     return new_text_box;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
@@ -68,18 +71,20 @@ Entity& createUITextField(
     const std::string& id, 
     const std::string& text="UI_TEXTFIELD",
     int pos_x=0, int pos_y=0,
+    TextFieldEditStyle edit_style=TextFieldEditStyle::NONE,
     const SDL_Color& text_color=Game::default_text_color, 
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color,
-    std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){}
+    std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
+    groupLabels group=groupUI
 ) {
     auto& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
         text_color, bg_color, border_color, 3,
-        onUp, [](TextBoxComponent&){}, 1
+        onUp, [](TextBoxComponent&){}, edit_style
     );
-    new_text_box.addGroup(groupUI);
+    new_text_box.addGroup(group);
     return new_text_box;
 }
 
@@ -165,6 +170,78 @@ Entity& createUIMapThumbnail(
     }    
     new_map_thumbnail.addGroup(groupUI);
     return new_map_thumbnail;
+}
+// this assumes that the content_entity has been created as part of the groupModalForeground
+// will create a set of entities and return them as a vector of entity pointers
+// { modal_background, cancel_button, confirm_button, content_entity }
+std::vector<Entity*> createUIModal(
+    const std::string& id, 
+    ModalContentType content_type,
+    Entity* content_entity,
+    int pos_x=0, int pos_y=0, int width=100, int height=50, 
+    std::function<void(TextBoxComponent&)> onUpCancel = [](TextBoxComponent&){},
+    std::function<void(TextBoxComponent&)> onUpConfirm = [](TextBoxComponent&){},
+    const SDL_Color& bg_color=Game::default_bg_color, 
+    const SDL_Color& border_color=Game::default_text_color
+) {
+    Entity* cancel_button = &createUIButton(
+        id + "_button_left", 
+        "Cancel", 
+        0, 0, 
+        COLORS_RED, COLORS_BLACK, COLORS_RED, 
+        onUpCancel, [](TextBoxComponent&){},
+        groupModalForeground
+    );
+    Entity* confirm_button = &createUIButton(
+        id + "_button_right", 
+        "  OK  ", 
+        0, 0, 
+        COLORS_GREEN, COLORS_BLACK, COLORS_GREEN, 
+        onUpConfirm, [](TextBoxComponent&){},
+        groupModalForeground
+    );
+    TextBoxComponent& t_cancel = cancel_button->getComponent<TextBoxComponent>();
+    TextBoxComponent& t_confirm = confirm_button->getComponent<TextBoxComponent>();
+
+    const int border_thickness = 3;
+    const int spacing = 10;
+    const int content_x = pos_x + border_thickness + spacing;
+    const int content_y = pos_y + border_thickness + spacing;
+    int content_h;
+    switch(content_type) {
+        case ModalContentType::MODAL_TEXT:
+            content_entity->getComponent<TextComponent>().x = content_x;
+            content_entity->getComponent<TextComponent>().y = content_y;
+            content_h = content_entity->getComponent<TextComponent>().h;
+            break;
+        case ModalContentType::MODAL_TEXTFIELD:
+            content_entity->getComponent<TextBoxComponent>().setRenderRects(
+                content_x, content_y, 
+                content_entity->getComponent<TextBoxComponent>().w,
+                content_entity->getComponent<TextBoxComponent>().h
+            );
+            content_h = content_entity->getComponent<TextBoxComponent>().h;
+            break;
+    }
+
+    t_cancel.setRenderRects(
+        content_x, content_y + content_h + spacing,
+        t_cancel.w, t_cancel.h
+    );
+    t_confirm.setRenderRects(
+        pos_x + width - (border_thickness + spacing + t_confirm.w), content_y + content_h + spacing,
+        t_confirm.w, t_confirm.h
+    );
+
+    // abusing the fact that it creates a button, but only using it as background rects, I'm sorry future Lemos
+    Entity* modal_background = &createUIButton(
+        id + "_background", " ", pos_x, pos_y, 
+        Game::default_text_color, bg_color, border_color,
+        nullptr, nullptr,
+        groupModalBackground
+    );
+    modal_background->getComponent<TextBoxComponent>().setRenderRects(pos_x, pos_y, width, height);
+    return { modal_background, cancel_button, confirm_button, content_entity };
 }
 Entity& createBaseBuilding(
     std::string id, 

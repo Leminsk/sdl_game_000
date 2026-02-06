@@ -317,9 +317,9 @@ MainColors convertSDLColorToMainColor(const SDL_Color& sc) {
 }
 
 // gets an SDL_Event, reads the key presses, then edits the text and/or cursor_pos according to the key pressed
-// 0: non-editable, 1: IP-editable, 2: general-editable
-void handleTextEditing(SDL_Keycode virtual_key, int edit_style, std::string& text, int& cursor_pos, bool& exit_editing) {
-    if(edit_style == 0) { return; }
+// NONE: non-editable, IP: only valid IP characters, GENERAL: ASCII characters allowed
+void handleTextEditing(SDL_Keycode virtual_key, TextFieldEditStyle edit_style, std::string& text, int& cursor_pos, bool& exit_editing) {
+    if(edit_style == TextFieldEditStyle::NONE) { return; }
 
     const uint8_t *keystates = SDL_GetKeyboardState(NULL);
 
@@ -340,7 +340,7 @@ void handleTextEditing(SDL_Keycode virtual_key, int edit_style, std::string& tex
         exit_editing = true;
     } else {
         switch(edit_style) {
-            case 1: { 
+            case TextFieldEditStyle::IP: { 
                 switch(virtual_key) {
                     case SDLK_PERIOD: case SDLK_COLON:
                     case SDLK_0: case SDLK_1: case SDLK_2: case SDLK_3:
@@ -389,7 +389,7 @@ void handleTextEditing(SDL_Keycode virtual_key, int edit_style, std::string& tex
                     default: break;
                 }
             } break;
-            case 2: { 
+            case TextFieldEditStyle::GENERAL: { 
                 
             } break;
             default: break;

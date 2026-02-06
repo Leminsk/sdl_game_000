@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <SDL2/SDL.h>
 #include "Colors.hpp"
+#include "TextFieldEditStyle.hpp"
 
 
 uint8_t readBit(uint8_t byte, uint8_t bit);
@@ -39,6 +40,6 @@ bool isSameColor(const SDL_Color& x, const SDL_Color& y);
 SDL_Color convertMainColorToSDL(const MainColors& mc);
 MainColors convertSDLColorToMainColor(const SDL_Color& sc);
 
-void handleTextEditing(SDL_Keycode virtual_key, int edit_style, std::string& text, int& cursor_pos, bool& exit_editing);
+void handleTextEditing(SDL_Keycode virtual_key, TextFieldEditStyle edit_style, std::string& text, int& cursor_pos, bool& exit_editing);
 
 int timeDiffMs(uint64_t past_frame, uint64_t current_frame, int max_frame_delay);

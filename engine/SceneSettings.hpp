@@ -7,6 +7,7 @@
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
 #include "json.hpp"
+#include "TextFieldEditStyle.hpp"
 
 class SceneSettings {
 private:
@@ -126,6 +127,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_keyboard",
         "testing_keyboard",
         fps_dropdown_comp.borderRect.x, fps_dropdown_comp.borderRect.y + fps_dropdown_comp.borderRect.h + 20,
+        TextFieldEditStyle::IP,
         Game::default_text_color, Game::default_bg_color, border_color,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
