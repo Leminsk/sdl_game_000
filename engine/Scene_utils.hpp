@@ -66,26 +66,58 @@ Entity& createUIButton(
     new_text_box.addGroup(group);
     return new_text_box;
 }
+// single color rectangle background with a border
+Entity* createUISimpleRectangle(
+    const std::string& id, 
+    int pos_x=0, int pos_y=0, int width=0, int height=0,
+    const SDL_Color& bg_color=Game::default_bg_color, 
+    const SDL_Color& border_color=Game::default_text_color,
+    groupLabels group=groupUI
+) {
+    // abusing the fact that it creates a button, but only using it as background rects. I'm sorry future Lemos
+    Entity* background = &createUIButton(
+        id, " ", pos_x, pos_y, 
+        Game::default_text_color, bg_color, border_color,
+        nullptr, nullptr,
+        group
+    );
+    background->getComponent<TextBoxComponent>().setRenderRects(pos_x, pos_y, width, height);
+    return background;
+}
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-Entity& createUITextField(
+// returns { text_field, background }
+std::vector<Entity*> createUITextField(
     const std::string& id, 
     const std::string& text="UI_TEXTFIELD",
     int pos_x=0, int pos_y=0,
     TextFieldEditStyle edit_style=TextFieldEditStyle::NONE,
+    int fixed_character_width=1,
     const SDL_Color& text_color=Game::default_text_color, 
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color,
     std::function<void(TextBoxComponent&)> onUp = [](TextBoxComponent&){},
     groupLabels group=groupUI
 ) {
-    auto& new_text_box(Game::manager->addEntity(id));
+    Entity& new_text_box(Game::manager->addEntity(id));
     new_text_box.addComponent<TextBoxComponent>(
         text, pos_x, pos_y,
-        text_color, bg_color, border_color, 3,
-        onUp, [](TextBoxComponent&){}, edit_style
+        text_color, bg_color, border_color, 0,
+        onUp, [](TextBoxComponent&){}, edit_style,
+        fixed_character_width
     );
+    
+    const int border_thickness = 3;
+    const int double_thickness = border_thickness<<1;
+    TextBoxComponent& t_textbox = new_text_box.getComponent<TextBoxComponent>();
+    Entity* background = createUISimpleRectangle(
+        id + "_background", t_textbox.x, t_textbox.y, t_textbox.w + double_thickness, t_textbox.h + double_thickness,
+        bg_color, border_color, group
+    );
+    // since the proper textfield was created without a border, we have to manually reset its position to fit "inside" the background
+    t_textbox.setRenderRects(t_textbox.x + border_thickness, t_textbox.y + border_thickness, t_textbox.w, t_textbox.h);
+    background->addGroup(group);
     new_text_box.addGroup(group);
-    return new_text_box;
+    return { &new_text_box, background };
 }
 
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
@@ -178,7 +210,7 @@ std::vector<Entity*> createUIModal(
     const std::string& id, 
     ModalContentType content_type,
     Entity* content_entity,
-    int pos_x=0, int pos_y=0, int width=100, int height=50, 
+    int pos_x=0, int pos_y=0,
     std::function<void(TextBoxComponent&)> onUpCancel = [](TextBoxComponent&){},
     std::function<void(TextBoxComponent&)> onUpConfirm = [](TextBoxComponent&){},
     const SDL_Color& bg_color=Game::default_bg_color, 
@@ -207,40 +239,39 @@ std::vector<Entity*> createUIModal(
     const int spacing = 10;
     const int content_x = pos_x + border_thickness + spacing;
     const int content_y = pos_y + border_thickness + spacing;
-    int content_h;
+    int content_h, content_w;
     switch(content_type) {
-        case ModalContentType::MODAL_TEXT:
-            content_entity->getComponent<TextComponent>().x = content_x;
-            content_entity->getComponent<TextComponent>().y = content_y;
-            content_h = content_entity->getComponent<TextComponent>().h;
-            break;
-        case ModalContentType::MODAL_TEXTFIELD:
-            content_entity->getComponent<TextBoxComponent>().setRenderRects(
-                content_x, content_y, 
-                content_entity->getComponent<TextBoxComponent>().w,
-                content_entity->getComponent<TextBoxComponent>().h
-            );
-            content_h = content_entity->getComponent<TextBoxComponent>().h;
-            break;
+        case ModalContentType::MODAL_TEXT: {
+            TextBoxComponent& text_box = content_entity->getComponent<TextBoxComponent>();
+            text_box.x = content_x;
+            text_box.y = content_y;
+            content_h = text_box.h;
+            content_w = text_box.w;
+        } break;
+        case ModalContentType::MODAL_TEXTFIELD: {
+            TextBoxComponent& text_box = content_entity->getComponent<TextBoxComponent>();
+            text_box.setRenderRects(content_x, content_y, text_box.w, text_box.h);
+            content_h = text_box.h;
+            content_w = text_box.w;
+        } break;
     }
 
     t_cancel.setRenderRects(
         content_x, content_y + content_h + spacing,
         t_cancel.w, t_cancel.h
     );
+    const int width = content_w + (spacing<<1) + (border_thickness<<1);
+    const int height = content_h + (spacing<<1) + spacing + t_cancel.h + (border_thickness<<1);
     t_confirm.setRenderRects(
         pos_x + width - (border_thickness + spacing + t_confirm.w), content_y + content_h + spacing,
         t_confirm.w, t_confirm.h
     );
 
-    // abusing the fact that it creates a button, but only using it as background rects, I'm sorry future Lemos
-    Entity* modal_background = &createUIButton(
-        id + "_background", " ", pos_x, pos_y, 
-        Game::default_text_color, bg_color, border_color,
-        nullptr, nullptr,
-        groupModalBackground
+    Entity* modal_background = createUISimpleRectangle(
+        id + "_background", pos_x, pos_y, width, height,
+        bg_color, border_color, groupModalBackground
     );
-    modal_background->getComponent<TextBoxComponent>().setRenderRects(pos_x, pos_y, width, height);
+
     return { modal_background, cancel_button, confirm_button, content_entity };
 }
 Entity& createBaseBuilding(

@@ -318,7 +318,10 @@ MainColors convertSDLColorToMainColor(const SDL_Color& sc) {
 
 // gets an SDL_Event, reads the key presses, then edits the text and/or cursor_pos according to the key pressed
 // NONE: non-editable, IP: only valid IP characters, GENERAL: ASCII characters allowed
-void handleTextEditing(SDL_Keycode virtual_key, TextFieldEditStyle edit_style, std::string& text, int& cursor_pos, bool& exit_editing) {
+void handleTextEditing(
+    SDL_Keycode virtual_key, TextFieldEditStyle edit_style, int character_limit, 
+    std::string& text, int& cursor_pos, bool& exit_editing
+) {
     if(edit_style == TextFieldEditStyle::NONE) { return; }
 
     const uint8_t *keystates = SDL_GetKeyboardState(NULL);
@@ -347,6 +350,7 @@ void handleTextEditing(SDL_Keycode virtual_key, TextFieldEditStyle edit_style, s
                     case SDLK_4: case SDLK_5: case SDLK_6: case SDLK_7:
                     case SDLK_8: case SDLK_9: case SDLK_a: case SDLK_b:
                     case SDLK_c: case SDLK_d: case SDLK_e: case SDLK_f: { 
+                        if(text.size() >= character_limit) { return; }
                         text = left_side + (char)virtual_key + right_side;
                         ++cursor_pos;
                     } break;
@@ -364,7 +368,9 @@ void handleTextEditing(SDL_Keycode virtual_key, TextFieldEditStyle edit_style, s
                     } break;
                     case SDLK_PASTE: { 
                         std::string clipboard_text = SDL_GetClipboardText();
-                        text = left_side + clipboard_text + right_side;
+                        std::string temp_text = left_side + clipboard_text + right_side;
+                        if(temp_text.size() >= character_limit) { return ; }
+                        text = temp_text;
                         cursor_pos += clipboard_text.size();
                     } break;
                     case SDLK_COPY: { 

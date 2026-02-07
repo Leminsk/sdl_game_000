@@ -92,7 +92,6 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
             Game::isRunning = false;
         }
     );
-    createUIMultilineText("multiline", { "first line", "second line", " ", "fourth line" }, -10, 50, Game::default_text_color, background_color, border_color);
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {

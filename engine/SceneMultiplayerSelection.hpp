@@ -46,9 +46,10 @@ void destroyAddUserModal() {
 }
 
 void createAddUserModal() {
-    Entity* modal_content = &createUITextField(
-        "modal_content_textfield", " ", 0, 0,
+    std::vector<Entity*> textfield_entities = createUITextField(
+        "modal_content_textfield", "", 0, 0,
         TextFieldEditStyle::IP, // TODO: change this to GENERAL later when I implement it
+        26,
         Game::default_text_color, COLORS_BLACK, Game::default_text_color,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
@@ -57,19 +58,30 @@ void createAddUserModal() {
         },
         groupModalForeground
     );
-    this->modal_entities = createUIModal(
-        "modal_add_user", ModalContentType::MODAL_TEXTFIELD, modal_content,
-        Game::SCREEN_WIDTH>>2, Game::SCREEN_HEIGHT>>2, Game::SCREEN_WIDTH>>2, Game::SCREEN_HEIGHT>>2, 
+    std::vector<Entity*> temp_modal = createUIModal(
+        "modal_add_user", ModalContentType::MODAL_TEXTFIELD, textfield_entities[1],
+        Game::SCREEN_WIDTH>>2, Game::SCREEN_HEIGHT>>2,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->destroyAddUserModal();
         },
-        [this, modal_content](TextBoxComponent& self) {
+        [this, textfield_entities](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            std::cout << modal_content->getComponent<TextBoxComponent>().text_content[0] << '\n';
+            std::cout << textfield_entities[1]->getComponent<TextBoxComponent>().text_content[0] << '\n';
         },
         COLORS_NAVIGABLE, COLORS_IMPASSABLE
     );
+    // have to reposition the field proper manually because Modal only uses one Entity (bg) as reference
+    TextBoxComponent& field_bg = temp_modal[3]->getComponent<TextBoxComponent>();
+    TextBoxComponent& field = textfield_entities[0]->getComponent<TextBoxComponent>();
+    field.setRenderRects(
+        field_bg.x + field_bg.border_thickness, field_bg.y + field_bg.border_thickness,
+        field.w, field.h
+    );
+    this->modal_entities = {
+        temp_modal[0], temp_modal[1], temp_modal[2],
+        textfield_entities[0], textfield_entities[1]
+    };
 }
 
 void setUsersIpTable() {

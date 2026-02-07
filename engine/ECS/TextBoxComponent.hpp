@@ -90,6 +90,7 @@ float y = 0.0f; float inner_y;
 bool editing = false;
 TextFieldEditStyle edit_style = TextFieldEditStyle::NONE;
 int cursor_pos = 0;
+int character_limit;
 
 TextBoxComponent(
     const std::string& text, 
@@ -99,10 +100,18 @@ TextBoxComponent(
     std::function<void(TextBoxComponent&)> onUp = nullptr,
     std::function<void(TextBoxComponent&)> onDown = nullptr,
     TextFieldEditStyle edit_style=TextFieldEditStyle::NONE,
+    int character_limit=-1,
     const char* path=nullptr
 ) : onMouseUp(onUp), onMouseDown(onDown) {
     this->edit_style = edit_style;
-    setProportions(pos_x, pos_y, { text }, border_thickness);
+    this->character_limit = character_limit;
+    if(character_limit > 0) {
+        std::string padding_string = "";
+        for(int i=0; i<character_limit; ++i) { padding_string += ' '; }
+        setProportions(pos_x, pos_y, { padding_string }, border_thickness);
+    } else {
+        setProportions(pos_x, pos_y, { text }, border_thickness);
+    }    
     setColors(t_c, bg_c, b_c);
     this->font_path = path;
     setText(text, path);
@@ -132,9 +141,14 @@ TextBoxComponent(
 
 void setText(std::string text="", const char* path=nullptr) {
     if(this->texture != NULL) { SDL_DestroyTexture(this->texture); }
-    if(text == "") { text = "PLACEHOLDER"; }
+    
     int width, height;
-    this->texture = TextureManager::LoadTextTexture(text.c_str(), this->text_color, width, height, path);
+    if(text == "") { 
+        const char* placeholder = " ";
+        this->texture = TextureManager::LoadTextTexture(placeholder, this->text_color, width, height, path);
+    } else {
+        this->texture = TextureManager::LoadTextTexture(text.c_str(), this->text_color, width, height, path);
+    }    
     this->text_content = { text };
 }
 void setMultiText(const std::vector<std::string>& lines, const char* path=nullptr) {
@@ -210,7 +224,11 @@ void handleKeyDown(SDL_Keycode virtual_key) {
         this->key_frame_ref = Game::FRAME_COUNT;
         this->key_already_pressed = true;
         bool exit_editing = false;
-        handleTextEditing(virtual_key, this->edit_style, this->text_content[0], this->cursor_pos, exit_editing);
+        handleTextEditing(
+            virtual_key, this->edit_style, 
+            this->character_limit > 0 ? this->character_limit : 100, 
+            this->text_content[0], this->cursor_pos, exit_editing
+        );
         if(exit_editing) {
             this->editing = false;
         } else {
