@@ -119,8 +119,8 @@ void setScene(SceneType t) {
     if(Game::unit_tex == nullptr || this->load_textures) { loadTextures(); }
     this->st = t;
 
-    Entity& fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 163, 3, "FPS:000.00", Game::default_text_color, groupPriorityUI);
-    this->fps_text = &fps_ui.getComponent<TextComponent>();
+    Entity* fps_ui = createUISimpleText("FPS_COUNTER", Game::SCREEN_WIDTH - 163, 3, "FPS:000.00", Game::default_text_color, groupPriorityUI);
+    this->fps_text = &fps_ui->getComponent<TextComponent>();
 
     switch(t) {
         case SceneType::MAIN_MENU: { 

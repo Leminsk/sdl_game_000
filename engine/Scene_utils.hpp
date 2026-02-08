@@ -30,7 +30,7 @@ Entity& createUIImage(
     new_ui_image.addGroup(groupBackgroundUI);
     return new_ui_image;
 }
-Entity& createUISimpleText(
+Entity* createUISimpleText(
     const std::string& id, 
     int pos_x=0, int pos_y=0,
     const std::string& text="SIMPLE_TEXT",
@@ -43,7 +43,7 @@ Entity& createUISimpleText(
         text_color, true
     );
     new_ui_text.addGroup(group);
-    return new_ui_text;
+    return &new_ui_text;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
 Entity& createUIButton(
@@ -203,14 +203,31 @@ Entity& createUIMapThumbnail(
     new_map_thumbnail.addGroup(groupUI);
     return new_map_thumbnail;
 }
-// this assumes that the content_entity has been created as part of the groupModalForeground
-// will create a set of entities and return them as a vector of entity pointers
-// { modal_background, cancel_button, confirm_button, content_entity }
+/**
+ * `id`: base id used as prefix to all other ids created by this function
+ * `content`: list of what Entities are going to be rendered in the Modal
+ * this assumes that all content Entities have been created as part of the groupModalForeground
+ * `content_types`: necessary enums describing main objects to be rendered by each Entity
+ * `offsets`: the relative render position for each Entity in relation to the Modal's inner position (inside the border)
+ * `pos_x`: Modal x coordinate
+ * `pos_y`: Modal y coordinate
+ * As with many other components, Modal's (x,y) is its outermost "top-left" corner (defaults to top-left corner of the screen)
+ * `width`: Modal inner most width, excluding border thickness(3) and inner spacing(10)
+ * `height`: Modal inner most height, excluding border thickness(3) and inner spacing(10)
+ * `onUpCancel`: callback function to be run when the "Cancel" button gets clicked
+ * `onUpConfirm`: callback function to be run when the "Confirm" button gets clicked
+ * `bg_color`: Modal's main color
+ * `border_color`: Modal's border color
+ * 
+ * returns a set of entities including the ones created by this function as well as the original content entities 
+ * { modal_background, cancel_button, confirm_button, content_0, content_1, ... }
+ */
 std::vector<Entity*> createUIModal(
-    const std::string& id, 
-    ModalContentType content_type,
-    Entity* content_entity,
-    int pos_x=0, int pos_y=0,
+    const std::string& id,
+    const std::vector<Entity*> content,
+    const std::vector<ModalContentType> content_types,
+    const std::vector<Vector2D> offsets,
+    int pos_x=0, int pos_y=0, int width=0, int height=0,
     std::function<void(TextBoxComponent&)> onUpCancel = [](TextBoxComponent&){},
     std::function<void(TextBoxComponent&)> onUpConfirm = [](TextBoxComponent&){},
     const SDL_Color& bg_color=Game::default_bg_color, 
@@ -237,42 +254,37 @@ std::vector<Entity*> createUIModal(
 
     const int border_thickness = 3;
     const int spacing = 10;
-    const int content_x = pos_x + border_thickness + spacing;
-    const int content_y = pos_y + border_thickness + spacing;
-    int content_h, content_w;
-    switch(content_type) {
-        case ModalContentType::MODAL_TEXT: {
-            TextBoxComponent& text_box = content_entity->getComponent<TextBoxComponent>();
-            text_box.x = content_x;
-            text_box.y = content_y;
-            content_h = text_box.h;
-            content_w = text_box.w;
-        } break;
-        case ModalContentType::MODAL_TEXTFIELD: {
-            TextBoxComponent& text_box = content_entity->getComponent<TextBoxComponent>();
-            text_box.setRenderRects(content_x, content_y, text_box.w, text_box.h);
-            content_h = text_box.h;
-            content_w = text_box.w;
-        } break;
+    const int base_x = pos_x + border_thickness + spacing;
+    const int base_y = pos_y + border_thickness + spacing;
+
+    for(int i=0; i<content.size(); ++i) {
+        switch(content_types[i]) {
+            case ModalContentType::MODAL_TEXT: {
+                TextComponent& text = content[i]->getComponent<TextComponent>();
+                text.setRenderPos(base_x + offsets[i].x, base_y + offsets[i].y, text.w, text.h);
+            } break;
+            case ModalContentType::MODAL_TEXTBOX: {
+                TextBoxComponent& text_box = content[i]->getComponent<TextBoxComponent>();
+                text_box.setRenderRects(base_x + offsets[i].x, base_y + offsets[i].y, text_box.w, text_box.h);
+            } break;
+        }
     }
 
-    t_cancel.setRenderRects(
-        content_x, content_y + content_h + spacing,
-        t_cancel.w, t_cancel.h
-    );
-    const int width = content_w + (spacing<<1) + (border_thickness<<1);
-    const int height = content_h + (spacing<<1) + spacing + t_cancel.h + (border_thickness<<1);
-    t_confirm.setRenderRects(
-        pos_x + width - (border_thickness + spacing + t_confirm.w), content_y + content_h + spacing,
-        t_confirm.w, t_confirm.h
-    );
+    const int buttons_y = base_y + height + spacing;
+    t_cancel.setRenderRects(base_x, buttons_y, t_cancel.w, t_cancel.h);
+    const int modal_width = width + (spacing<<1) + (border_thickness<<1);
+    const int modal_height = height + (spacing<<1) + spacing + t_cancel.h + (border_thickness<<1);
+    const int button_confirm_x = base_x + width - t_confirm.w;
+    t_confirm.setRenderRects(button_confirm_x, buttons_y, t_confirm.w, t_confirm.h);
 
     Entity* modal_background = createUISimpleRectangle(
-        id + "_background", pos_x, pos_y, width, height,
+        id + "_background", pos_x, pos_y, modal_width, modal_height,
         bg_color, border_color, groupModalBackground
     );
 
-    return { modal_background, cancel_button, confirm_button, content_entity };
+    std::vector<Entity*> res = { modal_background, cancel_button, confirm_button };
+    for(Entity* e : content) { res.push_back(e); }
+    return res;
 }
 Entity& createBaseBuilding(
     std::string id, 

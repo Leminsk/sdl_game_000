@@ -55,7 +55,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     const int base_x = 70;
     const int base_y = 50;
 
-    this->title = &createUISimpleText("select_map_title", base_x, max_y_title, "-- Map Selection --");
+    this->title = createUISimpleText("select_map_title", base_x, max_y_title, "-- Map Selection --");
     
     const std::string maps_dir = "assets/maps/";
     std::vector<std::string> map_names = getFileNamesInDirectory(maps_dir, "BMP");

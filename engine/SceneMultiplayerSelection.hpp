@@ -46,8 +46,9 @@ void destroyAddUserModal() {
 }
 
 void createAddUserModal() {
-    std::vector<Entity*> textfield_entities = createUITextField(
-        "modal_content_textfield", "", 0, 0,
+    Entity* textfield_username_label = createUISimpleText("modal_content_username_simpletext", 0, 0, "Username:", Game::default_text_color, groupModalForeground);
+    std::vector<Entity*> username_entities = createUITextField(
+        "modal_content_username_textfield", "", 0, 0,
         TextFieldEditStyle::IP, // TODO: change this to GENERAL later when I implement it
         26,
         Game::default_text_color, COLORS_BLACK, Game::default_text_color,
@@ -58,30 +59,69 @@ void createAddUserModal() {
         },
         groupModalForeground
     );
-    std::vector<Entity*> temp_modal = createUIModal(
-        "modal_add_user", ModalContentType::MODAL_TEXTFIELD, textfield_entities[1],
+    username_entities.insert(username_entities.begin(), textfield_username_label);
+
+    Entity* textfield_ip_label = createUISimpleText("modal_content_ip_simpletext", 0, 0, "IPv4 or IPv6:", Game::default_text_color, groupModalForeground);
+    std::vector<Entity*> ip_entities = createUITextField(
+        "modal_content_ip_textfield", "", 0, 0,
+        TextFieldEditStyle::IP,
+        39,
+        Game::default_text_color, COLORS_BLACK, Game::default_text_color,
+        [this](TextBoxComponent& self) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            self.editing = true;
+            self.cursor_pos = self.text_content[0].size();
+        },
+        groupModalForeground
+    );
+    ip_entities.insert(ip_entities.begin(), textfield_ip_label);
+    
+    std::vector<Entity*> m_entities = username_entities;
+    m_entities.push_back(ip_entities[0]);
+    m_entities.push_back(ip_entities[1]);
+    m_entities.push_back(ip_entities[2]);
+
+    TextComponent& username_label_text = username_entities[0]->getComponent<TextComponent>();
+    TextBoxComponent& username_bg_textbox = username_entities[2]->getComponent<TextBoxComponent>();
+    TextComponent& ip_label_text = ip_entities[0]->getComponent<TextComponent>();
+    TextBoxComponent& ip_bg_textbox = ip_entities[2]->getComponent<TextBoxComponent>();
+    
+    const float username_label_offset = 0;
+    const float username_textfield_bg_offset = username_label_text.h + 2;
+    const float username_textfield_fg_offset = username_textfield_bg_offset + username_bg_textbox.border_thickness;
+    const float ip_label_offset = username_textfield_bg_offset + username_bg_textbox.h + 10;
+    const float ip_textfield_bg_offset = ip_label_offset + ip_label_text.h + 2;
+    const float ip_textfield_fg_offset = ip_textfield_bg_offset + ip_bg_textbox.border_thickness;
+
+    const int content_zone_width = ip_bg_textbox.w;
+    const int content_zone_height = ip_textfield_bg_offset + ip_bg_textbox.h;
+
+    this->modal_entities = createUIModal(
+        "modal_add_user", m_entities, 
+        { 
+            ModalContentType::MODAL_TEXT, ModalContentType::MODAL_TEXTBOX, ModalContentType::MODAL_TEXTBOX,
+            ModalContentType::MODAL_TEXT, ModalContentType::MODAL_TEXTBOX, ModalContentType::MODAL_TEXTBOX
+        },
+        { 
+            { 0, username_label_offset },
+            { static_cast<float>(username_bg_textbox.border_thickness), username_textfield_fg_offset },
+            { 0, username_textfield_bg_offset },
+            { 0, ip_label_offset },
+            { static_cast<float>(ip_bg_textbox.border_thickness), ip_textfield_fg_offset },
+            { 0, ip_textfield_bg_offset }
+        },
         Game::SCREEN_WIDTH>>2, Game::SCREEN_HEIGHT>>2,
+        content_zone_width, content_zone_height,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->destroyAddUserModal();
         },
-        [this, textfield_entities](TextBoxComponent& self) {
+        [this, m_entities](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            std::cout << textfield_entities[1]->getComponent<TextBoxComponent>().text_content[0] << '\n';
+            std::cout << "Username:" << m_entities[1]->getComponent<TextBoxComponent>().text_content[0] << " IP:" << m_entities[4]->getComponent<TextBoxComponent>().text_content[0]  << '\n';
         },
         COLORS_NAVIGABLE, COLORS_IMPASSABLE
     );
-    // have to reposition the field proper manually because Modal only uses one Entity (bg) as reference
-    TextBoxComponent& field_bg = temp_modal[3]->getComponent<TextBoxComponent>();
-    TextBoxComponent& field = textfield_entities[0]->getComponent<TextBoxComponent>();
-    field.setRenderRects(
-        field_bg.x + field_bg.border_thickness, field_bg.y + field_bg.border_thickness,
-        field.w, field.h
-    );
-    this->modal_entities = {
-        temp_modal[0], temp_modal[1], temp_modal[2],
-        textfield_entities[0], textfield_entities[1]
-    };
 }
 
 void setUsersIpTable() {
