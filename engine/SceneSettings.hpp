@@ -123,20 +123,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         }
     );
 
-    createUITextField(
-        "button_keyboard",
-        "testing_keyboard",
-        fps_dropdown_comp.borderRect.x, fps_dropdown_comp.borderRect.y + fps_dropdown_comp.borderRect.h + 20,
-        TextFieldEditStyle::IP,
-        16,
-        Game::default_text_color, Game::default_bg_color, border_color,
-        [this](TextBoxComponent& self) {
-            Mix_PlayChannel(-1, this->sound_button, 0);
-            self.editing = true;
-            self.cursor_pos = self.text_content[0].size();
-        }
-    );
-
     createUIButton(
         "button_back", 
         "Back", 
@@ -182,7 +168,7 @@ void changeScreenResolution(unsigned int width, unsigned int height) {
     SDL_DestroyWindow(Game::window);
     SDL_DestroyRenderer(Game::renderer);
 
-    const uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
+    const uint32_t flags = SDL_WINDOW_SHOWN;
     Game::window = SDL_CreateWindow("Bétula Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
     Game::renderer = SDL_CreateRenderer(Game::window, -1, SDL_RENDERER_ACCELERATED);
     Game::SCREEN_WIDTH = width;
@@ -224,26 +210,6 @@ bool clickedButton(Vector2D& pos) {
     }
     return false;
 }
-void handleKeyDown(SDL_Keycode key) {
-    for(auto& ui : this->ui_elements) {
-        if(ui->hasComponent<TextBoxComponent>()) {
-            if(ui->getComponent<TextBoxComponent>().editing) {
-                ui->getComponent<TextBoxComponent>().handleKeyDown(key);
-                return;
-            }
-        }
-    }
-}
-void handleKeyUp() {
-    for(auto& ui : this->ui_elements) {
-        if(ui->hasComponent<TextBoxComponent>()) {
-            if(ui->getComponent<TextBoxComponent>().editing) {
-                ui->getComponent<TextBoxComponent>().handleKeyUp();
-                return;
-            }
-        }
-    }
-}
 
 bool clickedDropdown(Vector2D& pos) {
     for(auto& pr_ui : this->pr_ui_elements) {
@@ -281,12 +247,8 @@ void handleEventsPollEvent() {
             case SDL_MOUSEBUTTONUP: {
                 handleMouseRelease(this->event->button);
             } break;
-            case SDL_KEYUP: {
-                handleKeyUp();
-            } break;
-            case SDL_KEYDOWN: {
-                handleKeyDown(this->event->key.keysym.sym);
-            } break;
+            case SDL_KEYUP: {} break;
+            case SDL_KEYDOWN: {} break;
             case SDL_WINDOWEVENT: {
                 switch(this->event->window.event) {
                     case SDL_WINDOWEVENT_SIZE_CHANGED: {
@@ -336,6 +298,7 @@ void render() {
     for(Entity*& drop_down : opened_dropdowns) { drop_down->draw(); }
 }
 void clean() {
+    this->config_file.close();
     Game::manager->clearEntities();
 }
 };

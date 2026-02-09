@@ -1,10 +1,11 @@
 {
     "FRAME_RATE": 60,
     "FULLSCREEN": false,
-    "SCREEN_HEIGHT": 768,
-    "SCREEN_WIDTH": 1366,
+    "SCREEN_HEIGHT": 720,
+    "SCREEN_WIDTH": 1280,
     "USERS_IP": {
         "A": "127.0.0.1",
-        "B_B": "192.168.0.1"
+        "B_B": "192.168.0.1",
+        "Leminsk": "11"
     }
 }

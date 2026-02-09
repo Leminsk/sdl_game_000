@@ -72,6 +72,8 @@ class Game {
         static int SERVER_STATE_SHARE_RATE;
         static int CLIENT_PING_RATE;
         static std::map<std::string, std::string> USERS_IP;
+        static const std::vector<char> allowed_ip_characters;
+        static const std::vector<char> allowed_username_characters;
 
         Game();
         ~Game();

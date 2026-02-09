@@ -64,6 +64,23 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_16;
 int Game::SERVER_STATE_SHARE_RATE;
 int Game::CLIENT_PING_RATE;
 std::map<std::string, std::string> Game::USERS_IP;
+const std::vector<char> Game::allowed_ip_characters = { 
+    '0','1','2','3','4','5','6','7','8','9',
+    'a','b','c','d','e','f','.',':',
+    'A','B','C','D','E','F'
+};
+// testing with ascii characters only. I'll deal with non-ascii text later somehow
+const std::vector<char> Game::allowed_username_characters = { 
+    '0','1','2','3','4','5','6','7','8','9',
+    'a','b','c','d','e','f','g','h','i','j',
+    'k','l','m','n','o','p','q','r','s','t',
+    'u','v','w','x','y','z',',','.',';',':',
+    '[',']','{','}','(',')','<','>','-','_',
+    '=','+','!','@','#','$','%','&','*','|',
+    'A','B','C','D','E','F','G','H','I','J',
+    'K','L','M','N','O','P','Q','R','S','T',
+    'U','V','W','X','Y','Z','?','~','/','\\'
+}; // testing with ascii characters only. I'll deal with non-ascii text later somehow
 
 Scene* scene;
 
@@ -129,7 +146,7 @@ void Game::init(
     Game::SCREEN_HEIGHT = height;
     Game::camera_focus = Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
-    uint32_t flags = SDL_WINDOW_SHOWN | SDL_WINDOW_MOUSE_GRABBED;
+    uint32_t flags = SDL_WINDOW_SHOWN; // SDL_WINDOW_MOUSE_GRABBED to trap mouse in the window, maybe use it only during gameplay?
     if (fullscreen) {
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     }

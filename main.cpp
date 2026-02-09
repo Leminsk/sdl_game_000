@@ -154,7 +154,7 @@ int main() {
         if(ms_passed >= 1000) {
             game->AVERAGE_FPS = small_frame_counter / (ms_passed / 1000.0f);
             small_frame_counter = 0;
-            start = std::chrono::steady_clock::now();
+            start += std::chrono::seconds(1);
         }
         elapsed_time = SDL_GetTicks64();
         game->FRAME_COUNT = frame;

@@ -26,8 +26,8 @@ uint64_t key_frame_ref = 0;
 
 const int v_line_gap = 2;
 const int h_line_gap = 2;
-const int v_char_height = 32;
-const int h_char_width = 16;
+const int v_char_height = 32; // height in pixels of a single character in the text line
+const int h_char_width = 16; // width in pixels of a single character in the text line
 
 std::function<void(TextBoxComponent&)> onMouseUp = nullptr;
 std::function<void(TextBoxComponent&)> onMouseDown = nullptr;
@@ -186,7 +186,19 @@ void setRenderRects(float x, float y, float width, float height) {
 bool onMousePress(const Vector2D& mouse_pos) {
     if(this->onMouseDown == nullptr) { return false; }
     bool pressed_on_button = false;
-    if(Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)) {
+    bool clicked_zone = false;
+    if(this->character_limit > 0) { 
+        clicked_zone = Collision::pointInRect(
+            mouse_pos.x, mouse_pos.y, 
+            this->x, this->y, 
+            (this->character_limit * this->h_char_width) + (this->h_line_gap<<1) + (this->border_thickness<<1),
+            this->h
+        );
+    } else {
+        clicked_zone = Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h);
+    }
+
+    if(clicked_zone) {
         this->mouse_down = true;
         this->onMouseDown(*this);
         pressed_on_button = true;
@@ -199,10 +211,19 @@ bool onMousePress(const Vector2D& mouse_pos) {
 bool onMouseRelease(const Vector2D& mouse_pos) {
     if(this->onMouseUp == nullptr) { return false; }
     bool released_on_button = false;
-    if(
-        this->mouse_down &&
-        Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h)
-    ) {
+    bool clicked_zone = false;
+    if(this->character_limit > 0) { 
+        clicked_zone = Collision::pointInRect(
+            mouse_pos.x, mouse_pos.y, 
+            this->x, this->y, 
+            (this->character_limit * this->h_char_width) + (this->h_line_gap<<1) + (this->border_thickness<<1),
+            this->h
+        );
+    } else {
+        clicked_zone = Collision::pointInRect(mouse_pos.x, mouse_pos.y, this->x, this->y, this->w, this->h);
+    }
+
+    if(this->mouse_down && clicked_zone) {
         this->onMouseUp(*this);
         released_on_button = true;
     } else {
@@ -212,26 +233,52 @@ bool onMouseRelease(const Vector2D& mouse_pos) {
     return released_on_button;
 }
 
-// keystates represent the physical QWERTY keys (ignore other layouts)
-// sym uses the virtual code, so it's independent of physical layout
-void handleKeyDown(SDL_Keycode virtual_key) {
+// handles text 
+void handleTyping(const std::string& input_text) {
     if(this->key_already_pressed) {    
-        if(timeDiffMs(this->key_frame_ref, Game::FRAME_COUNT, Game::MAX_FRAME_DELAY) >= 1) {
+        if(timeDiffMs(this->key_frame_ref, Game::FRAME_COUNT, Game::MAX_FRAME_DELAY) >= 20) {
             this->key_already_pressed = false;
             this->key_frame_ref = Game::FRAME_COUNT;
         }
     } else {
-        this->key_frame_ref = Game::FRAME_COUNT;
-        this->key_already_pressed = true;
-        bool exit_editing = false;
-        handleTextEditing(
-            virtual_key, this->edit_style, 
-            this->character_limit > 0 ? this->character_limit : 100, 
-            this->text_content[0], this->cursor_pos, exit_editing
-        );
-        if(exit_editing) {
-            this->editing = false;
+        std::string left_side = this->text_content[0].substr(0, this->cursor_pos);
+        std::string right_side = this->text_content[0].substr(this->cursor_pos);
+
+        bool char_allowed = false;
+        switch(edit_style) {
+            case TextFieldEditStyle::IP: {
+                char_allowed = std::find(
+                    Game::allowed_ip_characters.begin(), 
+                    Game::allowed_ip_characters.end(), 
+                    input_text[0]
+                ) != Game::allowed_ip_characters.end();
+            } break;
+            case TextFieldEditStyle::GENERAL: { 
+                char_allowed = std::find(
+                    Game::allowed_username_characters.begin(), 
+                    Game::allowed_username_characters.end(), 
+                    input_text[0]
+                ) != Game::allowed_username_characters.end();
+            } break;
+            default: break;
+        }
+
+        bool changed_text = false;
+        if(
+            char_allowed && 
+            this->text_content[0].size() < character_limit && 
+            input_text.size() <= (character_limit - this->text_content[0].size())
+        ) {
+            this->key_already_pressed = true;
+            this->key_frame_ref = Game::FRAME_COUNT;
+            this->text_content[0] = left_side + input_text + right_side;
+            changed_text = true;
+            ++this->cursor_pos;
         } else {
+            std::cout << "input_text not allowed:" << input_text << "||\n";
+        }
+
+        if(changed_text) {
             this->setProportions(this->x, this->y, this->text_content, this->border_thickness);
             this->setText(this->text_content[0]);
             this->init();
@@ -241,6 +288,108 @@ void handleKeyDown(SDL_Keycode virtual_key) {
 
 void handleKeyUp() {
     this->key_already_pressed = false;
+}
+
+void handleEventsPostPoll(const uint8_t* keystates) {
+    if(this->key_already_pressed) {    
+        if(timeDiffMs(this->key_frame_ref, Game::FRAME_COUNT, Game::MAX_FRAME_DELAY) >= 120) {
+            this->key_already_pressed = false;
+            this->key_frame_ref = Game::FRAME_COUNT;
+        }
+    } else {
+        std::string& text = this->text_content[0];
+        std::string left_side = text.substr(0, this->cursor_pos);
+        std::string right_side = text.substr(this->cursor_pos);
+        this->key_already_pressed = true;
+
+        bool changed_text = false;
+        if(keystates[SDL_SCANCODE_ESCAPE] || keystates[SDL_SCANCODE_RETURN] || keystates[SDL_SCANCODE_RETURN2]) {
+            this->editing = false;
+            SDL_StopTextInput();
+        }
+        // Ctrl+C
+        else if((keystates[SDL_SCANCODE_LCTRL] || keystates[SDL_SCANCODE_RCTRL]) && keystates[SDL_SCANCODE_C]) {
+            SDL_SetClipboardText(text.c_str());
+        }
+        // Ctrl+V
+        else if((keystates[SDL_SCANCODE_LCTRL] || keystates[SDL_SCANCODE_RCTRL]) && keystates[SDL_SCANCODE_V]) {
+            std::string clipboard_text = SDL_GetClipboardText();
+            bool clipboard_allowed = false;
+            switch(edit_style) {
+                case TextFieldEditStyle::IP: {
+                    for(char& c : clipboard_text) {
+                        if(
+                            std::find(
+                                Game::allowed_ip_characters.begin(), 
+                                Game::allowed_ip_characters.end(), 
+                                c
+                            ) == Game::allowed_ip_characters.end()
+                        ) {
+                            return;
+                        }
+                    }
+                    clipboard_allowed = true;
+                } break;
+                case TextFieldEditStyle::GENERAL: { 
+                    for(char& c : clipboard_text) {
+                        if(
+                            std::find(
+                                Game::allowed_username_characters.begin(), 
+                                Game::allowed_username_characters.end(), 
+                                c
+                            ) == Game::allowed_username_characters.end()
+                        ) {
+                            return;
+                        }
+                    }
+                    clipboard_allowed = true;
+                } break;
+                default: break;
+            }
+            std::string temp_text = left_side + clipboard_text + right_side;
+            if(temp_text.size() >= character_limit) { return ; }
+            text = temp_text;
+            this->cursor_pos += clipboard_text.size();
+            changed_text = true;
+
+        } else if(keystates[SDL_SCANCODE_BACKSPACE]) {
+            if(this->cursor_pos > 0) {
+                left_side.pop_back(); 
+                text = left_side + right_side;
+                --this->cursor_pos;
+                changed_text = true;
+            }
+        } else if(keystates[SDL_SCANCODE_DELETE]) {
+            if(this->cursor_pos < text.size()) {
+                text = left_side + right_side.substr(1);
+                changed_text = true;
+            }
+        } else if(keystates[SDL_SCANCODE_HOME]) {
+            this->cursor_pos = 0;
+        } else if(keystates[SDL_SCANCODE_END]) {
+            this->cursor_pos = text.size();
+        } else if(keystates[SDL_SCANCODE_LEFT]) {
+            if(this->cursor_pos > 0) { 
+                --this->cursor_pos; 
+            }
+        } else if(keystates[SDL_SCANCODE_RIGHT]) {
+            if(this->cursor_pos < text.size()) { 
+                ++this->cursor_pos; 
+            }
+        } else {
+            this->key_already_pressed = false;
+        }
+
+        if(this->key_already_pressed) { 
+            this->key_frame_ref = Game::FRAME_COUNT;
+        }
+
+        if(changed_text) {
+            this->setProportions(this->x, this->y, this->text_content, this->border_thickness);
+            this->setText(this->text_content[0]);
+            this->init();
+        }
+    }
 }
 
 void init() override {

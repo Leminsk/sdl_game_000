@@ -15,6 +15,8 @@
 class SceneMultiplayerSelection {
 private:
 SceneType parent_scene;
+bool textinput_triggered = false;
+std::string textinput_text;
 
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
@@ -49,13 +51,14 @@ void createAddUserModal() {
     Entity* textfield_username_label = createUISimpleText("modal_content_username_simpletext", 0, 0, "Username:", Game::default_text_color, groupModalForeground);
     std::vector<Entity*> username_entities = createUITextField(
         "modal_content_username_textfield", "", 0, 0,
-        TextFieldEditStyle::IP, // TODO: change this to GENERAL later when I implement it
+        TextFieldEditStyle::GENERAL,
         26,
         Game::default_text_color, COLORS_BLACK, Game::default_text_color,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             self.editing = true;
             self.cursor_pos = self.text_content[0].size();
+            SDL_StartTextInput();
         },
         groupModalForeground
     );
@@ -71,6 +74,7 @@ void createAddUserModal() {
             Mix_PlayChannel(-1, this->sound_button, 0);
             self.editing = true;
             self.cursor_pos = self.text_content[0].size();
+            SDL_StartTextInput();
         },
         groupModalForeground
     );
@@ -118,7 +122,19 @@ void createAddUserModal() {
         },
         [this, m_entities](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            std::cout << "Username:" << m_entities[1]->getComponent<TextBoxComponent>().text_content[0] << " IP:" << m_entities[4]->getComponent<TextBoxComponent>().text_content[0]  << '\n';
+            if(this->config_file.is_open()) { this->config_file.close(); }
+            this->config_file.open("config.json");
+            if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
+            this->config_json = nlohmann::json::parse(this->config_file);
+            std::string username = m_entities[1]->getComponent<TextBoxComponent>().text_content[0];
+            std::string userip = m_entities[4]->getComponent<TextBoxComponent>().text_content[0];
+            this->config_json["USERS_IP"][username] = userip;
+            Game::USERS_IP[username] = userip;
+            std::ofstream o("config.json");
+            o << this->config_json.dump(4);
+            o.close();
+            this->destroyAddUserModal();
+            this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
         },
         COLORS_NAVIGABLE, COLORS_IMPASSABLE
     );
@@ -297,11 +313,11 @@ void handleMouseWheel(SDL_MouseWheelEvent& e) {
     }                
 }
 
-void handleKeyDown(SDL_Keycode key) {
+void handleTyping(const std::string& text) {
     for(auto& modal_fg_ui : this->modal_fg_ui_elements) {
         if(modal_fg_ui->hasComponent<TextBoxComponent>()) {
             if(modal_fg_ui->getComponent<TextBoxComponent>().editing) {
-                modal_fg_ui->getComponent<TextBoxComponent>().handleKeyDown(key);
+                modal_fg_ui->getComponent<TextBoxComponent>().handleTyping(text);
                 return;
             }
         }
@@ -309,14 +325,14 @@ void handleKeyDown(SDL_Keycode key) {
     for(auto& ui : this->ui_elements) {
         if(ui->hasComponent<TextBoxComponent>()) {
             if(ui->getComponent<TextBoxComponent>().editing) {
-                ui->getComponent<TextBoxComponent>().handleKeyDown(key);
+                ui->getComponent<TextBoxComponent>().handleTyping(text);
                 return;
             }
         }
     }
 }
 void handleKeyUp(SDL_Keycode key) {
-    if(this->event->key.keysym.sym == SDLK_ESCAPE) {
+    if(key == SDLK_ESCAPE) {
         if(this->modal_entities.size() == 0 || this->modal_entities[0] == nullptr) {
             this->goBack();
             return;
@@ -338,9 +354,9 @@ void handleKeyUp(SDL_Keycode key) {
             }
         }
     }
-    if(this->event->key.keysym.sym == SDLK_ESCAPE) {
-        if(this->modal_entities.size() > 0 && this->modal_entities[0] != nullptr) {
-            this->goBack();
+    if(key == SDLK_ESCAPE) {
+        if(!this->textinput_triggered && this->modal_entities.size() > 0 && this->modal_entities[0] != nullptr) {
+            this->destroyAddUserModal();
             return;
         }
     }
@@ -366,13 +382,35 @@ void handleEventsPollEvent() {
             case SDL_KEYUP: {
                 handleKeyUp(this->event->key.keysym.sym);
             } break;
-            case SDL_KEYDOWN: {
-                handleKeyDown(this->event->key.keysym.sym);
+            case SDL_TEXTINPUT: {
+                this->textinput_triggered = true;
+                this->textinput_text = this->event->text.text;
             } break;
         }                
     }
 }
-void handleEventsPostPoll(const uint8_t *keystates) {}
+void handleEventsPostPoll(const uint8_t *keystates) {
+    if(this->textinput_triggered) {
+        handleTyping(this->textinput_text);
+        this->textinput_triggered = false;
+    }
+    for(auto& modal_fg_ui : this->modal_fg_ui_elements) {
+        if(modal_fg_ui->hasComponent<TextBoxComponent>()) {
+            if(modal_fg_ui->getComponent<TextBoxComponent>().editing) {
+                modal_fg_ui->getComponent<TextBoxComponent>().handleEventsPostPoll(keystates);
+                return;
+            }
+        }
+    }
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleEventsPostPoll(keystates);
+                return;
+            }
+        }
+    }
+}
 void update() {
     Game::manager->refresh();
     Game::manager->preUpdate();
@@ -394,6 +432,7 @@ void render() {
     for(auto& modal_fg_ui : this->modal_fg_ui_elements) { modal_fg_ui->draw(); }
 }
 void clean() {
+    this->config_file.close();
     Game::manager->clearEntities();
     this->destroyAddUserModal();
     this->table_header_users = nullptr;
