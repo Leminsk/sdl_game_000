@@ -28,6 +28,8 @@ Entity* table_header_users = nullptr;
 Entity* table_header_ips = nullptr;
 Entity* table_column_users = nullptr;
 Entity* table_column_ips = nullptr;
+std::vector<Entity*> copy_buttons = {};
+std::vector<Entity*> delete_buttons = {};
 
 std::vector<Entity*> modal_entities = {};
 
@@ -45,6 +47,29 @@ void destroyAddUserModal() {
     }
     this->modal_entities.clear();
     this->modal_entities.shrink_to_fit();
+}
+
+void destroyTable() {
+    this->table_header_users->destroy();
+    this->table_header_ips->destroy();
+    this->table_column_users->destroy();
+    this->table_column_ips->destroy();
+    this->table_column_users = nullptr;
+    this->table_column_ips = nullptr;
+    this->table_header_users = nullptr;
+    this->table_header_ips = nullptr;
+
+    for(Entity*& e : this->copy_buttons) {
+        if(e != nullptr) { e->destroy(); e = nullptr; }
+    }
+    this->copy_buttons.clear();
+    this->copy_buttons.shrink_to_fit();
+
+    for(Entity*& e : this->delete_buttons) {
+        if(e != nullptr) { e->destroy(); e = nullptr; }
+    }
+    this->delete_buttons.clear();
+    this->delete_buttons.shrink_to_fit();
 }
 
 void createAddUserModal() {
@@ -167,19 +192,12 @@ void setUsersIpTable() {
     header_label = padding + header_label;
 
     if(this->table_header_users != nullptr) {
-        this->table_header_users->destroy();
-        this->table_header_ips->destroy();
-        this->table_column_users->destroy();
-        this->table_column_ips->destroy();
-        this->table_column_users = nullptr;
-        this->table_column_ips = nullptr;
-        this->table_header_users = nullptr;
-        this->table_header_ips = nullptr;
+        this->destroyTable();
     }
 
     this->table_header_users = &createUIMultilineText(
         "table_headers_users", { header_label },
-        50, 50,
+        100, 50,
         Game::default_text_color, background_color, border_color
     );
     TextBoxComponent& users_header = this->table_header_users->getComponent<TextBoxComponent>();
@@ -189,16 +207,36 @@ void setUsersIpTable() {
         Game::default_text_color, background_color, border_color
     );
 
+    const int ref_y = users_header.y + users_header.h;
     this->table_column_users = &createUIMultilineText(
         "users_column", users,
-        users_header.x, users_header.y + users_header.h,
+        users_header.x, ref_y,
         Game::default_text_color, background_color, border_color
     );
     this->table_column_ips = &createUIMultilineText(
         "ips_column", ips,
-        this->table_header_ips->getComponent<TextBoxComponent>().x, users_header.y + users_header.h,
+        this->table_header_ips->getComponent<TextBoxComponent>().x, ref_y,
         Game::default_text_color, background_color, border_color
     );
+
+    for(int i=0; i<users.size(); ++i) {
+        Entity* current_button = &createUIButton(
+            "copy_button_" + std::to_string(i), 
+            "Copy",
+            0, 0,
+            Game::default_text_color, COLORS_BLACK, border_color,
+            [this, i](TextBoxComponent& self) {
+                std::string user = this->table_column_users->getComponent<TextBoxComponent>().text_content[i];
+                std::string ip = this->table_column_ips->getComponent<TextBoxComponent>().text_content[i];
+                std::string content = trim_copy(user) + ' ' + trim_copy(ip);
+                std::cout << "Content: " << content << '\n';
+            }
+        );
+        TextBoxComponent& b = current_button->getComponent<TextBoxComponent>();
+        b.setRenderRects(0, 0, 0.9*b.w, 0.9*b.h); // re-scale first (eye-balled it lol), then reposition it
+        b.setRenderRects(users_header.border_thickness + users_header.x - b.w, ref_y + (i*users_header.inner_h), b.w, b.h);
+        this->copy_buttons.push_back(current_button);
+    }
 }
 
 public:
@@ -435,10 +473,6 @@ void clean() {
     this->config_file.close();
     Game::manager->clearEntities();
     this->destroyAddUserModal();
-    this->table_header_users = nullptr;
-    this->table_header_ips = nullptr;
-    this->table_column_users = nullptr;
-    this->table_column_ips = nullptr;
-    this->modal_entities = {};
+    this->destroyTable();
 }
 };
