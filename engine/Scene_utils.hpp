@@ -10,15 +10,15 @@
 #include "ModalContentType.hpp"
 #include "TextFieldEditStyle.hpp"
 
-Entity& createDrone(float pos_x, float pos_y, MainColors c) {
+Entity* createDrone(float pos_x, float pos_y, MainColors c) {
     auto& new_drone(Game::manager->addEntity("DRO" + left_pad_int(Game::UNIT_COUNTER, 5)));
     new_drone.addComponent<DroneComponent>(Vector2D(pos_x, pos_y), Game::UNIT_SIZE, Game::unit_tex, c);
     new_drone.addComponent<Wireframe>();
     new_drone.addComponent<TextComponent>("", 0, 0);
     new_drone.addGroup(groupDrones);
-    return new_drone;
+    return &new_drone;
 }
-Entity& createUIImage(
+Entity* createUIImage(
     const std::string& id, SDL_Texture* image_texture,
     int pos_x=0, int pos_y=0, int width=32, int height=32
 ) {
@@ -28,7 +28,7 @@ Entity& createUIImage(
     new_ui_image.addComponent<TransformComponent>(pos_x, pos_y, width, height, 1);
     new_ui_image.addComponent<SpriteComponent>(image_texture);
     new_ui_image.addGroup(groupBackgroundUI);
-    return new_ui_image;
+    return &new_ui_image;
 }
 Entity* createUISimpleText(
     const std::string& id, 
@@ -46,7 +46,7 @@ Entity* createUISimpleText(
     return &new_ui_text;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-Entity& createUIButton(
+Entity* createUIButton(
     const std::string& id, 
     const std::string& text="UI_BUTTON",
     int pos_x=0, int pos_y=0,
@@ -64,7 +64,7 @@ Entity& createUIButton(
         onUp, onDown
     );
     new_text_box.addGroup(group);
-    return new_text_box;
+    return &new_text_box;
 }
 // single color rectangle background with a border
 Entity* createUISimpleRectangle(
@@ -75,7 +75,7 @@ Entity* createUISimpleRectangle(
     groupLabels group=groupUI
 ) {
     // abusing the fact that it creates a button, but only using it as background rects. I'm sorry future Lemos
-    Entity* background = &createUIButton(
+    Entity* background = createUIButton(
         id, " ", pos_x, pos_y, 
         Game::default_text_color, bg_color, border_color,
         nullptr, nullptr,
@@ -121,7 +121,7 @@ std::vector<Entity*> createUITextField(
 }
 
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-Entity& createUIMultilineText(
+Entity* createUIMultilineText(
     const std::string& id, 
     const std::vector<std::string>& lines,
     int pos_x=0, int pos_y=0,
@@ -135,7 +135,7 @@ Entity& createUIMultilineText(
         text_color, bg_color, border_color
     );
     new_multiline_text.addGroup(groupUI);
-    return new_multiline_text;            
+    return &new_multiline_text;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
 Entity& createUIDropdown(
@@ -233,7 +233,7 @@ std::vector<Entity*> createUIModal(
     const SDL_Color& bg_color=Game::default_bg_color, 
     const SDL_Color& border_color=Game::default_text_color
 ) {
-    Entity* cancel_button = &createUIButton(
+    Entity* cancel_button = createUIButton(
         id + "_button_left", 
         "Cancel", 
         0, 0, 
@@ -241,7 +241,7 @@ std::vector<Entity*> createUIModal(
         onUpCancel, [](TextBoxComponent&){},
         groupModalForeground
     );
-    Entity* confirm_button = &createUIButton(
+    Entity* confirm_button = createUIButton(
         id + "_button_right", 
         "  OK  ", 
         0, 0, 
@@ -286,7 +286,7 @@ std::vector<Entity*> createUIModal(
     for(Entity* e : content) { res.push_back(e); }
     return res;
 }
-Entity& createBaseBuilding(
+Entity* createBaseBuilding(
     std::string id, 
     float world_pos_x, float world_pos_y, 
     float width,
@@ -299,7 +299,7 @@ Entity& createBaseBuilding(
     building.addComponent<Collider>(ColliderType::HEXAGON);
     building.addComponent<Wireframe>();
     building.addGroup(groupBuildings);
-    return building;
+    return &building;
 }
 void SetSolidTileNeighbors(uint8_t* neighbors, int map_x, int map_y, const std::vector<std::vector<int>>& layout) {
         int dec_map_x = map_x-1;

@@ -134,7 +134,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, std::vector<std:
             if(this->map->hexFreeInMap(hex_hull, tile_xy)) {
                 Vector2D hex_center = convertHexToWorld(hex_tile);
                 std::cout << "success on first pass: " << hex_center << '\n';
-                created_building = &createBaseBuilding(
+                created_building = createBaseBuilding(
                     "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                     hex_center.x - HEX_SIDE_LENGTH, hex_center.y - HEX_SIDE_LENGTH, width, map_pixels[map_y][map_x]
                 );
@@ -174,7 +174,7 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, std::vector<std:
                 }
                 if(valid_spawn) {
                     std::cout << "success on second pass: " << free_pos_x << ", " << free_pos_y << '\n';
-                    created_building = &createBaseBuilding(
+                    created_building = createBaseBuilding(
                         "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                         free_pos_x, free_pos_y, width, map_pixels[map_y][map_x]
                     );

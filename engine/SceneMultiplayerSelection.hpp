@@ -147,19 +147,21 @@ void createAddUserModal() {
         },
         [this, m_entities](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
-            if(this->config_file.is_open()) { this->config_file.close(); }
-            this->config_file.open("config.json");
-            if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
-            this->config_json = nlohmann::json::parse(this->config_file);
             std::string username = m_entities[1]->getComponent<TextBoxComponent>().text_content[0];
             std::string userip = m_entities[4]->getComponent<TextBoxComponent>().text_content[0];
-            this->config_json["USERS_IP"][username] = userip;
-            Game::USERS_IP[username] = userip;
-            std::ofstream o("config.json");
-            o << this->config_json.dump(4);
-            o.close();
-            this->destroyAddUserModal();
-            this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
+            if(trim_copy(username).size() > 0 || trim_copy(userip).size() > 0) {
+                if(this->config_file.is_open()) { this->config_file.close(); }
+                this->config_file.open("config.json");
+                if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
+                this->config_json = nlohmann::json::parse(this->config_file);
+                this->config_json["USERS_IP"][username] = userip;
+                Game::USERS_IP[username] = userip;
+                std::ofstream o("config.json");
+                o << this->config_json.dump(4);
+                o.close();
+                this->destroyAddUserModal();
+                this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
+            }
         },
         COLORS_NAVIGABLE, COLORS_IMPASSABLE
     );
@@ -195,32 +197,32 @@ void setUsersIpTable() {
         this->destroyTable();
     }
 
-    this->table_header_users = &createUIMultilineText(
+    this->table_header_users = createUIMultilineText(
         "table_headers_users", { header_label },
         100, 50,
         Game::default_text_color, background_color, border_color
     );
     TextBoxComponent& users_header = this->table_header_users->getComponent<TextBoxComponent>();
-    this->table_header_ips = &createUIMultilineText(
+    this->table_header_ips = createUIMultilineText(
         "table_headers_users", { "IP" },
         users_header.x + users_header.w - users_header.border_thickness, users_header.y,
         Game::default_text_color, background_color, border_color
     );
 
     const int ref_y = users_header.y + users_header.h;
-    this->table_column_users = &createUIMultilineText(
+    this->table_column_users = createUIMultilineText(
         "users_column", users,
         users_header.x, ref_y,
         Game::default_text_color, background_color, border_color
     );
-    this->table_column_ips = &createUIMultilineText(
+    this->table_column_ips = createUIMultilineText(
         "ips_column", ips,
         this->table_header_ips->getComponent<TextBoxComponent>().x, ref_y,
         Game::default_text_color, background_color, border_color
     );
 
     for(int i=0; i<users.size(); ++i) {
-        Entity* current_button = &createUIButton(
+        Entity* current_button = createUIButton(
             "copy_button_" + std::to_string(i), 
             "Copy",
             0, 0,
@@ -258,7 +260,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     setUsersIpTable();
 
     TextBoxComponent& t_header_ips = this->table_header_ips->getComponent<TextBoxComponent>();
-    Entity* add_button = &createUIButton(
+    Entity* add_button = createUIButton(
         "button_add_user", 
         " + ",
         t_header_ips.x + t_header_ips.w + 4, t_header_ips.y,

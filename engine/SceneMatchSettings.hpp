@@ -52,7 +52,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
     // TODO: this will actually crash the game if clicked initially with "Random" colors. IMPLEMENT random color assignment on scene change.
-    this->button_go = &createUIButton(
+    this->button_go = createUIButton(
         "button_go", 
         "PLAY", 
         -50, -50, 
@@ -238,7 +238,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                 if(clickedDropdown(pos)) {
                     if(isValidMapSpawns() && isValidPlayerSpawn()) {
                         if(this->button_go == nullptr) {
-                            this->button_go = &createUIButton(
+                            this->button_go = createUIButton(
                                 "button_go", 
                                 "PLAY", 
                                 -50, -50, 

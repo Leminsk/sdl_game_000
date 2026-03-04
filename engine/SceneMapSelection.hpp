@@ -91,7 +91,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     }
 
     const int back_button_y = 50;
-    Entity& back_button = createUIButton(
+    Entity* back_button = createUIButton(
         "button_back", 
         "Back", 
         50, -back_button_y, 
@@ -104,7 +104,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     int ui_elements_stacked_height = this->max_y_title + this->title->getComponent<TextComponent>().h + ((y_offset+1) * this->thumbnail_height);
     int height_overlap = ui_elements_stacked_height - Game::SCREEN_HEIGHT;
     if(height_overlap > 0) {
-        this->min_y_title = this->max_y_title - (height_overlap + back_button_y + back_button.getComponent<TextBoxComponent>().h);
+        this->min_y_title = this->max_y_title - (height_overlap + back_button_y + back_button->getComponent<TextBoxComponent>().h);
     } else {
         this->min_y_title = this->max_y_title;
     }
@@ -168,7 +168,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
             if(!clickedButton(pos)) {
                 if(clickedThumbnail(pos)) {
                     if(this->button_go == nullptr) {
-                        this->button_go = &createUIButton(
+                        this->button_go = createUIButton(
                             "button_go", 
                             " Go ", 
                             -50, -50, 
