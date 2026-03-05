@@ -19,15 +19,9 @@ std::vector<int> width_per_line = {};
 SDL_Rect srcRect;
 bool single_line = true;
 int lines_amount = 1;
-int line_thickness;
 
 bool key_already_pressed = false;
 uint64_t key_frame_ref = 0;
-
-const int v_line_gap = 2;
-const int h_line_gap = 2;
-const int v_char_height = 32; // height in pixels of a single character in the text line
-const int h_char_width = 16; // width in pixels of a single character in the text line
 
 std::function<void(TextBoxComponent&)> onMouseUp = nullptr;
 std::function<void(TextBoxComponent&)> onMouseDown = nullptr;
@@ -76,6 +70,12 @@ int rotation_tick = 1;
 bool rotating = false;
 
 int border_thickness;
+int line_thickness;
+
+const int v_line_gap = 2; // vertical gap between the border and the text line
+const int h_line_gap = 2; // horizontal gap between the border and the text line
+const int v_char_height = 32; // height in pixels of a single character in the text line
+const int h_char_width = 16; // width in pixels of a single character in the text line
 
 const char* font_path;
 SDL_Color text_color, bg_color, border_color;

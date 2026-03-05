@@ -149,7 +149,7 @@ void createAddUserModal() {
             Mix_PlayChannel(-1, this->sound_button, 0);
             std::string username = m_entities[1]->getComponent<TextBoxComponent>().text_content[0];
             std::string userip = m_entities[4]->getComponent<TextBoxComponent>().text_content[0];
-            if(trim_copy(username).size() > 0 || trim_copy(userip).size() > 0) {
+            if(trim_copy(username).size() > 0 && trim_copy(userip).size() > 0) {
                 if(this->config_file.is_open()) { this->config_file.close(); }
                 this->config_file.open("config.json");
                 if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
@@ -221,6 +221,10 @@ void setUsersIpTable() {
         Game::default_text_color, background_color, border_color
     );
 
+    TextBoxComponent& users_column = this->table_column_users->getComponent<TextBoxComponent>();
+    const int button_height = users_column.line_thickness;
+    const int button_ref_y = ref_y + users_column.border_thickness + users_column.v_line_gap;
+
     for(int i=0; i<users.size(); ++i) {
         Entity* current_button = createUIButton(
             "copy_button_" + std::to_string(i), 
@@ -231,12 +235,16 @@ void setUsersIpTable() {
                 std::string user = this->table_column_users->getComponent<TextBoxComponent>().text_content[i];
                 std::string ip = this->table_column_ips->getComponent<TextBoxComponent>().text_content[i];
                 std::string content = trim_copy(user) + ' ' + trim_copy(ip);
-                std::cout << "Content: " << content << '\n';
+                SDL_SetClipboardText(content.c_str());
             }
         );
         TextBoxComponent& b = current_button->getComponent<TextBoxComponent>();
-        b.setRenderRects(0, 0, 0.9*b.w, 0.9*b.h); // re-scale first (eye-balled it lol), then reposition it
-        b.setRenderRects(users_header.border_thickness + users_header.x - b.w, ref_y + (i*users_header.inner_h), b.w, b.h);
+        b.setRenderRects(0, 0, b.w, button_height);
+        b.setRenderRects(
+            b.border_thickness + users_header.x - b.w, 
+            button_ref_y + (i*button_height), 
+            b.w, b.h
+        );
         this->copy_buttons.push_back(current_button);
     }
 }
