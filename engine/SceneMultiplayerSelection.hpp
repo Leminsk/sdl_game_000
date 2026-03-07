@@ -31,7 +31,8 @@ Entity* table_column_ips = nullptr;
 std::vector<Entity*> copy_buttons = {};
 std::vector<Entity*> delete_buttons = {};
 
-std::vector<Entity*> modal_entities = {};
+std::vector<Entity*> modal_add_user_entities = {};
+std::vector<Entity*> modal_delete_user_entities = {};
 
 std::ifstream config_file;
 nlohmann::json config_json;
@@ -42,11 +43,18 @@ void goBack() {
 }
 
 void destroyAddUserModal() {
-    for(Entity*& e : this->modal_entities) {
+    for(Entity*& e : this->modal_add_user_entities) {
         if(e != nullptr) { e->destroy(); e = nullptr; }
     }
-    this->modal_entities.clear();
-    this->modal_entities.shrink_to_fit();
+    this->modal_add_user_entities.clear();
+    this->modal_add_user_entities.shrink_to_fit();
+}
+void destroyDeleteUserModal() {
+    for(Entity*& e : this->modal_delete_user_entities) {
+        if(e != nullptr) { e->destroy(); e = nullptr; }
+    }
+    this->modal_delete_user_entities.clear();
+    this->modal_delete_user_entities.shrink_to_fit();
 }
 
 void destroyTable() {
@@ -125,7 +133,7 @@ void createAddUserModal() {
     const int content_zone_width = ip_bg_textbox.w;
     const int content_zone_height = ip_textfield_bg_offset + ip_bg_textbox.h;
 
-    this->modal_entities = createUIModal(
+    this->modal_add_user_entities = createUIModal(
         "modal_add_user", m_entities, 
         { 
             ModalContentType::MODAL_TEXT, ModalContentType::MODAL_TEXTBOX, ModalContentType::MODAL_TEXTBOX,
@@ -162,6 +170,44 @@ void createAddUserModal() {
                 this->destroyAddUserModal();
                 this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
             }
+        },
+        COLORS_NAVIGABLE, COLORS_IMPASSABLE
+    );
+}
+
+void createDeleteUserModal(std::string user_name) {
+    Entity* main_text = createUISimpleText("modal_delete_content_simpletext", 0, 0, "Delete this user from the table?", Game::default_text_color, groupModalForeground);
+    Entity* username_text = createUISimpleText("modal_delete_content_simpletext", 0, 0, user_name, COLORS_RED, groupModalForeground);
+    TextComponent& m_text = main_text->getComponent<TextComponent>();
+    const int content_zone_width = m_text.w;
+    const float offset = m_text.h + 2;
+    const int content_zone_height = offset + username_text->getComponent<TextComponent>().h;
+
+    std::vector<Entity*> m_entities = { main_text, username_text };
+
+    this->modal_delete_user_entities = createUIModal(
+        "modal_delete_user", m_entities, 
+        { ModalContentType::MODAL_TEXT, ModalContentType::MODAL_TEXT },
+        { { 0, 0 }, { 0, offset } },
+        Game::SCREEN_WIDTH>>2, Game::SCREEN_HEIGHT>>2,
+        content_zone_width, content_zone_height,
+        [this](TextBoxComponent& self) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            this->destroyDeleteUserModal();
+        },
+        [this, user_name](TextBoxComponent& self) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            if(this->config_file.is_open()) { this->config_file.close(); }
+            this->config_file.open("config.json");
+            if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
+            this->config_json = nlohmann::json::parse(this->config_file);
+            this->config_json["USERS_IP"].erase(user_name);
+            Game::USERS_IP.erase(user_name);
+            std::ofstream o("config.json");
+            o << this->config_json.dump(4);
+            o.close();
+            this->destroyDeleteUserModal();
+            this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
         },
         COLORS_NAVIGABLE, COLORS_IMPASSABLE
     );
@@ -222,30 +268,50 @@ void setUsersIpTable() {
     );
 
     TextBoxComponent& users_column = this->table_column_users->getComponent<TextBoxComponent>();
+    TextBoxComponent& ips_column = this->table_column_ips->getComponent<TextBoxComponent>();
     const int button_height = users_column.line_thickness;
     const int button_ref_y = ref_y + users_column.border_thickness + users_column.v_line_gap;
 
     for(int i=0; i<users.size(); ++i) {
-        Entity* current_button = createUIButton(
+        std::string username = trim_copy(this->table_column_users->getComponent<TextBoxComponent>().text_content[i]);
+        std::string ip = trim_copy(this->table_column_ips->getComponent<TextBoxComponent>().text_content[i]);
+
+        Entity* curr_copy_button = createUIButton(
             "copy_button_" + std::to_string(i), 
             "Copy",
             0, 0,
             Game::default_text_color, COLORS_BLACK, border_color,
-            [this, i](TextBoxComponent& self) {
-                std::string user = this->table_column_users->getComponent<TextBoxComponent>().text_content[i];
-                std::string ip = this->table_column_ips->getComponent<TextBoxComponent>().text_content[i];
-                std::string content = trim_copy(user) + ' ' + trim_copy(ip);
+            [this, username, ip](TextBoxComponent& self) {
+                std::string content = username + ' ' + ip;
                 SDL_SetClipboardText(content.c_str());
             }
         );
-        TextBoxComponent& b = current_button->getComponent<TextBoxComponent>();
-        b.setRenderRects(0, 0, b.w, button_height);
-        b.setRenderRects(
-            b.border_thickness + users_header.x - b.w, 
+        TextBoxComponent& cb = curr_copy_button->getComponent<TextBoxComponent>();
+        cb.setRenderRects(
+            users_column.x + cb.border_thickness - cb.w, // overlap button's border with column's border
             button_ref_y + (i*button_height), 
-            b.w, b.h
+            cb.w, 
+            button_height
         );
-        this->copy_buttons.push_back(current_button);
+        this->copy_buttons.push_back(curr_copy_button);
+
+        Entity* curr_delete_button = createUIButton(
+            "delete_button_" + std::to_string(i),
+            "Delete",
+            0, 0,
+            COLORS_RED, COLORS_BLACK, border_color,
+            [this, username](TextBoxComponent& self) {
+                this->createDeleteUserModal(username);
+            }
+        );
+        TextBoxComponent& db = curr_delete_button->getComponent<TextBoxComponent>();
+        db.setRenderRects(
+            ips_column.x + ips_column.w - db.border_thickness, // overlap button's border with column's border
+            button_ref_y + (i*button_height), 
+            db.w, 
+            button_height
+        );
+        this->delete_buttons.push_back(curr_copy_button);
     }
 }
 
@@ -270,21 +336,11 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     TextBoxComponent& t_header_ips = this->table_header_ips->getComponent<TextBoxComponent>();
     Entity* add_button = createUIButton(
         "button_add_user", 
-        " + ",
+        " + User ",
         t_header_ips.x + t_header_ips.w + 4, t_header_ips.y,
         COLORS_GREEN, COLORS_BLACK, border_color,
         [this](TextBoxComponent& self) {
             this->createAddUserModal();
-        }
-    );
-    TextBoxComponent& t_add_button = add_button->getComponent<TextBoxComponent>();
-    createUIButton(
-        "button_delete_user", 
-        " - ",
-        t_add_button.x + t_add_button.w + 4, t_add_button.y,
-        COLORS_RED, COLORS_BLACK, border_color,
-        [this](TextBoxComponent& self) {
-            std::cout << "Pressed -\n";
         }
     );
     
@@ -381,7 +437,10 @@ void handleTyping(const std::string& text) {
 }
 void handleKeyUp(SDL_Keycode key) {
     if(key == SDLK_ESCAPE) {
-        if(this->modal_entities.size() == 0 || this->modal_entities[0] == nullptr) {
+        if(
+            (this->modal_add_user_entities.size() == 0 || this->modal_add_user_entities[0] == nullptr) &&
+            (this->modal_delete_user_entities.size() == 0 || this->modal_delete_user_entities[0] == nullptr)
+        ) {
             this->goBack();
             return;
         }
@@ -403,7 +462,11 @@ void handleKeyUp(SDL_Keycode key) {
         }
     }
     if(key == SDLK_ESCAPE) {
-        if(!this->textinput_triggered && this->modal_entities.size() > 0 && this->modal_entities[0] != nullptr) {
+        if(
+            !this->textinput_triggered && 
+            this->modal_add_user_entities.size() > 0 && this->modal_add_user_entities[0] != nullptr &&
+            this->modal_delete_user_entities.size() > 0 && this->modal_delete_user_entities[0] != nullptr
+        ) {
             this->destroyAddUserModal();
             return;
         }
@@ -483,6 +546,7 @@ void clean() {
     this->config_file.close();
     Game::manager->clearEntities();
     this->destroyAddUserModal();
+    this->destroyDeleteUserModal();
     this->destroyTable();
 }
 };
