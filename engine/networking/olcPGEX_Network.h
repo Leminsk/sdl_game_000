@@ -56,7 +56,7 @@
 */
 
 /*
-	Slightly modified by Matheus Lemos, aka Leminsk 2025
+	Slightly modified by Matheus Lemos, aka Leminsk 2025, 2026
 */
 
 #pragma once 
