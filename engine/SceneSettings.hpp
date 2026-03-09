@@ -74,7 +74,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
-    this->resolution_dropdown = &createUIDropdown(
+    this->resolution_dropdown = createUIDropdown(
         "resolution_dropdown", resolution_labels, this->sound_button,
         50, 50, 
         Game::default_text_color, background_color, border_color
@@ -97,7 +97,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         }
     );
 
-    this->fps_dropdown = &createUIDropdown(
+    this->fps_dropdown = createUIDropdown(
         "fps_dropdown", fps_labels, this->sound_button,
         res_dropdown.borderRect.x, res_dropdown.borderRect.y + res_dropdown.borderRect.h + 20, 
         Game::default_text_color, background_color, border_color

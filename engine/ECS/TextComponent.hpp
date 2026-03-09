@@ -76,6 +76,10 @@ class TextComponent : public Component {
             
             this->w = 16 * text.size();
             this->h = 32;
+            if(this->fixed) {
+                this->x = this->x < 0 ? ((Game::SCREEN_WIDTH - this->w) + this->x) : this->x;
+                this->y = this->y < 0 ? ((Game::SCREEN_HEIGHT - this->h) + this->y) : this->y;
+            }            
         }
         void setRenderPos(float world_x, float world_y, float width, float height) {
             this->x = world_x; this->y = world_y; this->w = width; this->h = height;
@@ -122,7 +126,7 @@ class TextComponent : public Component {
                     destRect is the SCREEN coordinates
                     TransformComponent's position is the WORLD coordinates
                 */
-                TextureManager::DrawText(this->color, this->texture, &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
+                TextureManager::DrawSimpleText(this->color, this->texture, &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
             }
         }
 };

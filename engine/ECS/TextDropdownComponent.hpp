@@ -23,13 +23,18 @@ void setOptions(
     float pos_x, float pos_y,
     const SDL_Color& t_c, const SDL_Color& bg_c, const SDL_Color& b_c
 ) {
+    
     // default is always the first
     // create one first and let it calculate the correct position for the base of the dropdown
     this->selected_option_label = op_vec[0];
     this->selected_option = new TextBoxComponent(
         this->padded_labels[0], 
-        pos_x + this->border_thickness, pos_y + this->border_thickness, 
+        pos_x, pos_y, 
         t_c, bg_c, b_c
+    );
+    this->selected_option->setRenderRects(
+        this->selected_option->x + this->border_thickness, this->selected_option->y + this->border_thickness,
+        this->selected_option->w, this->selected_option->h
     );
     this->selected_option->init();
 
@@ -39,8 +44,8 @@ void setOptions(
     this->y = this->selected_option->y;
 
     // offset back because of dropdown highlight
-    this->borderRect.x = pos_x;
-    this->borderRect.y = pos_y;
+    this->borderRect.x = this->x - this->border_thickness;
+    this->borderRect.y = this->y - this->border_thickness;
     this->borderRect.w = this->w + (this->border_thickness<<1);
     this->borderRect.h = this->h + (this->border_thickness<<1);
 

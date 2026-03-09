@@ -63,7 +63,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->maps_thumbnails.resize(this->maps_amount, nullptr);
 
 
-    this->maps_thumbnails[0] = &createUIMapThumbnail("thumbnail_0_"+map_names[0], maps_dir, map_names[0], base_x, base_y);
+    this->maps_thumbnails[0] = createUIMapThumbnail("thumbnail_0_"+map_names[0], maps_dir, map_names[0], base_x, base_y);
     MapThumbnailComponent& base_thumbnail = this->maps_thumbnails[0]->getComponent<MapThumbnailComponent>();
     const int margin = 20;
     this->thumbnail_width  = base_thumbnail.border_rect.w + margin;
@@ -82,7 +82,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
             ++y_offset;
             row_count = 0;
         }
-        this->maps_thumbnails[i] = &createUIMapThumbnail(
+        this->maps_thumbnails[i] = createUIMapThumbnail(
             "thumbnail_" + std::to_string(i) + "_" + map_names[i], maps_dir, map_names[i],
             base_thumbnail.origin_x + (this->thumbnail_width * row_count),
             base_thumbnail.origin_y + (this->thumbnail_height * y_offset)

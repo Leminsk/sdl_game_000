@@ -81,6 +81,7 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define ASIO_STANDALONE
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
 
@@ -88,6 +89,39 @@ namespace olc
 {
 	namespace net
 	{
+		std::string getExternalIP() {
+			try {
+				asio::io_context io_context;
+				asio::ssl::context ssl_context(asio::ssl::context::sslv23);
+				asio::ip::tcp::resolver resolver(io_context);
+				auto endpoints = resolver.resolve("ifconfig.me", "https");
+
+				asio::ip::tcp::socket socket(io_context);
+				asio::connect(socket, endpoints);
+
+				asio::ssl::stream<asio::ip::tcp::socket> ssl_socket(std::move(socket), ssl_context);
+				ssl_socket.handshake(asio::ssl::stream_base::client);
+
+				std::string request = "GET /ip HTTP/1.1\r\nHost: ifconfig.me\r\nConnection: close\r\nUser-Agent: curl/7.68.0\r\n\r\n";
+				asio::write(ssl_socket, asio::buffer(request));
+
+				asio::streambuf response;
+				asio::read_until(ssl_socket, response, "\r\n\r\n"); // headers
+				std::istream response_stream(&response);
+				std::string headers;
+				// last header is the IP
+				std::string current_header;
+				while (std::getline(response_stream, headers)) {
+					current_header = headers;
+				}
+				return current_header;
+			} catch (const std::exception& e) {
+				std::cout << "getExternalIP() Exception: " << e.what() << '\n';
+				return "";
+			}
+			return "";
+		}
+
 		// disable Nagle algorithm
 		const asio::ip::tcp::no_delay no_nagle(true);
 		// Message

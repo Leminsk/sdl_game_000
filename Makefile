@@ -6,6 +6,10 @@ OBJECTS = $(MAIN_SOURCE:.cpp=.o) $(SOURCES:.cpp=.o)
 COMPILER = g++
 C_FLAGS = -std=c++17
 
+MIXER = -lSDL2_mixer
+IMAGE = -lSDL2_image
+TTF = -lSDL2_ttf
+
 ifeq ($(OS),Windows_NT) # For Windows
     # INCLUDE_PATHS specifies the additional include paths we'll need
     INCLUDE_PATHS = -IC:/msys64/mingw64/include/SDL2
@@ -22,12 +26,9 @@ ifeq ($(OS),Windows_NT) # For Windows
     
     # LINKER_FLAGS specifies the libraries we're linking against
     # NET = -lssl -lcrypto # I don't think I'll need this for Linux
-    MIXER = -lSDL2_mixer
-    IMAGE = -lSDL2_image
-    TTF = -lSDL2_ttf
     MAIN_SDL = -lSDL2main -lSDL2
     
-    WIN_NET = -lws2_32 -lwsock32
+    WIN_NET = -lws2_32 -lwsock32 -lssl -lcrypto
     MINGW = -lmingw32
     
     LINKER_FLAGS = $(MINGW) $(MAIN_SDL) $(WIN_NET) $(MIXER) $(IMAGE) $(TTF)
@@ -37,12 +38,9 @@ else # For Linux
     NET_INCLUDE_PATHS = -I/usr/include -Iengine/networking
 	LIBRARY_PATHS = -L/usr/lib/x86_64-linux-gnu
     
-    MIXER = -lSDL2_mixer
-    IMAGE = -lSDL2_image
-    TTF = -lSDL2_ttf
     MAIN_SDL = -lSDL2
     
-    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lpng -ljpeg -lfreetype -lz -lm
+    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lpng -ljpeg -lfreetype -lz -lm -lssl -lcrypto
     C_FLAGS += -pthread
 
 endif

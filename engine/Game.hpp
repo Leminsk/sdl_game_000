@@ -66,9 +66,7 @@ class Game {
 
         static Manager* manager;
         
-        
-        static bool is_client;
-        static bool is_server;
+        static std::string EXTERNAL_IP;
         static int SERVER_STATE_SHARE_RATE;
         static int CLIENT_PING_RATE;
         static std::map<std::string, std::string> USERS_IP;

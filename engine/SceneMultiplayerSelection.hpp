@@ -28,11 +28,16 @@ Entity* table_header_users = nullptr;
 Entity* table_header_ips = nullptr;
 Entity* table_column_users = nullptr;
 Entity* table_column_ips = nullptr;
+Entity* users_dropdown = nullptr;
 std::vector<Entity*> copy_buttons = {};
 std::vector<Entity*> delete_buttons = {};
 
 std::vector<Entity*> modal_add_user_entities = {};
 std::vector<Entity*> modal_delete_user_entities = {};
+
+int max_user_size = 0;
+std::vector<std::string> usernames = {};
+std::vector<std::string> ips = {};
 
 std::ifstream config_file;
 nlohmann::json config_json;
@@ -217,24 +222,19 @@ void setUsersIpTable() {
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     std::string header_label = "Username";
-
-    std::vector<std::string> users = {};
-    std::vector<std::string> ips = {};
-    int max_size_user = 0;
-    for(auto const& [user, ip] : Game::USERS_IP) {
-        users.push_back(user);
-        ips.push_back(ip);
-        if(user.size() > max_size_user) { max_size_user = user.size(); }
+    
+    if(header_label.size() > this->max_user_size) { 
+        this->max_user_size = header_label.size(); 
     }
-    if(header_label.size() > max_size_user) { max_size_user = header_label.size(); }
 
-    for(std::string& user : users) {
-        int to_pad = max_size_user - user.size();
+    std::vector<std::string> padded_users = {};
+    for(const std::string& user : this->usernames) {
+        int to_pad = this->max_user_size - user.size();
         std::string padding = "";
         for(int i=0; i<to_pad; ++i) { padding += ' '; }
-        user = padding + user;
+        padded_users.push_back(padding + user);
     }
-    int to_pad = max_size_user - header_label.size();
+    int to_pad = this->max_user_size - header_label.size();
     std::string padding = "";
     for(int i=0; i<to_pad; ++i) { padding += ' '; }
     header_label = padding + header_label;
@@ -257,12 +257,12 @@ void setUsersIpTable() {
 
     const int ref_y = users_header.y + users_header.h;
     this->table_column_users = createUIMultilineText(
-        "users_column", users,
+        "users_column", padded_users,
         users_header.x, ref_y,
         Game::default_text_color, background_color, border_color
     );
     this->table_column_ips = createUIMultilineText(
-        "ips_column", ips,
+        "ips_column", this->ips,
         this->table_header_ips->getComponent<TextBoxComponent>().x, ref_y,
         Game::default_text_color, background_color, border_color
     );
@@ -272,9 +272,9 @@ void setUsersIpTable() {
     const int button_height = users_column.line_thickness;
     const int button_ref_y = ref_y + users_column.border_thickness + users_column.v_line_gap;
 
-    for(int i=0; i<users.size(); ++i) {
-        std::string username = trim_copy(this->table_column_users->getComponent<TextBoxComponent>().text_content[i]);
-        std::string ip = trim_copy(this->table_column_ips->getComponent<TextBoxComponent>().text_content[i]);
+    for(int i=0; i<this->usernames.size(); ++i) {
+        std::string username = this->usernames[i];
+        std::string ip = this->ips[i];
 
         Entity* curr_copy_button = createUIButton(
             "copy_button_" + std::to_string(i), 
@@ -331,6 +331,16 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
+    this->usernames = {};
+    this->ips = {};
+    for(auto const& [user, ip] : Game::USERS_IP) {
+        this->usernames.push_back(user);
+        this->ips.push_back(ip);
+        if(user.size() > this->max_user_size) { 
+            this->max_user_size = user.size(); 
+        }
+    }
+
     setUsersIpTable();
 
     TextBoxComponent& t_header_ips = this->table_header_ips->getComponent<TextBoxComponent>();
@@ -353,6 +363,65 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
             this->goBack();
         }
     );
+
+    Entity* e_text_my_ip = createUISimpleText("text_my_ip", -300, 50, "My IP:", Game::default_text_color);
+    TextComponent& text_my_ip  = e_text_my_ip->getComponent<TextComponent>();
+    if(Game::EXTERNAL_IP.empty()) {
+        createUISimpleText(
+            "text_external_ip", 
+            text_my_ip.x, text_my_ip.y + text_my_ip.h + 10,
+            "No internet connection", 
+            COLORS_IMPASSABLE
+        );
+    } else {
+        createUISimpleText(
+            "text_external_ip", 
+            text_my_ip.x, text_my_ip.y + text_my_ip.h + 10,
+            Game::EXTERNAL_IP,
+            COLORS_CYAN
+        );
+        createUIButton(
+            "button_copy_ip", "Copy IP",
+            text_my_ip.x + 100, text_my_ip.y - 5,
+            Game::default_text_color, COLORS_BLACK, border_color,
+            [this](TextBoxComponent& self) {
+                SDL_SetClipboardText(Game::EXTERNAL_IP.c_str());
+            }
+        );
+    }
+
+    createUIButton(
+        "button_host_game",
+        "Host Game",
+        -50, 200,
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            std::cout << "host game\n";
+        }
+    );
+
+    Entity* e_button_join = createUIButton(
+        "button_connect_to_player",
+        "Join Game",
+        -50, 300,
+        Game::default_text_color, background_color, border_color,
+        [this](TextBoxComponent& self) {
+            TextDropdownComponent& dropdown = this->users_dropdown->getComponent<TextDropdownComponent>();
+            std::string join_ip = "";
+            for(auto const& [user, ip] : Game::USERS_IP) {
+                if(dropdown.selected_option_label == user) { join_ip = ip; break;}
+            }
+            std::cout << "join " << dropdown.selected_option_label << "'s game using IP:" << join_ip << '\n';
+            
+        }
+    );
+    TextBoxComponent& button_join = e_button_join->getComponent<TextBoxComponent>();
+
+    users_dropdown = createUIDropdown(
+        "dropdown_player_selection", this->usernames, this->sound_button,
+        -10, button_join.y + button_join.h + 10,
+        Game::default_text_color, background_color, border_color
+    );
 }
 
 void handleMouse(SDL_MouseButtonEvent& b) {
@@ -362,6 +431,13 @@ void handleMouse(SDL_MouseButtonEvent& b) {
             for(auto& modal_fg_ui : this->modal_fg_ui_elements) {
                 if(modal_fg_ui->hasComponent<TextBoxComponent>()) {
                     if(modal_fg_ui->getComponent<TextBoxComponent>().onMousePress(pos)) {
+                        return;
+                    }
+                }
+            }
+            for(auto& pr_ui : this->pr_ui_elements) {
+                if(pr_ui->hasComponent<TextDropdownComponent>()) {
+                    if(pr_ui->getComponent<TextDropdownComponent>().onMousePress(pos)) {
                         return;
                     }
                 }
@@ -382,6 +458,13 @@ bool clickedButton(Vector2D& pos) {
     for(auto& modal_fg_ui : this->modal_fg_ui_elements) {
         if(modal_fg_ui->hasComponent<TextBoxComponent>()) {
             if(modal_fg_ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
+                return true;
+            }
+        }
+    }
+    for(auto& pr_ui : this->pr_ui_elements) {
+        if(pr_ui->hasComponent<TextDropdownComponent>()) {
+            if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
                 return true;
             }
         }
@@ -538,7 +621,16 @@ void render() {
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }
+    std::vector<Entity*> opened_dropdowns = {};
     for(auto& pr_ui : this->pr_ui_elements) { pr_ui->draw(); }
+    for(auto& pr_ui : this->pr_ui_elements) { 
+        if(pr_ui->hasComponent<TextDropdownComponent>() && pr_ui->getComponent<TextDropdownComponent>().display_dropdown) {
+            opened_dropdowns.push_back(pr_ui);
+        } else {
+            pr_ui->draw();
+        }
+    }
+    for(Entity*& drop_down : opened_dropdowns) { drop_down->draw(); }
     for(auto& modal_bg_ui : this->modal_bg_ui_elements) { modal_bg_ui->draw(); }
     for(auto& modal_fg_ui : this->modal_fg_ui_elements) { modal_fg_ui->draw(); }
 }

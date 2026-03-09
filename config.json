@@ -4,8 +4,11 @@
     "SCREEN_HEIGHT": 720,
     "SCREEN_WIDTH": 1280,
     "USERS_IP": {
+        "01234567890123456789": "0",
         "A": "127.0.0.1",
         "B_B": "192.168.0.1",
-        "Leminsk": "11"
+        "CrysisTM": "192.168.0.1",
+        "Leminsk": "11",
+        "This_name_is_26_chars_long": "0"
     }
 }

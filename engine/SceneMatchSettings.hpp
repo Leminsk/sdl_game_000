@@ -69,7 +69,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         }
     );
 
-    this->selected_map = &createUIMapThumbnail(
+    this->selected_map = createUIMapThumbnail(
         "map_preview_" + this->map_name, "assets/maps/", this->map_name, 
         20, 20, 
         1.0f, true, 
@@ -115,7 +115,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
                     COLORS_SPAWN
                 );
                 this->spawn_info_entities.push_back( 
-                    &createUIDropdownColors(
+                    createUIDropdownColors(
                         "spawn_dropdown_"+std::to_string(spawn_count), this->sound_button,
                         base_x + spawn_text_length_with_offset, base_y,
                         COLORS_SPAWN, background_color, Game::default_text_color,
@@ -131,7 +131,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
                     )
                 );
                 this->spawn_selections.push_back(
-                    &createUIDropdown(
+                    createUIDropdown(
                         "spawn_selection_dropdown_"+std::to_string(spawn_count), { "CPU", "Player" }, this->sound_button,
                         base_x + spawn_text_length_with_offset + 10 + this->spawn_info_entities[spawn_count]->getComponent<TextDropdownComponent>().w, base_y,
                         Game::default_text_color, Game::default_bg_color, Game::default_text_color,

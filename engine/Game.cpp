@@ -1,6 +1,7 @@
 #include <vector>
 #include <random>
 #include <map>
+#include "networking/olcPGEX_Network.h"
 #include "Game.hpp"
 #include "SceneTypes.hpp"
 #include "Scene.hpp"
@@ -60,7 +61,7 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_1;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_4;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_16;
 
-
+std::string Game::EXTERNAL_IP;
 int Game::SERVER_STATE_SHARE_RATE;
 int Game::CLIENT_PING_RATE;
 std::map<std::string, std::string> Game::USERS_IP;
@@ -195,6 +196,7 @@ void Game::init(
     Game::SERVER_STATE_SHARE_RATE = max_fps / server_broadcast_rate;
     Game::CLIENT_PING_RATE = max_fps * 3;
     Game::USERS_IP = users_ip;
+    Game::EXTERNAL_IP = olc::net::getExternalIP();
     Game::RNG = rng_generator;
 
     Game::manager = new Manager();

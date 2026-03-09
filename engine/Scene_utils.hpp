@@ -138,7 +138,7 @@ Entity* createUIMultilineText(
     return &new_multiline_text;
 }
 // if pos_x < 0 -> offset from the right (analogous with pos_y from the bottom)
-Entity& createUIDropdown(
+Entity* createUIDropdown(
     const std::string& id,
     const std::vector<std::string>& labels,
     Mix_Chunk* selection_sound_effect,
@@ -157,9 +157,9 @@ Entity& createUIDropdown(
         onUp, onDown
     );
     new_dropdown.addGroup(groupPriorityUI);
-    return new_dropdown;
+    return &new_dropdown;
 }
-Entity& createUIDropdownColors(
+Entity* createUIDropdownColors(
     const std::string& id,
     Mix_Chunk* selection_sound_effect,
     int pos_x=0, int pos_y=0,
@@ -177,9 +177,9 @@ Entity& createUIDropdownColors(
         onUp, onDown
     );
     new_dropdown_colors.addGroup(groupPriorityUI);
-    return new_dropdown_colors;
+    return &new_dropdown_colors;
 }
-Entity& createUIMapThumbnail(
+Entity* createUIMapThumbnail(
     const std::string& id, 
     const std::string map_dir="assets/maps/",
     const std::string map_name="test3",
@@ -201,7 +201,7 @@ Entity& createUIMapThumbnail(
         );
     }    
     new_map_thumbnail.addGroup(groupUI);
-    return new_map_thumbnail;
+    return &new_map_thumbnail;
 }
 /**
  * `id`: base id used as prefix to all other ids created by this function

@@ -58,7 +58,7 @@ void TextureManager::Draw(SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, doub
     );
 }
 
-void TextureManager::DrawText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, double rotation_degrees, SDL_RendererFlip flip) {
+void TextureManager::DrawSimpleText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, double rotation_degrees, SDL_RendererFlip flip) {
     SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
     TextureManager::Draw(tex, src, dest, rotation_degrees, flip);
     SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);
