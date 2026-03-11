@@ -248,17 +248,17 @@ void handleTyping(const std::string& input_text) {
         switch(edit_style) {
             case TextFieldEditStyle::IP: {
                 char_allowed = std::find(
-                    Game::allowed_ip_characters.begin(), 
-                    Game::allowed_ip_characters.end(), 
+                    Game::ALLOWED_IP_CHARACTERS.begin(), 
+                    Game::ALLOWED_IP_CHARACTERS.end(), 
                     input_text[0]
-                ) != Game::allowed_ip_characters.end();
+                ) != Game::ALLOWED_IP_CHARACTERS.end();
             } break;
             case TextFieldEditStyle::GENERAL: { 
                 char_allowed = std::find(
-                    Game::allowed_username_characters.begin(), 
-                    Game::allowed_username_characters.end(), 
+                    Game::ALLOWED_USERNAME_CHARACTERS.begin(), 
+                    Game::ALLOWED_USERNAME_CHARACTERS.end(), 
                     input_text[0]
-                ) != Game::allowed_username_characters.end();
+                ) != Game::ALLOWED_USERNAME_CHARACTERS.end();
             } break;
             default: break;
         }
@@ -320,10 +320,10 @@ void handleEventsPostPoll(const uint8_t* keystates) {
                     for(char& c : clipboard_text) {
                         if(
                             std::find(
-                                Game::allowed_ip_characters.begin(), 
-                                Game::allowed_ip_characters.end(), 
+                                Game::ALLOWED_IP_CHARACTERS.begin(), 
+                                Game::ALLOWED_IP_CHARACTERS.end(), 
                                 c
-                            ) == Game::allowed_ip_characters.end()
+                            ) == Game::ALLOWED_IP_CHARACTERS.end()
                         ) {
                             return;
                         }
@@ -334,10 +334,10 @@ void handleEventsPostPoll(const uint8_t* keystates) {
                     for(char& c : clipboard_text) {
                         if(
                             std::find(
-                                Game::allowed_username_characters.begin(), 
-                                Game::allowed_username_characters.end(), 
+                                Game::ALLOWED_USERNAME_CHARACTERS.begin(), 
+                                Game::ALLOWED_USERNAME_CHARACTERS.end(), 
                                 c
-                            ) == Game::allowed_username_characters.end()
+                            ) == Game::ALLOWED_USERNAME_CHARACTERS.end()
                         ) {
                             return;
                         }

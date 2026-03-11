@@ -151,6 +151,7 @@ void setScene(SceneType t) {
 
         case SceneType::MATCH_GAME: {
             this->S_MatchGame->setScene(
+                this->S_MainMenu->music_main_menu,
                 this->S_MatchSettings->map_pixels, this->S_MatchSettings->player_sdl_color, 
                 this->S_MatchSettings->spawn_positions[this->S_MatchSettings->player_spawn_index],
                 this->S_MatchSettings->spawn_positions,
@@ -190,7 +191,7 @@ void handleEventsPrePoll() {
         case SceneType::MAP_SELECTION: { this->S_MapSelection->handleEventsPrePoll(); } break;
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->handleEventsPrePoll(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPrePoll(); } break;
-        case SceneType::MULTIPLAYER_SELECTION: {} break;
+        case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->handleEventsPrePoll(); } break;
         case SceneType::SETTINGS: { this->S_Settings->handleEventsPrePoll(); } break;        
     }
 }
@@ -226,6 +227,11 @@ void handleEventsPollEvent() {
 
         case SceneType::MATCH_GAME: {
             this->S_MatchGame->handleEventsPollEvent();
+            if(this->S_MatchGame->change_to_scene != SceneType::NONE) {
+                this->S_MatchGame->clean();
+                setScene(this->S_MatchGame->change_to_scene);
+                this->S_MatchGame->change_to_scene = SceneType::NONE;
+            }
         } break;
 
         case SceneType::MULTIPLAYER_SELECTION: {

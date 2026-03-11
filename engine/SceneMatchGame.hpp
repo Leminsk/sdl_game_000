@@ -9,6 +9,7 @@
 #include "Map.hpp"
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
+#include "MatchGameType.hpp"
 #include "networking/MessageTypes.h"
 #include "networking/Client.hpp"
 #include "networking/Server.hpp"
@@ -72,8 +73,7 @@ std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 
 public:
-
-
+SceneType change_to_scene = SceneType::NONE;
 TextComponent* fps_text;
 
 SceneMatchGame(SDL_Event* e) { this->event = e; }
@@ -208,12 +208,44 @@ void LoadMapRender(float tile_scale=1.0f) {
 }
 
 void setScene(
+    Mix_Music* music_main_menu,
     const std::vector<std::vector<SDL_Color>>& map_pixels, const SDL_Color& player_color, const std::pair<int,int>& player_spawn,
     const std::vector<std::pair<int,int>>& spawn_positions,
     SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL_Texture* water_bg, SDL_Texture* water_fg, 
     TextComponent* fps
 ) {
     Mix_HaltMusic();
+
+    switch(Game::match_game_type) {
+        case MatchGameType::SINGLE_PLAYER:
+            this->is_client = false;
+            this->is_server = false;
+            break;
+        case MatchGameType::MULTIPLAYER_CLIENT:
+            this->is_client = true;
+            this->is_server = false;
+            this->client = new Client();
+            this->client->Connect(Game::REMOTE_HOST_IP, 50000);
+            if(!this->client->IsConnected()) {
+                this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
+                Mix_PlayMusic(music_main_menu, -1);
+                return;
+            }
+            // TODO:
+            // fetch the map name
+            // fetch player color
+            // fetch player spawn
+            // fetch spawn positions
+            // this->client->
+            break;
+        case MatchGameType::MULTIPLAYER_HOST:
+            this->is_client = false;
+            this->is_server = true;
+            this->server = new Server();
+            this->server->Start();
+            break;
+    }
+
     this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
     Game::default_bg_color = COLORS_ROUGH;
 
@@ -429,8 +461,10 @@ void destroyClient() {
     this->is_client = false;
     this->PLAYER_CLIENT_ID = 0;
     this->PLAYER_COLOR = MainColors::NONE;
-    this->client->WarnDisconnect();
-    this->client->Disconnect();
+    if(this->client->IsConnected()) {
+        this->client->WarnDisconnect();
+        this->client->Disconnect();
+    }
     delete this->client;
     this->client = nullptr;
 }
@@ -560,26 +594,6 @@ void handleEventsPostPoll(const uint8_t *keystates) {
     if(keystates[SDL_SCANCODE_ESCAPE]) { 
             Game::isRunning = false; 
     } else {
-        if(keystates[SDL_SCANCODE_O] && !this->is_client) {
-            if(this->is_server) { destroyServer(); }
-            this->is_client = true;
-            this->client = new Client();
-            this->client->Connect("[IPv4|IPv6]", 50000);
-            printf("Client UP\n");            
-        }
-        if(keystates[SDL_SCANCODE_P] && !this->is_server) {
-            if(this->is_client) { destroyClient(); }
-            this->is_server = true;
-            this->server = new Server();
-            this->server->Start();
-            this->PLAYER_COLOR = MainColors::WHITE;
-            printf("Server UP\n");
-        }
-        if(keystates[SDL_SCANCODE_DELETE]) {
-            if(this->is_server) { destroyServer(); }
-            if(this->is_client) { destroyClient(); }
-        }
-
 
         if(this->pressed_toggle_collision_mesh_crosshair && keystates[SDL_SCANCODE_F]) { 
             ++this->toggle_collision_mesh_crosshair;
@@ -640,12 +654,19 @@ void update() {
     for(int i=0; i<this->drones.size(); ++i) { this->drones[i]->getComponent<DroneComponent>().handleCollisionTranslations(); }
     for(int i=0; i<this->drones.size(); ++i) { this->drones[i]->getComponent<DroneComponent>().handleOutOfBounds(Game::world_map_layout_width, Game::world_map_layout_height); }
 
-    Game::manager->getEntityFromGroup("crosshair", groupUI)->getComponent<TextComponent>().setText(
-        "Crosshair: " + convertScreenToWorld(Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1)).FormatDecimal(4,0)
-    );
-    Game::manager->getEntityFromGroup("camera_zoom", groupUI)->getComponent<TextComponent>().setText(
-        "Camera zoom: " + format_decimal(Game::camera_zoom, 1, 1, false)
-    );
+    Entity* e_crosshair = Game::manager->getEntityFromGroup("crosshair", groupUI);
+    if(e_crosshair != nullptr) {
+        e_crosshair->getComponent<TextComponent>().setText(
+            "Crosshair: " + convertScreenToWorld(Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1)).FormatDecimal(4,0)
+        );
+    }
+    
+    Entity* e_camera_zoom = Game::manager->getEntityFromGroup("camera_zoom", groupUI);
+    if(e_camera_zoom != nullptr) {
+        e_camera_zoom->getComponent<TextComponent>().setText(
+            "Camera zoom: " + format_decimal(Game::camera_zoom, 1, 1, false)
+        );
+    }
 }
 void render() {
     for(auto& t : this->tiles) { t->draw(); }
@@ -814,6 +835,11 @@ void render() {
             debug_mesh_height = Game::collision_mesh_macro_4_height;
             debug_mesh_width  = Game::collision_mesh_macro_4_width;
             break;
+        default:
+            mesh_density = -1;
+            debug_collision_mesh = nullptr;
+            debug_mesh_height = -1;
+            debug_mesh_width = -1;
     }
     if(debug_collision_mesh != nullptr) {
         for(int y=0; y<debug_mesh_height; ++y) {

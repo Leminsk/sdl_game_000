@@ -11,6 +11,7 @@
 #include "ModalContentType.hpp"
 #include "GroupLabels.hpp"
 #include "TextFieldEditStyle.hpp"
+#include "MatchGameType.hpp"
 
 class SceneMultiplayerSelection {
 private:
@@ -397,6 +398,9 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             std::cout << "host game\n";
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            Game::match_game_type = MatchGameType::MULTIPLAYER_HOST;
+            this->change_to_scene = SceneType::MAP_SELECTION;
         }
     );
 
@@ -412,7 +416,10 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
                 if(dropdown.selected_option_label == user) { join_ip = ip; break;}
             }
             std::cout << "join " << dropdown.selected_option_label << "'s game using IP:" << join_ip << '\n';
-            
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            Game::match_game_type = MatchGameType::MULTIPLAYER_CLIENT;
+            Game::REMOTE_HOST_IP = join_ip;
+            this->change_to_scene = SceneType::MATCH_GAME;
         }
     );
     TextBoxComponent& button_join = e_button_join->getComponent<TextBoxComponent>();

@@ -6,6 +6,7 @@
 #include "AudioManager.hpp"
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
+#include "MatchGameType.hpp"
 
 class SceneMainMenu {
 private:
@@ -30,6 +31,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
     this->music_main_menu = music;
     this->sound_button = sound;
     this->fps_text = fps;
+    Game::match_game_type = MatchGameType::SINGLE_PLAYER;
 
     if(music_main_menu == nullptr) {
         Mix_HaltMusic();

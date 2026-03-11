@@ -9,6 +9,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 #include "Vector2D.hpp"
+#include "MatchGameType.hpp"
 #include "ECS/ECS.hpp"
 
 class Game {
@@ -66,12 +67,14 @@ class Game {
 
         static Manager* manager;
         
+        static MatchGameType match_game_type;
         static std::string EXTERNAL_IP;
+        static std::string REMOTE_HOST_IP;
         static int SERVER_STATE_SHARE_RATE;
         static int CLIENT_PING_RATE;
         static std::map<std::string, std::string> USERS_IP;
-        static const std::vector<char> allowed_ip_characters;
-        static const std::vector<char> allowed_username_characters;
+        static const std::vector<char> ALLOWED_IP_CHARACTERS;
+        static const std::vector<char> ALLOWED_USERNAME_CHARACTERS;
 
         Game();
         ~Game();
