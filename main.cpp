@@ -91,12 +91,15 @@ int main() {
     }
     json config_data;
     if(!has_config) {
+        json users_ip_data = {
+            {"localhost", "127.0.0.1"}
+        };
         config_data = {
             {"SCREEN_WIDTH", 1280},
             {"SCREEN_HEIGHT", 720},
             {"FULLSCREEN", false},
             {"FRAME_RATE", 60},
-            {"USERS_IP", {}}
+            {"USERS_IP", users_ip_data }
         };
         std::ofstream o("config.json");
         o << config_data.dump(4);
