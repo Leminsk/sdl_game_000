@@ -8,25 +8,20 @@
 #include "Scene_utils.hpp"
 #include "json.hpp"
 #include "TextFieldEditStyle.hpp"
+#include "Colors.hpp"
 
 class SceneSettings {
 private:
 SceneType parent_scene;
+bool textinput_triggered = false;
+std::string textinput_text;
 std::vector<Entity*>& bg_ui_elements = Game::manager->getGroup(groupBackgroundUI);
 std::vector<Entity*>&    ui_elements = Game::manager->getGroup(groupUI);
 std::vector<Entity*>& pr_ui_elements = Game::manager->getGroup(groupPriorityUI);
 SDL_Event* event;
-Entity* fps_dropdown = nullptr;
-std::vector<unsigned int> fps_values = { 
-      1,  10,  20,  30,  40,  50,  60,  70,  80,  90, 
-    100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 
-    200, 210, 220, 230, 240, 250, 260, 270, 280, 290
-};
-std::vector<std::string> fps_labels = { 
-    "  1 Hz", " 10 Hz", " 20 Hz", " 30 Hz", " 40 Hz", " 50 Hz", " 60 Hz", " 70 Hz", " 80 Hz", " 90 Hz", 
-    "100 Hz", "110 Hz", "120 Hz", "130 Hz", "140 Hz", "150 Hz", "160 Hz", "170 Hz", "180 Hz", "190 Hz", 
-    "200 Hz", "210 Hz", "220 Hz", "230 Hz", "240 Hz", "250 Hz", "260 Hz", "270 Hz", "280 Hz", "290 Hz"
-};
+Entity* fps_current_value = nullptr;
+std::vector<Entity*> fps_textfield = {};
+
 Entity* resolution_dropdown = nullptr;
 std::vector<std::pair<unsigned int, unsigned int>> resolution_values = {
     {  800,  600 },
@@ -52,6 +47,11 @@ std::vector<std::string> resolution_labels = {
 
 std::ifstream config_file;
 nlohmann::json config_json;
+
+void goBack() {
+    Mix_PlayChannel(-1, this->sound_button, 0);
+    this->change_to_scene = this->parent_scene;
+}
 
 public:
 Mix_Chunk* sound_button = NULL;
@@ -97,29 +97,43 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         }
     );
 
-    this->fps_dropdown = createUIDropdown(
-        "fps_dropdown", fps_labels, this->sound_button,
-        res_dropdown.borderRect.x, res_dropdown.borderRect.y + res_dropdown.borderRect.h + 20, 
-        Game::default_text_color, background_color, border_color
+    std::string fps_string = left_pad_int(Game::MAX_FPS, 3, ' ');
+
+    this->fps_current_value = createUISimpleText(
+        "fps_current_value", res_dropdown.borderRect.x, res_dropdown.borderRect.y + res_dropdown.borderRect.h + 20,
+        "Current FPS: "+fps_string
     );
-    TextDropdownComponent& fps_dropdown_comp = this->fps_dropdown->getComponent<TextDropdownComponent>();
+    TextComponent& fps_label = this->fps_current_value->getComponent<TextComponent>();
+
+    this->fps_textfield = createUITextField(
+        "fps_textfield", fps_string,
+        fps_label.x, fps_label.y + fps_label.h,
+        TextFieldEditStyle::NUMERICAL,
+        3,
+        Game::default_text_color, COLORS_BLACK, Game::default_text_color,
+        [this](TextBoxComponent& self) {
+            Mix_PlayChannel(-1, this->sound_button, 0);
+            self.editing = true;
+            self.cursor_pos = self.text_content[0].size();
+            SDL_StartTextInput();
+        }
+    );
+    TextBoxComponent& fps_input_box = this->fps_textfield[1]->getComponent<TextBoxComponent>();
+
     createUIButton(
         "button_apply_fps",
         "Apply FPS",
-        fps_dropdown_comp.borderRect.x + fps_dropdown_comp.borderRect.w + 30, fps_dropdown_comp.y,
+        fps_input_box.borderRect.x + fps_input_box.borderRect.w + 30, fps_input_box.y,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            std::string fps_option = this->fps_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
-            for(int i=0; i<this->fps_labels.size(); ++i) {
-                if(this->fps_labels[i] == fps_option) {
-                    changeFPS(this->fps_values[i]);
-                    this->config_json["FRAME_RATE"] = this->fps_values[i];
-                    std::ofstream o("config.json");
-                    o << this->config_json.dump(4);
-                    o.close();
-                    break;
-                }
-            }
+            int fps_value = std::stoi( trim_copy( this->fps_textfield[0]->getComponent<TextBoxComponent>().text_content[0] ) );
+            changeFPS(fps_value);
+            std::string new_fps_string = left_pad_int(fps_value, 3, ' ');
+            this->fps_current_value->getComponent<TextComponent>().setText("Current FPS: "+new_fps_string);
+            this->config_json["FRAME_RATE"] = fps_value;
+            std::ofstream o("config.json");
+            o << this->config_json.dump(4);
+            o.close();
         }
     );
 
@@ -129,8 +143,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         50,  -50, 
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
-            Mix_PlayChannel(-1, this->sound_button, 0);
-            this->change_to_scene = this->parent_scene;
+            this->goBack();
         }
     );
 
@@ -141,12 +154,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
             resolution_values[i].second == Game::SCREEN_HEIGHT
         ) {
             res_dropdown.setSelectedOption(i);
-            break;
-        }
-    }
-    for(int i=0; i<fps_values.size(); ++i) {
-        if(fps_values[i] == Game::MAX_FPS) {
-            fps_dropdown_comp.setSelectedOption(i);
             break;
         }
     }
@@ -201,20 +208,16 @@ void handleMouse(SDL_MouseButtonEvent& b) {
 }
 
 bool clickedButton(Vector2D& pos) {
-    for(auto& ui : this->ui_elements) {
-        if(ui->hasComponent<TextBoxComponent>()) {
-            if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
+    for(auto& pr_ui : this->pr_ui_elements) {
+        if(pr_ui->hasComponent<TextDropdownComponent>()) {
+            if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
                 return true;
             }
         }
     }
-    return false;
-}
-
-bool clickedDropdown(Vector2D& pos) {
-    for(auto& pr_ui : this->pr_ui_elements) {
-        if(pr_ui->hasComponent<TextDropdownComponent>()) {
-            if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
                 return true;
             }
         }
@@ -226,11 +229,34 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            if(!clickedDropdown(pos)) {
-                clickedButton(pos);
-            }
+            clickedButton(pos);
         } break;
     }
+}
+
+void handleTyping(const std::string& text) {
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleTyping(text);
+                return;
+            }
+        }
+    }
+}
+void handleKeyUp(SDL_Keycode key) {
+    if(key == SDLK_ESCAPE && !this->textinput_triggered) {
+        this->goBack();
+        return;
+    }
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleKeyUp();
+                return;
+            }
+        }
+    }    
 }
 
 void handleEventsPrePoll() {}
@@ -247,8 +273,13 @@ void handleEventsPollEvent() {
             case SDL_MOUSEBUTTONUP: {
                 handleMouseRelease(this->event->button);
             } break;
-            case SDL_KEYUP: {} break;
-            case SDL_KEYDOWN: {} break;
+            case SDL_KEYUP: {
+                handleKeyUp(this->event->key.keysym.sym);
+            } break;
+            case SDL_TEXTINPUT: {
+                this->textinput_triggered = true;
+                this->textinput_text = this->event->text.text;
+            } break;
             case SDL_WINDOWEVENT: {
                 switch(this->event->window.event) {
                     case SDL_WINDOWEVENT_SIZE_CHANGED: {
@@ -268,7 +299,20 @@ void handleEventsPollEvent() {
         }                
     }
 }
-void handleEventsPostPoll() {}
+void handleEventsPostPoll(const uint8_t *keystates) {
+    if(this->textinput_triggered) {
+        handleTyping(this->textinput_text);
+        this->textinput_triggered = false;
+    }
+    for(auto& ui : this->ui_elements) {
+        if(ui->hasComponent<TextBoxComponent>()) {
+            if(ui->getComponent<TextBoxComponent>().editing) {
+                ui->getComponent<TextBoxComponent>().handleEventsPostPoll(keystates);
+                return;
+            }
+        }
+    }
+}
 
 void update() {
     Game::manager->refresh();

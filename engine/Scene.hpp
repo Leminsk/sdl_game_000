@@ -262,7 +262,7 @@ void handleEventsPostPoll() {
         case SceneType::MATCH_SETTINGS: { this->S_MatchSettings->handleEventsPostPoll(); } break;
         case SceneType::MATCH_GAME: { this->S_MatchGame->handleEventsPostPoll(keystates); } break;
         case SceneType::MULTIPLAYER_SELECTION: { this->S_MultiplayerSelection->handleEventsPostPoll(keystates); } break;
-        case SceneType::SETTINGS: { this->S_Settings->handleEventsPostPoll(); } break;
+        case SceneType::SETTINGS: { this->S_Settings->handleEventsPostPoll(keystates); } break;
     }
 }
 

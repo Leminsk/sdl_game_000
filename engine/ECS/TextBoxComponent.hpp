@@ -260,6 +260,13 @@ void handleTyping(const std::string& input_text) {
                     input_text[0]
                 ) != Game::ALLOWED_USERNAME_CHARACTERS.end();
             } break;
+            case TextFieldEditStyle::NUMERICAL: {
+                char_allowed = std::find(
+                    Game::ALLOWED_NUMERICAL_CHARACTERS.begin(), 
+                    Game::ALLOWED_NUMERICAL_CHARACTERS.end(), 
+                    input_text[0]
+                ) != Game::ALLOWED_NUMERICAL_CHARACTERS.end();
+            } break;
             default: break;
         }
 
@@ -324,6 +331,20 @@ void handleEventsPostPoll(const uint8_t* keystates) {
                                 Game::ALLOWED_IP_CHARACTERS.end(), 
                                 c
                             ) == Game::ALLOWED_IP_CHARACTERS.end()
+                        ) {
+                            return;
+                        }
+                    }
+                    clipboard_allowed = true;
+                } break;
+                case TextFieldEditStyle::NUMERICAL: { 
+                    for(char& c : clipboard_text) {
+                        if(
+                            std::find(
+                                Game::ALLOWED_NUMERICAL_CHARACTERS.begin(), 
+                                Game::ALLOWED_NUMERICAL_CHARACTERS.end(), 
+                                c
+                            ) == Game::ALLOWED_NUMERICAL_CHARACTERS.end()
                         ) {
                             return;
                         }

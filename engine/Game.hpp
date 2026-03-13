@@ -75,6 +75,7 @@ class Game {
         static std::map<std::string, std::string> USERS_IP;
         static const std::vector<char> ALLOWED_IP_CHARACTERS;
         static const std::vector<char> ALLOWED_USERNAME_CHARACTERS;
+        static const std::vector<char> ALLOWED_NUMERICAL_CHARACTERS;
 
         Game();
         ~Game();
