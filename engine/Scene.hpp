@@ -152,6 +152,7 @@ void setScene(SceneType t) {
         case SceneType::MATCH_GAME: {
             this->S_MatchGame->setScene(
                 this->S_MainMenu->music_main_menu,
+                this->S_MatchSettings->map_name,
                 this->S_MatchSettings->map_pixels, this->S_MatchSettings->player_sdl_color, 
                 this->S_MatchSettings->spawn_positions[this->S_MatchSettings->player_spawn_index],
                 this->S_MatchSettings->spawn_positions,

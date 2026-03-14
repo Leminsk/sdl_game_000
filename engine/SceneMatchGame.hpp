@@ -40,6 +40,10 @@ Vector2D clicked_point;
 Vector2D converted_point;
 
 Map* map = nullptr;
+std::string map_name = "";
+std::pair<int, int> player_spawn = {};
+std::vector<std::pair<int, int>> spawn_positions = {};
+std::vector<std::vector<SDL_Color>> map_pixels_colors = {};
 
 
 // --------------------------- NETWORKING ------------------------
@@ -207,46 +211,129 @@ void LoadMapRender(float tile_scale=1.0f) {
     }
 }
 
+void processServerMessages() {
+    while(!this->client->Incoming().empty()) {
+        auto msg = this->client->Incoming().pop_front().msg;
+        switch (msg.header.id) {
+            case MessageTypes::ServerAccept: {
+                std::string server_name;
+                msg >= server_name;
+                msg >> this->PLAYER_CLIENT_ID;
+                std::cout << "Connected to: " << server_name << " as user id [" << this->PLAYER_CLIENT_ID << "]\n";
+                msg >= this->map_name;
+                const std::string file_path = "assets/maps/"+this->map_name+".bmp";
+                uint32_t map_width, map_height;
+                bool got_pixels = getBMPPixels(file_path, this->map_pixels_colors, &map_width, &map_height);
+                if(got_pixels) {
+                    msg >> this->PLAYER_COLOR;
+                    MainColors c;
+                    int first, second, players_amount;
+                    msg >> players_amount;
+                    if(this->spawn_positions.empty()) {
+                        for(int i=0; i<players_amount; ++i) {
+                            msg >> c;
+                            msg >> first;
+                            msg >> second;
+                            this->spawn_positions.push_back({ first, second });
+                            if(c == this->PLAYER_COLOR) {
+                                this->player_spawn = { first, second };
+                            }
+                        }
+                    }
+                } else {
+                    throw std::runtime_error("Failed to get map " + file_path + " from server.\n");
+                }
+                
+            } break;
+            case MessageTypes::ServerState_Colors: {
+                int clients_amount;
+                msg >> clients_amount;
+                int id; MainColors c;
+                std::cout << "   id | main_color\n";
+                for(int i=0; i<clients_amount; ++i) {
+                    msg >> id;
+                    msg >> c;
+                    this->clients_color[id] = c;
+                    if(id == this->PLAYER_CLIENT_ID) {
+                        this->PLAYER_COLOR = c;
+                        std::cout << id << " | " << static_cast<int>(c) << " (me)\n";
+                    } else {
+                        std::cout << id << " | " << static_cast<int>(c) << '\n';
+                    }
+                }
+            } break;
+            case MessageTypes::ServerState_Drones: {
+                handleStateFromServer(msg);
+            } break;
+            case MessageTypes::ClientPing: {
+                // bounce back to calculate ping on server
+                this->client->Send(msg);
+            } break;
+            case MessageTypes::UsersStatus: {
+                int clients_amount;
+                msg >> clients_amount;
+                int id, ping;
+                std::cout << "   id | ping (ms)\n";
+                for(int i=0; i<clients_amount; ++i) {
+                    msg >> id;
+                    msg >> ping;
+                    this->clients_ping[id] = ping;
+                    if(id == this->PLAYER_CLIENT_ID) {
+                        this->PING_MS = ping;
+                        std::cout << id << " | " << ping << " (me)\n";
+                    } else {
+                        std::cout << id << " | " << ping << '\n';
+                    }
+                }
+            } break;
+        }
+    }
+}
+
 void setScene(
     Mix_Music* music_main_menu,
+    const std::string& map_name,
     const std::vector<std::vector<SDL_Color>>& map_pixels, const SDL_Color& player_color, const std::pair<int,int>& player_spawn,
     const std::vector<std::pair<int,int>>& spawn_positions,
     SDL_Texture* plain, SDL_Texture* rough, SDL_Texture* mountain, SDL_Texture* water_bg, SDL_Texture* water_fg, 
     TextComponent* fps
 ) {
     Mix_HaltMusic();
+    
 
     switch(Game::match_game_type) {
         case MatchGameType::SINGLE_PLAYER:
+            this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
+            this->spawn_positions = spawn_positions;
+            this->player_spawn = player_spawn;
+            this->map_pixels_colors = map_pixels;
             this->is_client = false;
             this->is_server = false;
             break;
-        case MatchGameType::MULTIPLAYER_CLIENT:
+        case MatchGameType::MULTIPLAYER_CLIENT: {
             this->is_client = true;
             this->is_server = false;
             this->client = new Client();
-            this->client->Connect(Game::REMOTE_HOST_IP, 50000);
-            if(!this->client->IsConnected()) {
+            bool connected = this->client->JoinGame(Game::REMOTE_HOST_IP);
+            if(!connected) {
                 this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
                 Mix_PlayMusic(music_main_menu, -1);
                 return;
             }
-            // TODO:
-            // fetch the map name
-            // fetch player color
-            // fetch player spawn
-            // fetch spawn positions
-            // this->client->
-            break;
-        case MatchGameType::MULTIPLAYER_HOST:
+            this->processServerMessages();
+        } break;
+        case MatchGameType::MULTIPLAYER_HOST: {
+            this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
+            this->spawn_positions = spawn_positions;
+            this->player_spawn = player_spawn;
+            this->map_pixels_colors = map_pixels;
             this->is_client = false;
             this->is_server = true;
-            this->server = new Server();
+            this->server = new Server(map_pixels, player_spawn, spawn_positions, map_name);
             this->server->Start();
-            break;
+        } break;
     }
 
-    this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
     Game::default_bg_color = COLORS_ROUGH;
 
     this->plain_terrain_texture = plain;
@@ -257,7 +344,7 @@ void setScene(
     this->fps_text = fps;
 
     this->map = new Map(
-        map_pixels, 
+        this->map_pixels_colors, 
         this->plain_terrain_texture,
         this->rough_terrain_texture,
         this->mountain_texture,
@@ -282,8 +369,8 @@ void setScene(
         this->map->generateCollisionMesh(64, Game::collision_mesh_64, Game::collision_mesh_64_width, Game::collision_mesh_64_height, this->buildings);
         this->map->generateCollisionMacroMesh( 4, Game::collision_mesh_macro_4,  Game::collision_mesh_macro_4_width,  Game::collision_mesh_macro_4_height);
 
-        for(const std::pair<int,int>& pos : spawn_positions) {
-            MainColors c = convertSDLColorToMainColor(map_pixels[pos.first][pos.second]);
+        for(const std::pair<int,int>& pos : this->spawn_positions) {
+            MainColors c = convertSDLColorToMainColor(this->map_pixels_colors[pos.first][pos.second]);
             Vector2D world_pos = this->map->getWorldPosFromTileCoord(pos.second, pos.first-1);
             createDrone(world_pos.x, world_pos.y, c);
         }
@@ -293,6 +380,7 @@ void setScene(
 
     } else {
         printf("Map failed to load.\n");
+        this->change_to_scene = SceneType::MAIN_MENU;
     }
 }
 
@@ -481,64 +569,9 @@ void handleEventsPrePoll() {
     // for multiplayer
     this->moved_drones = {};
     if(this->is_server) {
-
         this->server->Update(-1);
-        
     } else if(this->is_client && this->client->IsConnected()) {
-
-        while(!this->client->Incoming().empty()) {
-            auto msg = this->client->Incoming().pop_front().msg;
-            switch (msg.header.id) {
-                case MessageTypes::ServerAccept: {
-                    std::string server_name;
-                    msg >= server_name;
-                    msg >> this->PLAYER_CLIENT_ID;
-                    std::cout << "Connected to: " << server_name << " as user id [" << this->PLAYER_CLIENT_ID << "]\n";
-                } break;
-                case MessageTypes::ServerState_Colors: {
-                    int clients_amount;
-                    msg >> clients_amount;
-                    int id; MainColors c;
-                    std::cout << "   id | main_color\n";
-                    for(int i=0; i<clients_amount; ++i) {
-                        msg >> id;
-                        msg >> c;
-                        this->clients_color[id] = c;
-                        if(id == this->PLAYER_CLIENT_ID) {
-                            this->PLAYER_COLOR = c;
-                            std::cout << id << " | " << static_cast<int>(c) << " (me)\n";
-                        } else {
-                            std::cout << id << " | " << static_cast<int>(c) << '\n';
-                        }
-                    }
-                } break;
-                case MessageTypes::ServerState_Drones: {
-                    handleStateFromServer(msg);
-                } break;
-                case MessageTypes::ClientPing: {
-                    // bounce back to calculate ping on server
-                    this->client->Send(msg);
-                } break;
-                case MessageTypes::UsersStatus: {
-                    int clients_amount;
-                    msg >> clients_amount;
-                    int id, ping;
-                    std::cout << "   id | ping (ms)\n";
-                    for(int i=0; i<clients_amount; ++i) {
-                        msg >> id;
-                        msg >> ping;
-                        this->clients_ping[id] = ping;
-                        if(id == this->PLAYER_CLIENT_ID) {
-                            this->PING_MS = ping;
-                            std::cout << id << " | " << ping << " (me)\n";
-                        } else {
-                            std::cout << id << " | " << ping << '\n';
-                        }
-                    }
-                } break;
-            }
-        }
-
+        this->processServerMessages();
     }
 }
 void handleEventsPollEvent() {

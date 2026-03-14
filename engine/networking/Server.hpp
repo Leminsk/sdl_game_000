@@ -1,68 +1,94 @@
 #pragma once
+#include <map>
 #include <unordered_map>
 #include <vector>
-#include "olcPGEX_Network.h"
-#include "MessageTypes.h"
+#include "../utils.hpp"
 #include "../Game.hpp"
 #include "../Vector2D.hpp"
 #include "../ECS/DroneComponent.hpp"
 #include "../GroupLabels.hpp"
 #include "../Colors.hpp"
+#include "olcPGEX_Network.h"
+#include "MessageTypes.h"
 
 
 class Server : public olc::net::server_interface<MessageTypes> {
-    public:
-        Server(uint16_t nPort=50000, std::string server_name="PLACEHOLDER") : olc::net::server_interface<MessageTypes>(nPort) {
-            this->port = nPort;
-            this->name = server_name;
+public:
+Server(
+    const std::vector<std::vector<SDL_Color>>& map_pixels,
+    const std::pair<int,int>& host_spawn,
+    const std::vector<std::pair<int,int>>& spawn_positions,
+    const std::string& map_name,
+    uint16_t nPort=50000, std::string server_name="PLACEHOLDER"
+) : olc::net::server_interface<MessageTypes>(nPort) {
+    this->port = nPort;
+    this->name = server_name;
+    this->map_name = map_name;
+    this->spawn_pos = spawn_positions;
+    this->player_limit = spawn_positions.size() - 1;
+
+    for(const std::pair<int,int>& coord : spawn_positions) {
+        MainColors c = convertSDLColorToMainColor(map_pixels[coord.first][coord.second]);
+        this->colors_spawn_pos[c] = coord;
+        if(coord == host_spawn) {
+            this->colors_used = { c };
         }
-        ~Server() {};
+    }
+    
+}
+~Server() {};
 
-        void PingAllClients() {
-            olc::net::message<MessageTypes> broadcast_msg;
-            broadcast_msg.header.id = MessageTypes::ClientPing;
-            // Caution with this...
-            std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
-            broadcast_msg << timeNow;
-            MessageAllClients(broadcast_msg);
+void PingAllClients() {
+    olc::net::message<MessageTypes> broadcast_msg;
+    broadcast_msg.header.id = MessageTypes::ClientPing;
+    // Caution with this...
+    std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
+    broadcast_msg << timeNow;
+    MessageAllClients(broadcast_msg);
+}
+
+protected:
+std::string name; // dummy ip localhost
+std::string map_name;
+uint16_t port;
+uint32_t clients_amount = 0;
+uint8_t player_limit = 1;
+std::vector<std::pair<int,int>> spawn_pos = {};
+std::unordered_map<uint32_t, int> clients_ping = {};
+std::unordered_map<uint32_t, MainColors> clients_color = {};
+std::map<MainColors, std::pair<int,int>> colors_spawn_pos = {};
+std::vector<MainColors> colors_used = {};
+std::unordered_map<uint32_t, bool> requested_ping = {};
+
+virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
+    this->clients_amount++;
+    MainColors color_for_client = MainColors::NONE;
+
+    for(auto const& [color, pos] : this->colors_spawn_pos) {
+        if( std::find(this->colors_used.begin(), this->colors_used.end(), color) == this->colors_used.end() ) {
+            color_for_client = color;
+            colors_used.push_back(color);
+            break;
         }
+    }
+    this->clients_color[this->nIDCounter] = color_for_client;
 
-    protected:
-        std::string name; // dummy ip localhost
-        uint16_t port;
-        uint32_t clients_amount = 0;
-        std::unordered_map<uint32_t, int> clients_ping = {};
-        std::unordered_map<uint32_t, MainColors> clients_color = {};
-        std::vector<MainColors> possible_colors = { 
-            MainColors::BLACK,
-            MainColors::RED, MainColors::GREEN, MainColors::BLUE, 
-            MainColors::YELLOW, MainColors::CYAN, MainColors::MAGENTA
-        };
-        std::vector<MainColors> colors_used = {};
-        std::unordered_map<uint32_t, bool> requested_ping = {};
-
-        virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
-            this->clients_amount++;
-            MainColors color_for_client = MainColors::NONE;
-
-            for(MainColors& c : possible_colors) {
-                if(std::find(colors_used.begin(), colors_used.end(), c) == colors_used.end()) {
-                    color_for_client = c;
-                    colors_used.push_back(c);
-                    break;
-                }
-            }
-
-            this->clients_color[this->nIDCounter] = color_for_client;
-
-            olc::net::message<MessageTypes> msg;
-            // send their ID
-            msg.header.id = MessageTypes::ServerAccept;
-            msg << this->nIDCounter;
-            msg <= this->name;
-            client->Send(msg);
-            return true;
-        }
+    olc::net::message<MessageTypes> msg;
+    // send their ID and relevant information to create the scene
+    msg.header.id = MessageTypes::ServerAccept;
+    for(auto const& [color, pos] : this->colors_spawn_pos) {
+        msg << pos.second;
+        msg << pos.first;
+        msg << color;
+    }
+    msg << this->spawn_pos.size();
+    msg << color_for_client;
+    msg <= this->map_name;
+    msg << this->nIDCounter;
+    msg <= this->name;
+    client->Send(msg);
+    return true;
+}
 
         void OnClientValidated(std::shared_ptr<olc::net::connection<MessageTypes>> client) override {
             olc::net::message<MessageTypes> colors_msg;

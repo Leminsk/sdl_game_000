@@ -85,6 +85,8 @@
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
 
+#include "../utils.hpp"
+
 namespace olc
 {
 	namespace net
@@ -109,12 +111,19 @@ namespace olc
 				asio::read_until(ssl_socket, response, "\r\n\r\n"); // headers
 				std::istream response_stream(&response);
 				std::string headers;
-				// last header is the IP
-				std::string current_header;
+				// last header is the IPv4, and previous one is IPv6 (if there is one)
+				std::string ipv6 = "";
+				std::string ipv4 = "";
 				while (std::getline(response_stream, headers)) {
-					current_header = headers;
+					ipv6 = ipv4;
+					ipv4 = headers;
 				}
-				return current_header;
+				trim(ipv4);
+				trim(ipv6);
+				std::cout << "IPv4:" << ipv4 << "||\n";
+				std::cout << "IPv6:" << ipv6 << "||\n";
+				if(ipv6.empty()) { return ipv4; }
+				return ipv6;
 			} catch (const std::exception& e) {
 				std::cout << "getExternalIP() Exception: " << e.what() << '\n';
 				return "";
@@ -461,8 +470,8 @@ namespace olc
 								// so wait for that and respond
 								ReadValidation();
 							} else {
-								// std::cout << "Error on ConnectToServer(): " << ec.message() << '\n';
-								throw std::runtime_error("Error on ConnectToServer(): " + ec.message() + " (" + std::to_string(ec.value()) + ")");
+								std::cout << "Error on ConnectToServer(): " << ec.message() << " (" << std::to_string(ec.value()) << ")\n";
+								// throw std::runtime_error("Error on ConnectToServer(): " + ec.message() + " (" + std::to_string(ec.value()) + ")");
 							}
 						});
 				}
@@ -700,7 +709,6 @@ namespace olc
 							if (m_nOwnerType == owner::server)
 							{
 								// Connection is a server, so check response from client
-
 								// Compare sent data to actual solution
 								if (m_nHandshakeIn == m_nHandshakeCheck)
 								{
