@@ -22,6 +22,7 @@ class Game {
         // camera
         static Vector2D camera_position;
         static Vector2D camera_velocity;
+        static const float camera_speed;
         static float camera_zoom;
         static Vector2D camera_focus;
         static const float DEFAULT_SPEED;
@@ -44,8 +45,6 @@ class Game {
         static float world_map_layout_width;
         static float world_map_layout_height;
 
-        static int collision_mesh_macro_16_height;
-        static int collision_mesh_macro_16_width;
         static int collision_mesh_macro_4_height;
         static int collision_mesh_macro_4_width;
         static int collision_mesh_1_height;
@@ -62,7 +61,6 @@ class Game {
         static std::vector<std::vector<uint8_t>> collision_mesh_4;
         static std::vector<std::vector<uint8_t>> collision_mesh_1;
         static std::vector<std::vector<uint8_t>> collision_mesh_macro_4;
-        static std::vector<std::vector<uint8_t>> collision_mesh_macro_16;
 
 
         static Manager* manager;

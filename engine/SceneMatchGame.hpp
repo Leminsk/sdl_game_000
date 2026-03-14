@@ -302,14 +302,14 @@ void setScene(
     
 
     switch(Game::match_game_type) {
-        case MatchGameType::SINGLE_PLAYER:
+        case MatchGameType::SINGLE_PLAYER: {
             this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
             this->spawn_positions = spawn_positions;
             this->player_spawn = player_spawn;
             this->map_pixels_colors = map_pixels;
             this->is_client = false;
             this->is_server = false;
-            break;
+        } break;
         case MatchGameType::MULTIPLAYER_CLIENT: {
             this->is_client = true;
             this->is_server = false;
@@ -636,11 +636,10 @@ void handleEventsPostPoll(const uint8_t *keystates) {
             this->pressed_toggle_collision_mesh_crosshair = false;
         }
 
-
-        if(keystates[SDL_SCANCODE_W]) { Game::camera_velocity.y =  -2.0f / Game::camera_zoom; }
-        if(keystates[SDL_SCANCODE_S]) { Game::camera_velocity.y =   2.0f / Game::camera_zoom; }
-        if(keystates[SDL_SCANCODE_A]) { Game::camera_velocity.x =  -2.0f / Game::camera_zoom; }
-        if(keystates[SDL_SCANCODE_D]) { Game::camera_velocity.x =   2.0f / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_W]) { Game::camera_velocity.y =  -Game::camera_speed / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_S]) { Game::camera_velocity.y =   Game::camera_speed / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_A]) { Game::camera_velocity.x =  -Game::camera_speed / Game::camera_zoom; }
+        if(keystates[SDL_SCANCODE_D]) { Game::camera_velocity.x =   Game::camera_speed / Game::camera_zoom; }
 
         if(!keystates[SDL_SCANCODE_W] && !keystates[SDL_SCANCODE_S]) { Game::camera_velocity.y = 0.0f; }
         if(!keystates[SDL_SCANCODE_A] && !keystates[SDL_SCANCODE_D]) { Game::camera_velocity.x = 0.0f; }

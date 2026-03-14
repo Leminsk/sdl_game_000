@@ -19,6 +19,7 @@ int Game::SCREEN_WIDTH;
 
 Vector2D Game::camera_position;
 Vector2D Game::camera_velocity;
+const float Game::camera_speed = 5.0f;
 Vector2D Game::camera_focus;
 const float Game::DEFAULT_SPEED = 100.0f; // pixels per second
 float Game::camera_zoom;
@@ -42,8 +43,6 @@ SDL_Texture *Game::building_tex = nullptr;
 float Game::world_map_layout_width;
 float Game::world_map_layout_height;
 
-int Game::collision_mesh_macro_16_height;
-int Game::collision_mesh_macro_16_width;
 int Game::collision_mesh_macro_4_height;
 int Game::collision_mesh_macro_4_width;
 int Game::collision_mesh_1_height;
@@ -59,7 +58,6 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_16;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_4;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_1;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_4;
-std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_16;
 
 MatchGameType Game::match_game_type;
 std::string Game::EXTERNAL_IP;

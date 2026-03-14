@@ -561,16 +561,11 @@ std::vector<Vector2D> find_path(const Vector2D& start, const Vector2D& destinati
         width_limit = Game::collision_mesh_1_width-1;
         height_limit = Game::collision_mesh_1_height-1;
         offcourse_limit = 24.0f;
-    } else if(Game::collision_mesh_macro_4_width > 0 && distance <= macro_16_limit) { // use macro mesh of 4 (4 tiles -> 1 node)
+    } else { // use macro mesh of 4 (4 tiles -> 1 node)
         macro_size = 4; mesh = &Game::collision_mesh_macro_4; 
         width_limit = Game::collision_mesh_macro_4_width-1;
         height_limit = Game::collision_mesh_macro_4_height-1;
         offcourse_limit = 32.0f;
-    } else if(Game::collision_mesh_macro_16_width > 0) { // use macro mesh of 16 (16 tiles -> 1 node)
-        macro_size = 16; mesh = &Game::collision_mesh_macro_16; 
-        width_limit = Game::collision_mesh_macro_16_width-1;
-        height_limit = Game::collision_mesh_macro_16_height-1;
-        offcourse_limit = 64.0f;
     }
 
     if(macro_size > 0) {
