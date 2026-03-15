@@ -1,0 +1,15 @@
+.container-lg.px-3.my-5.markdown-body {
+  background-color: #0d1117 !important;
+  color: #c9d1d9 !important;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+body {
+  background-color: #0d1117 !important;
+}
+
+.footer.border-top.border-gray-light {
+  background-color: #0d1117 !important;
+  color: #c9d1d9 !important;
+}
