@@ -40,7 +40,7 @@ else # For Linux
     
     MAIN_SDL = -lSDL2
     
-    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lpng -ljpeg -lfreetype -lm -lssl -lcrypto
+    LINKER_FLAGS = $(MAIN_SDL) $(MIXER) $(IMAGE) $(TTF) -lm -lssl -lcrypto
     C_FLAGS += -pthread
 
 endif

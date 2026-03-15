@@ -211,15 +211,16 @@ void LoadMapRender(float tile_scale=1.0f) {
     }
 }
 
-void processServerMessages() {
-    while(!this->client->Incoming().empty()) {
-        auto msg = this->client->Incoming().pop_front().msg;
-        switch (msg.header.id) {
-            case MessageTypes::ServerAccept: {
+std::vector<MainColors> awaitMapData() {
+    std::vector<MainColors> spawn_colors = {};
+    bool got_data = false;
+    while(!got_data) {
+        if(!this->client->Incoming().empty()) {
+            auto msg = this->client->Incoming().pop_front().msg;
+            if(msg.header.id == MessageTypes::ServerAccept) {
                 std::string server_name;
                 msg >= server_name;
                 msg >> this->PLAYER_CLIENT_ID;
-                std::cout << "Connected to: " << server_name << " as user id [" << this->PLAYER_CLIENT_ID << "]\n";
                 msg >= this->map_name;
                 const std::string file_path = "assets/maps/"+this->map_name+".bmp";
                 uint32_t map_width, map_height;
@@ -229,22 +230,30 @@ void processServerMessages() {
                     MainColors c;
                     int first, second, players_amount;
                     msg >> players_amount;
-                    if(this->spawn_positions.empty()) {
-                        for(int i=0; i<players_amount; ++i) {
-                            msg >> c;
-                            msg >> first;
-                            msg >> second;
-                            this->spawn_positions.push_back({ first, second });
-                            if(c == this->PLAYER_COLOR) {
-                                this->player_spawn = { first, second };
-                            }
+                    for(int i=0; i<players_amount; ++i) {
+                        msg >> c;
+                        msg >> first;
+                        msg >> second;
+                        this->spawn_positions.push_back({ first, second });
+                        spawn_colors.push_back(c);
+                        if(c == this->PLAYER_COLOR) {
+                            this->player_spawn = { first, second };
                         }
                     }
+                    got_data = true;
                 } else {
-                    throw std::runtime_error("Failed to get map " + file_path + " from server.\n");
+                    throw std::runtime_error("Failed to get map " + file_path + " form server.\n");
                 }
-                
-            } break;
+            }
+        }
+    }
+    return spawn_colors;
+}
+
+void processServerMessages() {
+    while(!this->client->Incoming().empty()) {
+        auto msg = this->client->Incoming().pop_front().msg;
+        switch (msg.header.id) {
             case MessageTypes::ServerState_Colors: {
                 int clients_amount;
                 msg >> clients_amount;
@@ -320,7 +329,13 @@ void setScene(
                 Mix_PlayMusic(music_main_menu, -1);
                 return;
             }
-            this->processServerMessages();
+            std::vector<MainColors> spawn_colors = this->awaitMapData(); // TODO: refactor this function to have a timeout
+            // spawn_positions received form the server comes in the reverse order
+            std::reverse( this->spawn_positions.begin(), this->spawn_positions.end() );
+            for(int i=0; i<spawn_colors.size(); ++i) {
+                std::pair<int,int> pos = this->spawn_positions[i];
+                this->map_pixels_colors[pos.first][pos.second] = convertMainColorToSDL(spawn_colors[i]);
+            }
         } break;
         case MatchGameType::MULTIPLAYER_HOST: {
             this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
@@ -361,7 +376,7 @@ void setScene(
         LoadMapRender();
         Game::world_map_layout_width = this->map->world_layout_width;
         Game::world_map_layout_height = this->map->world_layout_height;
-        Game::camera_position = this->map->getWorldPosFromTileCoord(player_spawn.second, player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+        Game::camera_position = this->map->getWorldPosFromTileCoord(this->player_spawn.second, this->player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
         this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height,  this->buildings);
         this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height,  this->buildings);

@@ -81,7 +81,7 @@ virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>>
         msg << pos.first;
         msg << color;
     }
-    msg << this->spawn_pos.size();
+    msg << (int)this->colors_spawn_pos.size();
     msg << color_for_client;
     msg <= this->map_name;
     msg << this->nIDCounter;
