@@ -14,13 +14,13 @@ body {
   color: #c9d1d9 !important;
 }
 
-.table {
+.markdown-body .table {
   background: #161b22;
   color: #c9d1d9;
   border: 1px solid #30363d;
 }
 
-.th, .td {
+.markdown-body th, .markdown-body .td {
   border: 1px solid #30363d;
   padding: 8px;
 }
