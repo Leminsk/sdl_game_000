@@ -15,6 +15,6 @@ body {
 }
 
 
-.markdown-body th, .markdown-body .td {
+.markdown-body th, .markdown-body td {
   background: #161b22 !important;
 }
