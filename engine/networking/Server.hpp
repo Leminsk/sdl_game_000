@@ -25,16 +25,15 @@ Server(
     this->name = server_name;
     this->map_name = map_name;
     this->spawn_pos = spawn_positions;
-    this->player_limit = spawn_positions.size() - 1;
+    this->player_limit = spawn_positions.size();
+    this->colors_on_spawn.resize(this->player_limit);
 
-    for(const std::pair<int,int>& coord : spawn_positions) {
+    for(int i=0; i<this->spawn_pos.size(); ++i) {
+        std::pair<int,int> coord = this->spawn_pos[i];
         MainColors c = convertSDLColorToMainColor(map_pixels[coord.first][coord.second]);
-        this->colors_spawn_pos[c] = coord;
-        if(coord == host_spawn) {
-            this->colors_used = { c };
-        }
+        bool used = coord == host_spawn;
+        this->colors_on_spawn[i] = { c, used };
     }
-    
 }
 ~Server() {};
 
@@ -54,20 +53,19 @@ uint16_t port;
 uint32_t clients_amount = 0;
 uint8_t player_limit = 1;
 std::vector<std::pair<int,int>> spawn_pos = {};
+std::vector<std::pair<MainColors, bool>> colors_on_spawn = {}; // flag true if used by some player
 std::unordered_map<uint32_t, int> clients_ping = {};
 std::unordered_map<uint32_t, MainColors> clients_color = {};
-std::map<MainColors, std::pair<int,int>> colors_spawn_pos = {};
-std::vector<MainColors> colors_used = {};
 std::unordered_map<uint32_t, bool> requested_ping = {};
 
 virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>> client) {
     this->clients_amount++;
     MainColors color_for_client = MainColors::NONE;
 
-    for(auto const& [color, pos] : this->colors_spawn_pos) {
-        if( std::find(this->colors_used.begin(), this->colors_used.end(), color) == this->colors_used.end() ) {
-            color_for_client = color;
-            colors_used.push_back(color);
+    for(int i=0; i<this->spawn_pos.size(); ++i) {
+        if(!colors_on_spawn[i].second) {
+            colors_on_spawn[i].second = true;
+            color_for_client = colors_on_spawn[i].first;
             break;
         }
     }
@@ -76,12 +74,12 @@ virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>>
     olc::net::message<MessageTypes> msg;
     // send their ID and relevant information to create the scene
     msg.header.id = MessageTypes::ServerAccept;
-    for(auto const& [color, pos] : this->colors_spawn_pos) {
-        msg << pos.second;
-        msg << pos.first;
-        msg << color;
+    for(int i=0; i<this->spawn_pos.size(); ++i) {
+        msg << this->spawn_pos[i].second;
+        msg << this->spawn_pos[i].first;
+        msg << this->colors_on_spawn[i].first;
     }
-    msg << (int)this->colors_spawn_pos.size();
+    msg << static_cast<int>(this->spawn_pos.size());
     msg << color_for_client;
     msg <= this->map_name;
     msg << this->nIDCounter;
@@ -107,13 +105,11 @@ virtual bool OnClientConnect(std::shared_ptr<olc::net::connection<MessageTypes>>
             uint32_t client_id = client->GetID();
             this->clients_amount--;
             MainColors color_to_remove = this->clients_color[client_id];
-            this->colors_used.erase(
-                std::remove(
-                    this->colors_used.begin(), 
-                    this->colors_used.end(), 
-                    color_to_remove
-                )
-            );
+            for(int i=0; i<this->colors_on_spawn.size(); ++i) {
+                if(this->colors_on_spawn[i].first == color_to_remove) {
+                    this->colors_on_spawn[i].second = false;
+                }
+            }
             std::cout << "Removing client [" << client_id << "]\n";
             this->clients_ping.erase(client_id);
             this->clients_color.erase(client_id);

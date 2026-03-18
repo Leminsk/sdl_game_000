@@ -211,8 +211,7 @@ void LoadMapRender(float tile_scale=1.0f) {
     }
 }
 
-std::vector<MainColors> awaitMapData() {
-    std::vector<MainColors> spawn_colors = {};
+void awaitMapData() {
     bool got_data = false;
     while(!got_data) {
         if(!this->client->Incoming().empty()) {
@@ -235,7 +234,7 @@ std::vector<MainColors> awaitMapData() {
                         msg >> first;
                         msg >> second;
                         this->spawn_positions.push_back({ first, second });
-                        spawn_colors.push_back(c);
+                        this->map_pixels_colors[first][second] = convertMainColorToSDL(c);
                         if(c == this->PLAYER_COLOR) {
                             this->player_spawn = { first, second };
                         }
@@ -247,7 +246,8 @@ std::vector<MainColors> awaitMapData() {
             }
         }
     }
-    return spawn_colors;
+    // spawn_positions received from the server come in the reverse order
+    std::reverse( this->spawn_positions.begin(), this->spawn_positions.end() );
 }
 
 void processServerMessages() {
@@ -329,13 +329,7 @@ void setScene(
                 Mix_PlayMusic(music_main_menu, -1);
                 return;
             }
-            std::vector<MainColors> spawn_colors = this->awaitMapData(); // TODO: refactor this function to have a timeout
-            // spawn_positions received form the server comes in the reverse order
-            std::reverse( this->spawn_positions.begin(), this->spawn_positions.end() );
-            for(int i=0; i<spawn_colors.size(); ++i) {
-                std::pair<int,int> pos = this->spawn_positions[i];
-                this->map_pixels_colors[pos.first][pos.second] = convertMainColorToSDL(spawn_colors[i]);
-            }
+            this->awaitMapData(); // TODO: refactor this function to have a timeout
         } break;
         case MatchGameType::MULTIPLAYER_HOST: {
             this->PLAYER_COLOR = convertSDLColorToMainColor(player_color);
