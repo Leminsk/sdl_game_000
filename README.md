@@ -1,8 +1,8 @@
 ### Developing prototype of a simple 2D RTS in C++ with SDL
 
 ## Background (skip if you don't wanna know about me)
-I've always wanted to develop games. Unfortunately there was no good opportunity for me to do so during my universtity undergraduate course, nor was there much job prospects where I lived. So at first I tried to learn it following some game engine tutorials.  
-I tried Unity, but always got upset with all the nuts and bolts that I "don't need to know" but that are there staring me all the time.  
+I've always wanted to develop games. Unfortunately there was no good opportunity for me to do so during my universtity undergraduate course, nor were there many job prospects where I lived. So at first I tried to learn it following some game engine tutorials.  
+I tried Unity, but always got upset with all the nuts and bolts that I "don't need to know" but that are there staring at me all the time.  
 I thought about Unreal, but it always seemed too much overkill for any small 2D project.  
 One person recommended Godot to me, but then I thought "if I want to learn things from the ground up and there's always gonna be some odd stuff that are engine-specific, why don't I just do something without an engine?".  
 And that's how I ended up in the process of making my own engine. "Why would anyone do that" I hear you saying with your hands to your face. The answer is very simple: because I want to.
