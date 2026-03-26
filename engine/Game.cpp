@@ -59,6 +59,11 @@ std::vector<std::vector<uint8_t>> Game::collision_mesh_4;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_1;
 std::vector<std::vector<uint8_t>> Game::collision_mesh_macro_4;
 
+const int Game::LINE_GAP_V  =  2;
+const int Game::LINE_GAP_H  =  2;
+const int Game::CHAR_HEIGHT = 32;
+const int Game::CHAR_WIDTH  = 16;
+
 MatchGameType Game::match_game_type;
 std::string Game::EXTERNAL_IP;
 std::string Game::REMOTE_HOST_IP;

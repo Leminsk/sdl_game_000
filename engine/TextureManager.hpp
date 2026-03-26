@@ -12,4 +12,5 @@ class TextureManager {
         static void DrawWireframe(const SDL_FPoint* points, int count, const SDL_Color& color);
         static void DrawLine(const Vector2D& start, const Vector2D& end, const SDL_Color& color);
         static void DrawRect(const SDL_FRect* rect, const SDL_Color& color);
+        static void DrawTriangles(const std::vector<SDL_Vertex>& verts);
 };

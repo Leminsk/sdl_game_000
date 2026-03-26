@@ -14,6 +14,9 @@
 //
 class TextDropdownComponent : public Component {
 private:
+std::vector<SDL_Vertex> up_triangle = {};
+std::vector<SDL_Vertex> down_triangle = {};
+
 std::function<void(TextDropdownComponent&, int)> onMouseUp = nullptr;
 std::function<void(TextDropdownComponent&)> onMouseDown = nullptr;
 
@@ -43,12 +46,18 @@ void setOptions(
     this->x = this->selected_option->x;
     this->y = this->selected_option->y;
 
-    // offset back because of dropdown highlight
-    this->borderRect.x = this->x - this->border_thickness;
-    this->borderRect.y = this->y - this->border_thickness;
-    this->borderRect.w = this->w + (this->border_thickness<<1);
-    this->borderRect.h = this->h + (this->border_thickness<<1);
-
+    float base_x = this->selected_option->inner_x + Game::LINE_GAP_H;
+    float base_y = this->selected_option->inner_y + Game::LINE_GAP_V + (Game::CHAR_HEIGHT>>2);
+    this->up_triangle = {
+        { SDL_FPoint{base_x + (Game::CHAR_WIDTH>>1), base_y                         }, Game::default_text_color, SDL_FPoint{0} },
+        { SDL_FPoint{base_x                        , base_y + (Game::CHAR_HEIGHT>>1)}, Game::default_text_color, SDL_FPoint{0} },
+        { SDL_FPoint{base_x +      Game::CHAR_WIDTH, base_y + (Game::CHAR_HEIGHT>>1)}, Game::default_text_color, SDL_FPoint{0} }
+    };
+    this->down_triangle = {
+        { SDL_FPoint{base_x + (Game::CHAR_WIDTH>>1), base_y + (Game::CHAR_HEIGHT>>1)}, Game::default_text_color, SDL_FPoint{0} },
+        { SDL_FPoint{base_x                        , base_y                         }, Game::default_text_color, SDL_FPoint{0} },
+        { SDL_FPoint{base_x +      Game::CHAR_WIDTH, base_y                         }, Game::default_text_color, SDL_FPoint{0} }
+    };
 
     this->options.resize(options_amount);
     int last_index = -1;
@@ -91,8 +100,6 @@ bool is_color_dropdown = false;
 TextBoxComponent* selected_option;
 TransformComponent* selected_option_transform; // only used because of SpriteComponent
 SpriteComponent* selected_option_sprite;
-
-SDL_FRect borderRect;
 
 std::string selected_option_label;
 std::vector<TextBoxComponent*> options = {};
@@ -208,7 +215,7 @@ TextDropdownComponent(
         int chars_to_pad = max_chars - labels[i].size();
         std::string padded = labels[i];
         for(int j=0; j<chars_to_pad; ++j) { padded += ' '; }
-        this->padded_labels[i] = padded;
+        this->padded_labels[i] = ' ' + padded;
     }
     
     setOptions(labels, options_amount, pos_x, pos_y, t_c, bg_c, b_c);
@@ -282,7 +289,6 @@ void init() override {
 void update() override {
 }
 void draw() override {
-    TextureManager::DrawRect(&borderRect, COLORS_YELLOW); // using COLORS_YELLOW just for testing, change it later to something less ugly
     this->selected_option->draw();
 
     if(this->is_color_dropdown) {
@@ -294,6 +300,9 @@ void draw() override {
     } else {
         if(display_dropdown) {
             for(TextBoxComponent*& option : this->options) { option->draw(); }
+            TextureManager::DrawTriangles(this->up_triangle);
+        } else {
+            TextureManager::DrawTriangles(this->down_triangle);
         }
     }
 }

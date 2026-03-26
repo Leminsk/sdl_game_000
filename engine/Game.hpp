@@ -62,6 +62,12 @@ class Game {
         static std::vector<std::vector<uint8_t>> collision_mesh_1;
         static std::vector<std::vector<uint8_t>> collision_mesh_macro_4;
 
+        // for text display
+        static const int LINE_GAP_V;  // vertical gap between the border and the text line
+        static const int LINE_GAP_H;  // horizontal gap between the border and the text line
+        static const int CHAR_HEIGHT; // height in pixels of a single character in the text line
+        static const int CHAR_WIDTH;  // width in pixels of a single character in the text line
+
 
         static Manager* manager;
         

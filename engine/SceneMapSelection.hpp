@@ -67,7 +67,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     MapThumbnailComponent& base_thumbnail = this->maps_thumbnails[0]->getComponent<MapThumbnailComponent>();
     const int margin = 20;
     this->thumbnail_width  = base_thumbnail.border_rect.w + margin;
-    this->thumbnail_height = base_thumbnail.border_rect.h + (base_thumbnail.text_height<<1) + (base_thumbnail.thumbnail_gap<<1) + margin;
+    this->thumbnail_height = base_thumbnail.border_rect.h + (Game::CHAR_HEIGHT<<1) + (base_thumbnail.thumbnail_gap<<1) + margin;
 
     int width_overlap = (base_x + (this->maps_amount * this->thumbnail_width)) - Game::SCREEN_WIDTH;
     int row_max = this->maps_amount;

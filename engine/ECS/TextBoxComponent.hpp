@@ -32,8 +32,8 @@ void setProportions(int pos_x, int pos_y, const std::vector<std::string>& text_l
     for(std::string line : text_lines) {
         if(line.size() > max_char_on_line) { max_char_on_line = line.size(); }
     }
-    const int total_width = (max_char_on_line * this->h_char_width) + (this->h_line_gap<<1) + double_thickness;
-    const int total_height = (text_lines.size() * (this->v_char_height + this->v_line_gap)) + this->v_line_gap + double_thickness;
+    const int total_width = (max_char_on_line * Game::CHAR_WIDTH) + (Game::LINE_GAP_H<<1) + double_thickness;
+    const int total_height = (text_lines.size() * (Game::CHAR_HEIGHT + Game::LINE_GAP_V)) + Game::LINE_GAP_V + double_thickness;
 
     this->border_thickness = border_thickness;
 
@@ -72,10 +72,6 @@ bool rotating = false;
 int border_thickness;
 int line_thickness;
 
-const int v_line_gap = 2; // vertical gap between the border and the text line
-const int h_line_gap = 2; // horizontal gap between the border and the text line
-const int v_char_height = 32; // height in pixels of a single character in the text line
-const int h_char_width = 16; // width in pixels of a single character in the text line
 
 const char* font_path;
 SDL_Color text_color, bg_color, border_color;
@@ -162,7 +158,7 @@ void setMultiText(const std::vector<std::string>& lines, const char* path=nullpt
     this->text_content.clear();
     this->text_content.shrink_to_fit();
     for(std::string line : lines) {
-        this->width_per_line.push_back(line.size() * this->h_char_width);
+        this->width_per_line.push_back(line.size() * Game::CHAR_WIDTH);
         int width, height;
         this->textures.push_back( TextureManager::LoadTextTexture(line.c_str(), this->text_color, width, height, path) );
         this->text_content.push_back(line);
@@ -191,7 +187,7 @@ bool onMousePress(const Vector2D& mouse_pos) {
         clicked_zone = Collision::pointInRect(
             mouse_pos.x, mouse_pos.y, 
             this->x, this->y, 
-            (this->character_limit * this->h_char_width) + (this->h_line_gap<<1) + (this->border_thickness<<1),
+            (this->character_limit * Game::CHAR_WIDTH) + (Game::LINE_GAP_H<<1) + (this->border_thickness<<1),
             this->h
         );
     } else {
@@ -216,7 +212,7 @@ bool onMouseRelease(const Vector2D& mouse_pos) {
         clicked_zone = Collision::pointInRect(
             mouse_pos.x, mouse_pos.y, 
             this->x, this->y, 
-            (this->character_limit * this->h_char_width) + (this->h_line_gap<<1) + (this->border_thickness<<1),
+            (this->character_limit * Game::CHAR_WIDTH) + (Game::LINE_GAP_H<<1) + (this->border_thickness<<1),
             this->h
         );
     } else {
@@ -424,16 +420,16 @@ void init() override {
     this->bgRect.w = this->inner_w; this->bgRect.h = this->inner_h;
     
     // always used for 1 line at a time
-    this->destRect.x = this->inner_x + this->v_line_gap; 
-    this->destRect.y = this->inner_y + this->v_line_gap;
-    this->destRect.w = this->inner_w - (this->v_line_gap<<1);
+    this->destRect.x = this->inner_x + Game::LINE_GAP_V; 
+    this->destRect.y = this->inner_y + Game::LINE_GAP_V;
+    this->destRect.w = this->inner_w - (Game::LINE_GAP_V<<1);
     
     if(this->single_line) {
-        this->destRect.h = this->inner_h - (this->v_line_gap<<1);
+        this->destRect.h = this->inner_h - (Game::LINE_GAP_V<<1);
     } else {           
                                                     // top gap
-        this->line_thickness = ((this->inner_h - this->v_line_gap) / this->lines_amount);
-        this->destRect.h = this->line_thickness - this->v_line_gap; // bottom/inner gaps
+        this->line_thickness = ((this->inner_h - Game::LINE_GAP_V) / this->lines_amount);
+        this->destRect.h = this->line_thickness - Game::LINE_GAP_V; // bottom/inner gaps
     }
     
     this->cursorRect.x = this->destRect.x; this->cursorRect.y = this->destRect.y;
@@ -467,11 +463,11 @@ void draw() override {
             TextureManager::DrawSimpleText(color3, this->textures[i], &this->srcRect, &this->destRect, this->rotation, SDL_FLIP_NONE);
             this->destRect.y += this->line_thickness;
         }
-        this->destRect.y = this->inner_y + this->v_line_gap;
+        this->destRect.y = this->inner_y + Game::LINE_GAP_V;
     }
 
     if(this->editing) {
-        this->cursorRect.x = this->destRect.x + (this->cursor_pos * this->h_char_width);
+        this->cursorRect.x = this->destRect.x + (this->cursor_pos * Game::CHAR_WIDTH);
         TextureManager::DrawRect(&this->cursorRect, COLORS_GREEN);
     }
 }

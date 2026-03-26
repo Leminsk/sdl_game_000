@@ -83,7 +83,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     createUIButton(
         "button_apply_resolution",
         "Apply Resolution",
-        res_dropdown.borderRect.x + res_dropdown.borderRect.w + 30, res_dropdown.y,
+        res_dropdown.x + res_dropdown.w + 30, res_dropdown.y,
         Game::default_text_color, background_color, border_color,
         [this](TextBoxComponent& self) {
             std::string resolution_option = this->resolution_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
@@ -100,7 +100,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     std::string fps_string = left_pad_int(Game::MAX_FPS, 3, ' ');
 
     this->fps_current_value = createUISimpleText(
-        "fps_current_value", res_dropdown.borderRect.x, res_dropdown.borderRect.y + res_dropdown.borderRect.h + 20,
+        "fps_current_value", res_dropdown.x, res_dropdown.y + res_dropdown.h + 20,
         "Current FPS: "+fps_string
     );
     TextComponent& fps_label = this->fps_current_value->getComponent<TextComponent>();

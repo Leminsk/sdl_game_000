@@ -74,8 +74,8 @@ class TextComponent : public Component {
             int width, height;
             this->texture = TextureManager::LoadTextTexture(text.c_str(), this->color, width, height, path);
             
-            this->w = 16 * text.size();
-            this->h = 32;
+            this->w = Game::CHAR_WIDTH * text.size();
+            this->h = Game::CHAR_HEIGHT;
             if(this->fixed) {
                 this->x = this->x < 0 ? ((Game::SCREEN_WIDTH - this->w) + this->x) : this->x;
                 this->y = this->y < 0 ? ((Game::SCREEN_HEIGHT - this->h) + this->y) : this->y;

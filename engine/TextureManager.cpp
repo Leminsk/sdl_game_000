@@ -44,6 +44,18 @@ SDL_Texture* TextureManager::LoadTextTexture(const char* text, const SDL_Color& 
     return tex;
 }
 
+void setRenderDrawColor(const SDL_Color& color) {
+    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+}
+void resetRenderDrawColor() {
+    SDL_SetRenderDrawColor(
+        Game::renderer, 
+        Game::default_bg_color.r, 
+        Game::default_bg_color.g, 
+        Game::default_bg_color.b, 
+        Game::default_bg_color.a
+    );
+}
 
 
 /*
@@ -59,25 +71,29 @@ void TextureManager::Draw(SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, doub
 }
 
 void TextureManager::DrawSimpleText(const SDL_Color& color, SDL_Texture* tex, SDL_Rect *src, SDL_FRect *dest, double rotation_degrees, SDL_RendererFlip flip) {
-    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+    setRenderDrawColor(color);
     TextureManager::Draw(tex, src, dest, rotation_degrees, flip);
-    SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);
+    resetRenderDrawColor();
 }
 
 void TextureManager::DrawWireframe(const SDL_FPoint* points, int count, const SDL_Color& color) {
-    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+    setRenderDrawColor(color);
     SDL_RenderDrawLinesF(Game::renderer, points, count);
-    SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);
+    resetRenderDrawColor();
 }
 
 void TextureManager::DrawLine(const Vector2D& start, const Vector2D& end, const SDL_Color& color) {
-    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+    setRenderDrawColor(color);
     SDL_RenderDrawLineF(Game::renderer, start.x, start.y, end.x, end.y);
-    SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);
+    resetRenderDrawColor();
 }
 
 void TextureManager::DrawRect(const SDL_FRect* rect, const SDL_Color& color) {
-    SDL_SetRenderDrawColor(Game::renderer, color.r, color.g, color.b, color.a);
+    setRenderDrawColor(color);
     SDL_RenderFillRectF(Game::renderer, rect);
-    SDL_SetRenderDrawColor(Game::renderer, Game::default_bg_color.r, Game::default_bg_color.g, Game::default_bg_color.b, Game::default_bg_color.a);
+    resetRenderDrawColor();
+}
+
+void TextureManager::DrawTriangles(const std::vector<SDL_Vertex>& verts) {
+    SDL_RenderGeometry(Game::renderer, nullptr, verts.data(), verts.size(), nullptr, 0);
 }

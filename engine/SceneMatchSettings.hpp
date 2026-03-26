@@ -96,10 +96,9 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     int width_max_digits = std::to_string(map_width).size();
     int height_max_digits = std::to_string(map_height).size();
 
-    const int text_height = 32;
     const int v_spacing = 32;
-    const int spawn_text_offset  = text_height + v_spacing;
-    const int spawn_text_length_with_offset = ((width_max_digits + height_max_digits + 3) * 16) + 5;
+    const int spawn_text_offset  = Game::CHAR_HEIGHT + v_spacing;
+    const int spawn_text_length_with_offset = ((width_max_digits + height_max_digits + 3) * Game::CHAR_WIDTH) + 5;
     const int base_x = thumbnail.origin_x + thumbnail.border_rect.w + 64;
     int spawn_count = 0;
     int y, x;

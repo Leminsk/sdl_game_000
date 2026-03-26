@@ -24,7 +24,7 @@ void setObjects(float pos_x, float pos_y, float w, float h, const std::string& n
     this->map_title = new TextComponent(map_name, pos_x, pos_y, Game::default_text_color, true);
     this->border_rect = {
         pos_x,
-        pos_y + this->text_height + this->thumbnail_gap,
+        pos_y + Game::CHAR_HEIGHT + this->thumbnail_gap,
         w + this->double_thickness,
         h + this->double_thickness
     };
@@ -42,7 +42,6 @@ void setObjects(float pos_x, float pos_y, float w, float h, const std::string& n
 }
 
 public:
-const int text_height = 32;
 const float thumbnail_side_size = 200.0f;
 const int thumbnail_gap = 4;
 const int border_thickness = 2;

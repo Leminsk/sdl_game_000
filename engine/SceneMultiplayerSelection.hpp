@@ -271,7 +271,7 @@ void setUsersIpTable() {
     TextBoxComponent& users_column = this->table_column_users->getComponent<TextBoxComponent>();
     TextBoxComponent& ips_column = this->table_column_ips->getComponent<TextBoxComponent>();
     const int button_height = users_column.line_thickness;
-    const int button_ref_y = ref_y + users_column.border_thickness + users_column.v_line_gap;
+    const int button_ref_y = ref_y + users_column.border_thickness + Game::LINE_GAP_V;
 
     for(int i=0; i<this->usernames.size(); ++i) {
         std::string username = this->usernames[i];
