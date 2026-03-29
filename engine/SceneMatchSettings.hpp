@@ -208,7 +208,7 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     }
 }
 
-bool clickedDropdown(Vector2D& pos) {
+bool onMouseRelease(Vector2D& pos) {
     for(auto& pr_ui : this->pr_ui_elements) {
         if(pr_ui->hasComponent<TextDropdownComponent>()) {
             if(pr_ui->getComponent<TextDropdownComponent>().onMouseRelease(pos)) {
@@ -216,13 +216,10 @@ bool clickedDropdown(Vector2D& pos) {
             }
         }
     }
-    return false;
-}
-bool clickedButton(Vector2D& pos) {
     for(auto& ui : this->ui_elements) {
         if(ui->hasComponent<TextBoxComponent>()) {
             if(ui->getComponent<TextBoxComponent>().onMouseRelease(pos)) {
-                return true;
+                break;
             }
         }
     }
@@ -233,36 +230,34 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
     Vector2D pos = Vector2D(b.x, b.y);
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            if(!clickedButton(pos)) {
-                if(clickedDropdown(pos)) {
-                    if(isValidMapSpawns() && isValidPlayerSpawn()) {
-                        if(this->button_go == nullptr) {
-                            this->button_go = createUIButton(
-                                "button_go", 
-                                "PLAY", 
-                                -50, -50, 
-                                Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
-                                [this](TextBoxComponent& self) {
-                                    self.mouse_down = false;
-                                    Mix_PlayChannel(-1, this->sound_button, 0);
-                                    this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
-                                    this->player_sdl_color = this->map_pixels[
-                                        this->spawn_positions[ this->player_spawn_index ].first
-                                    ][
-                                        this->spawn_positions[ this->player_spawn_index ].second
-                                    ];
-                                    this->change_to_scene = SceneType::MATCH_GAME;
-                                },
-                                [this](TextBoxComponent& self) {
-                                    self.mouse_down = true;
-                                }
-                            );
-                        }
-                    } else if(this->button_go != nullptr) {
-                        this->button_go->destroy();
-                        this->button_go = nullptr;
-                    }                    
-                }
+            if(onMouseRelease(pos)) {
+                if(isValidMapSpawns() && isValidPlayerSpawn()) {
+                    if(this->button_go == nullptr) {
+                        this->button_go = createUIButton(
+                            "button_go", 
+                            "PLAY", 
+                            -50, -50, 
+                            Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
+                            [this](TextBoxComponent& self) {
+                                self.mouse_down = false;
+                                Mix_PlayChannel(-1, this->sound_button, 0);
+                                this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
+                                this->player_sdl_color = this->map_pixels[
+                                    this->spawn_positions[ this->player_spawn_index ].first
+                                ][
+                                    this->spawn_positions[ this->player_spawn_index ].second
+                                ];
+                                this->change_to_scene = SceneType::MATCH_GAME;
+                            },
+                            [this](TextBoxComponent& self) {
+                                self.mouse_down = true;
+                            }
+                        );
+                    }
+                } else if (this->button_go != nullptr) {
+                    this->button_go->destroy();
+                    this->button_go = nullptr;
+                }                    
             }
         } break;
         case SDL_BUTTON_RIGHT: break;

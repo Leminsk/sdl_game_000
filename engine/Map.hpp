@@ -239,7 +239,7 @@ bool generateCollisionMacroMesh(const int macro_size, std::vector<std::vector<ui
     };
     std::vector<uint8_t> tiles;
     switch(inc) {
-        case 4: {
+        case 4: { // I'm probably not going to use this for a long while, but maybe I'll change my mind
             tiles = { 
                 0, 0, 0, 0, 
                 0, 0, 0, 0, 
@@ -247,8 +247,9 @@ bool generateCollisionMacroMesh(const int macro_size, std::vector<std::vector<ui
                 0, 0, 0, 0
             };
             for(row=0; row<this->layout_height; row += inc) {
-                out_mesh[row].reserve(out_width);
                 int mesh_index = row>>factor;
+                out_mesh[mesh_index].reserve(out_width);
+                int row1 = row+1; int row2 = row+2; int row3 = row+3;
                 for(column=0; column<this->layout_width; column += inc) {
                     tile_counter[tile_type::TILE_BASE_SPAWN] = 0;
                     tile_counter[tile_type::TILE_IMPASSABLE] = 0;
@@ -257,10 +258,10 @@ bool generateCollisionMacroMesh(const int macro_size, std::vector<std::vector<ui
                     tile_counter[tile_type::TILE_PLAYER] = 0;
                     tile_counter[tile_type::TILE_ROUGH] = 0;
                     int column1 = column+1; int column2 = column+2; int column3 = column+3;
-                    tiles[ 0] = this->layout[row  ][column]; tiles[ 1] = this->layout[row  ][column1]; tiles[ 2] = this->layout[row  ][column2]; tiles[ 3] = this->layout[row  ][column3];
-                    tiles[ 4] = this->layout[row+1][column]; tiles[ 5] = this->layout[row+1][column1]; tiles[ 6] = this->layout[row+1][column2]; tiles[ 7] = this->layout[row+1][column3];
-                    tiles[ 8] = this->layout[row+2][column]; tiles[ 9] = this->layout[row+2][column1]; tiles[10] = this->layout[row+2][column2]; tiles[11] = this->layout[row+2][column3];
-                    tiles[12] = this->layout[row+3][column]; tiles[13] = this->layout[row+3][column1]; tiles[14] = this->layout[row+3][column2]; tiles[15] = this->layout[row+3][column3];
+                    tiles[ 0] = this->layout[row ][column]; tiles[ 1] = this->layout[row ][column1]; tiles[ 2] = this->layout[row ][column2]; tiles[ 3] = this->layout[row ][column3];
+                    tiles[ 4] = this->layout[row1][column]; tiles[ 5] = this->layout[row1][column1]; tiles[ 6] = this->layout[row1][column2]; tiles[ 7] = this->layout[row1][column3];
+                    tiles[ 8] = this->layout[row2][column]; tiles[ 9] = this->layout[row2][column1]; tiles[10] = this->layout[row2][column2]; tiles[11] = this->layout[row2][column3];
+                    tiles[12] = this->layout[row3][column]; tiles[13] = this->layout[row3][column1]; tiles[14] = this->layout[row3][column2]; tiles[15] = this->layout[row3][column3];
                     for(uint8_t& t : tiles) { ++tile_counter[t]; }
                     uint8_t max_counter_type = tile_type::TILE_BASE_SPAWN;
                     int current_max = 0;
@@ -281,8 +282,8 @@ bool generateCollisionMacroMesh(const int macro_size, std::vector<std::vector<ui
                 0, 0 
             };
             for(row=0; row<this->layout_height; row += inc) {
-                out_mesh[row].reserve(out_width);
                 int mesh_index = row>>factor;
+                out_mesh[mesh_index].reserve(out_width);
                 for(column=0; column<this->layout_width; column += inc) {
                     tile_counter[tile_type::TILE_BASE_SPAWN] = 0;
                     tile_counter[tile_type::TILE_IMPASSABLE] = 0;
