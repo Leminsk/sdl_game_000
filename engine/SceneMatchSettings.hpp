@@ -51,7 +51,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
     const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
 
-    // TODO: this will actually crash the game if clicked initially with "Random" colors. IMPLEMENT random color assignment on scene change.
     this->button_go = createUIButton(
         "button_go", 
         "PLAY", 
@@ -60,6 +59,31 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
+
+            std::vector<MainColors> used_colors = {};
+            // first pass to get those with colors selected
+            for(std::pair<int,int>& pos : this->spawn_positions) {
+                SDL_Color c = this->map_pixels[pos.first][pos.second];
+                if(!isSameColor(c, COLORS_SPAWN)) {
+                    used_colors.push_back(convertSDLColorToMainColor(c));
+                }
+            }
+            std::vector<MainColors> possible_colors = { 
+                MainColors::WHITE, MainColors::BLACK, MainColors::RED, MainColors::GREEN,
+                MainColors::BLUE, MainColors::YELLOW, MainColors::CYAN, MainColors::MAGENTA
+            };
+            for(MainColors& c : used_colors) {
+                possible_colors.erase( std::find(possible_colors.begin(), possible_colors.end(), c) );
+            }
+            // second pass to set those with COLORS_SPAWN
+            for(std::pair<int,int>& pos : this->spawn_positions) {
+                if(isSameColor(this->map_pixels[pos.first][pos.second], COLORS_SPAWN)) {
+                    MainColors random_color = randomFromVector(Game::RNG, possible_colors);
+                    possible_colors.erase( std::find(possible_colors.begin(), possible_colors.end(), random_color) );
+                    this->map_pixels[pos.first][pos.second] = convertMainColorToSDL(random_color);
+                }
+            }
+
             this->player_sdl_color = this->map_pixels[
                 this->spawn_positions[ this->player_spawn_index ].first
             ][

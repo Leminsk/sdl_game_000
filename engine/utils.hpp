@@ -22,6 +22,10 @@ std::string left_pad_int(int i, int total_digits, const char digit='0', bool can
 
 int randomInt(std::mt19937 *generator, int min=0, int max=100);
 float randomFloat(std::mt19937 *generator, float min=0.0f, float max=1.0f);
+template <typename T>
+T randomFromVector(std::mt19937 *generator, std::vector<T>& v) {
+    return v[ randomInt(generator, 0, v.size()-1) ];
+}
 
 // https://stackoverflow.com/questions/216823/how-can-i-trim-a-stdstring
 void ltrim(std::string &s);
