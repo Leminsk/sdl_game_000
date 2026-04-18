@@ -18,3 +18,36 @@ body {
 .markdown-body th, .markdown-body td {
   background: #161b22 !important;
 }
+
+.markdown-body .highlight .cm {
+  color: #98c379;
+}
+.markdown-body .highlight .n {
+  color: #e5c07b;
+}
+.markdown-body .highlight .o {
+  color: #abb2bf;
+}
+.markdown-body .highlight .p {
+  color: #61afef;
+}
+.markdown-body .highlight .mi, .markdown-body .highlight .mf {
+  color: #d19a66;
+}
+.markdown-body .highlight .k {
+  color: #c678dd;
+}
+.markdown-body .highlight .kt {
+  color: #c678dd;
+}
+
+.markdown-body pre,
+.markdown-body code {
+  background-color: #1e222d !important;
+  color: #e5c07b !important;
+  border-radius: 4px;
+  padding: 0.2em 0.4em;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  overflow-x: auto;
+}
