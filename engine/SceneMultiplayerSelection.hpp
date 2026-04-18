@@ -8,11 +8,11 @@
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
 #include "utils.hpp"
+#include "Colors.hpp"
 #include "ModalContentType.hpp"
 #include "GroupLabels.hpp"
 #include "TextFieldEditStyle.hpp"
 #include "MatchGameType.hpp"
-
 class SceneMultiplayerSelection {
 private:
 SceneType parent_scene;
@@ -220,8 +220,6 @@ void createDeleteUserModal(std::string user_name) {
 }
 
 void setUsersIpTable() {
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     std::string header_label = "Username";
     
     if(header_label.size() > this->max_user_size) { 
@@ -247,25 +245,25 @@ void setUsersIpTable() {
     this->table_header_users = createUIMultilineText(
         "table_headers_users", { header_label },
         100, 50,
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
     TextBoxComponent& users_header = this->table_header_users->getComponent<TextBoxComponent>();
     this->table_header_ips = createUIMultilineText(
         "table_headers_users", { "IP" },
         users_header.x + users_header.w - users_header.border_thickness, users_header.y,
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
 
     const int ref_y = users_header.y + users_header.h;
     this->table_column_users = createUIMultilineText(
         "users_column", padded_users,
         users_header.x, ref_y,
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
     this->table_column_ips = createUIMultilineText(
         "ips_column", this->ips,
         this->table_header_ips->getComponent<TextBoxComponent>().x, ref_y,
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
 
     TextBoxComponent& users_column = this->table_column_users->getComponent<TextBoxComponent>();
@@ -281,7 +279,7 @@ void setUsersIpTable() {
             "copy_button_" + std::to_string(i), 
             "Copy",
             0, 0,
-            Game::default_text_color, COLORS_BLACK, border_color,
+            Game::default_text_color, COLORS_BLACK, COLORS_UI_BUTTON_BORDER_1,
             [this, username, ip](TextBoxComponent& self) {
                 std::string content = username + ' ' + ip;
                 SDL_SetClipboardText(content.c_str());
@@ -300,7 +298,7 @@ void setUsersIpTable() {
             "delete_button_" + std::to_string(i),
             "Delete",
             0, 0,
-            COLORS_RED, COLORS_BLACK, border_color,
+            COLORS_RED, COLORS_BLACK, COLORS_UI_BUTTON_BORDER_1,
             [this, username](TextBoxComponent& self) {
                 this->createDeleteUserModal(username);
             }
@@ -329,9 +327,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     this->fps_text = fps;
     this->parent_scene = parent;
 
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-
     this->usernames = {};
     this->ips = {};
     for(auto const& [user, ip] : Game::USERS_IP) {
@@ -349,7 +344,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_add_user", 
         " + User ",
         t_header_ips.x + t_header_ips.w + 4, t_header_ips.y,
-        COLORS_GREEN, COLORS_BLACK, border_color,
+        COLORS_GREEN, COLORS_BLACK, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             this->createAddUserModal();
         }
@@ -359,7 +354,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_back", 
         "Back", 
         50, -50, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             this->goBack();
         }
@@ -384,7 +379,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         createUIButton(
             "button_copy_ip", "Copy IP",
             text_my_ip.x + 100, text_my_ip.y - 5,
-            Game::default_text_color, COLORS_BLACK, border_color,
+            Game::default_text_color, COLORS_BLACK, COLORS_UI_BUTTON_BORDER_1,
             [this](TextBoxComponent& self) {
                 SDL_SetClipboardText(Game::EXTERNAL_IP.c_str());
             }
@@ -395,7 +390,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_host_game",
         "Host Game",
         -50, 200,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             std::cout << "host game\n";
             Mix_PlayChannel(-1, this->sound_button, 0);
@@ -408,7 +403,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_connect_to_player",
         "Join Game",
         -50, 300,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             TextDropdownComponent& dropdown = this->users_dropdown->getComponent<TextDropdownComponent>();
             std::string join_ip = "";
@@ -427,7 +422,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     users_dropdown = createUIDropdown(
         "dropdown_player_selection", this->usernames, this->sound_button,
         -10, button_join.y + button_join.h + 10,
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
 }
 
@@ -618,13 +613,11 @@ void update() {
     Game::manager->update();
 }
 void render() {
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
     const SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
     const SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
     
-    TextureManager::DrawRect(&borderRect, border_color);
-    TextureManager::DrawRect(&backgroundRect, background_color);
+    TextureManager::DrawRect(&borderRect, COLORS_UI_BUTTON_BORDER_1);
+    TextureManager::DrawRect(&backgroundRect, COLORS_PLAIN);
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }

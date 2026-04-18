@@ -7,6 +7,7 @@
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
 #include "utils.hpp"
+#include "Colors.hpp"
 
 class SceneMatchSettings {
 private:
@@ -48,14 +49,11 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
     this->parent_scene = parent;
     this->map_name = map_name;
 
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-
     this->button_go = createUIButton(
         "button_go", 
         "PLAY", 
         -50, -50, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->map_pixels = this->selected_map->getComponent<MapThumbnailComponent>().map_pixels;
@@ -107,7 +105,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
         "button_back", 
         "Back", 
         50,  -50, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             this->goBack();
         }
@@ -141,7 +139,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent, const s
                     createUIDropdownColors(
                         "spawn_dropdown_"+std::to_string(spawn_count), this->sound_button,
                         base_x + spawn_text_length_with_offset, base_y,
-                        COLORS_SPAWN, background_color, Game::default_text_color,
+                        COLORS_SPAWN, COLORS_UI_BUTTON_BACKGROUND_1, Game::default_text_color,
                         [this](TextDropdownComponent& self, int i) {
                             for(int j=0; j<this->spawn_info_entities.size(); ++j) {
                                 if(this->spawn_info_entities[j]->getIdentifier() == self.entity->getIdentifier()) {
@@ -261,7 +259,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                             "button_go", 
                             "PLAY", 
                             -50, -50, 
-                            Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
+                            Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
                             [this](TextBoxComponent& self) {
                                 self.mouse_down = false;
                                 Mix_PlayChannel(-1, this->sound_button, 0);
@@ -318,13 +316,11 @@ void update() {
     Game::manager->update();
 }
 void render() {
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
     const SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
     const SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
     
-    TextureManager::DrawRect(&borderRect, border_color);
-    TextureManager::DrawRect(&backgroundRect, background_color);
+    TextureManager::DrawRect(&borderRect, COLORS_UI_BUTTON_BORDER_1);
+    TextureManager::DrawRect(&backgroundRect, COLORS_PLAIN);
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }

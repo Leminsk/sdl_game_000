@@ -7,6 +7,7 @@
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
 #include "MatchGameType.hpp"
+#include "Colors.hpp"
 
 class SceneMainMenu {
 private:
@@ -51,13 +52,11 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
             createUIImage("menu_background-" + std::to_string(j) + ',' + std::to_string(i), this->plain_terrain_texture, j, i, w, h);
         }
     }
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
     createUIButton(
         "button_single_player", 
         "Single-Player", 
         50,   50, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->change_to_scene = SceneType::MAP_SELECTION;
@@ -67,7 +66,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         "button_multiplayer",
         "Multiplayer", 
         50,  114, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->change_to_scene = SceneType::MULTIPLAYER_SELECTION;
@@ -77,7 +76,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         "button_settings",
         "Settings",
         50,  178,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             this->change_to_scene = SceneType::SETTINGS;
@@ -88,7 +87,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
         "button_quit",
         "Quit",
         50,  -50,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             Mix_PlayChannel(-1, this->sound_button, 0);
             Game::isRunning = false;

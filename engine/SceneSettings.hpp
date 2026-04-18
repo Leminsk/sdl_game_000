@@ -71,20 +71,17 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     if(!this->config_file.is_open()) { std::cerr << "Error: could not open config.json\n"; }
     this->config_json = nlohmann::json::parse(config_file);
 
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-
     this->resolution_dropdown = createUIDropdown(
         "resolution_dropdown", resolution_labels, this->sound_button,
         50, 50, 
-        Game::default_text_color, background_color, border_color
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1
     );
     TextDropdownComponent& res_dropdown = this->resolution_dropdown->getComponent<TextDropdownComponent>();
     createUIButton(
         "button_apply_resolution",
         "Apply Resolution",
         res_dropdown.x + res_dropdown.w + 30, res_dropdown.y,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             std::string resolution_option = this->resolution_dropdown->getComponent<TextDropdownComponent>().selected_option_label;
             for(int i=0; i<this->resolution_labels.size(); ++i) {
@@ -124,7 +121,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_apply_fps",
         "Apply FPS",
         fps_input_box.borderRect.x + fps_input_box.borderRect.w + 30, fps_input_box.y,
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             int fps_value = std::stoi( trim_copy( this->fps_textfield[0]->getComponent<TextBoxComponent>().text_content[0] ) );
             changeFPS(fps_value);
@@ -141,7 +138,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_back", 
         "Back", 
         50,  -50, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             this->goBack();
         }
@@ -320,13 +317,11 @@ void update() {
     Game::manager->update();
 }
 void render() {
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
     const SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
     const SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
     
-    TextureManager::DrawRect(&borderRect, border_color);
-    TextureManager::DrawRect(&backgroundRect, background_color);
+    TextureManager::DrawRect(&borderRect, COLORS_UI_BUTTON_BORDER_1);
+    TextureManager::DrawRect(&backgroundRect, COLORS_PLAIN);
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }

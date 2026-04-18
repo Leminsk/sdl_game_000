@@ -48,10 +48,6 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
     
     this->selected_map_name = "";
 
-    const SDL_Color background_color = {  20,  20, 100, SDL_ALPHA_OPAQUE };
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color dp_border_color  = {  40, 220, 200, SDL_ALPHA_OPAQUE };
-
     const int base_x = 70;
     const int base_y = 50;
 
@@ -95,7 +91,7 @@ void setScene(Mix_Chunk*& sound_b, TextComponent* fps, SceneType parent) {
         "button_back", 
         "Back", 
         50, -back_button_y, 
-        Game::default_text_color, background_color, border_color,
+        Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
         [this](TextBoxComponent& self) {
             this->goBack();
         }
@@ -172,7 +168,7 @@ void handleMouseRelease(SDL_MouseButtonEvent& b) {
                             "button_go", 
                             " Go ", 
                             -50, -50, 
-                            Game::default_text_color, { 20, 20, 100, SDL_ALPHA_OPAQUE }, { 230, 210, 190, SDL_ALPHA_OPAQUE },
+                            Game::default_text_color, COLORS_UI_BUTTON_BACKGROUND_1, COLORS_UI_BUTTON_BORDER_1,
                             [this](TextBoxComponent& self) {
                                 Mix_PlayChannel(-1, this->sound_button, 0);
                                 this->change_to_scene = SceneType::MATCH_SETTINGS;
@@ -294,13 +290,11 @@ void update() {
     Game::manager->update();
 }
 void render() {
-    const SDL_Color border_color     = { 230, 210, 190, SDL_ALPHA_OPAQUE };
-    const SDL_Color background_color = { 123,  82,  35, SDL_ALPHA_OPAQUE };
     const SDL_FRect borderRect     = { 0.0f, 0.0f, static_cast<float>(Game::SCREEN_WIDTH),   static_cast<float>(Game::SCREEN_HEIGHT)   };
     const SDL_FRect backgroundRect = { 3.0f, 3.0f, static_cast<float>(Game::SCREEN_WIDTH-6), static_cast<float>(Game::SCREEN_HEIGHT-6) };
     
-    TextureManager::DrawRect(&borderRect, border_color);
-    TextureManager::DrawRect(&backgroundRect, background_color);
+    TextureManager::DrawRect(&borderRect, COLORS_UI_BUTTON_BORDER_1);
+    TextureManager::DrawRect(&backgroundRect, COLORS_PLAIN);
 
     for(auto& bg_ui : this->bg_ui_elements) { bg_ui->draw(); }
     for(auto& ui : this->ui_elements) { ui->draw(); }
