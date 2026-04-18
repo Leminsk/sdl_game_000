@@ -148,7 +148,6 @@ void draw() override {
         screen_corners[1] = convertScreenToWorld({ static_cast<float>(Game::SCREEN_WIDTH),                                    0.0f });
         screen_corners[2] = convertScreenToWorld({ static_cast<float>(Game::SCREEN_WIDTH), static_cast<float>(Game::SCREEN_HEIGHT) });
         screen_corners[3] = convertScreenToWorld({                                   0.0f, static_cast<float>(Game::SCREEN_HEIGHT) });
-        std::vector<bool> corners_in_screen = std::vector<bool>(4);
         SDL_FPoint p;
         for(int i=0; i<4; ++i) {
             screen_corners[i].x = (screen_corners[i].x * this->minimap_proportion_width) + this->origin_x;
