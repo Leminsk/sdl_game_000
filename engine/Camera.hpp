@@ -10,11 +10,11 @@
 
 // screen = world - camera
 Vector2D panWorldToScreen(const Vector2D& world_pos) {
-    return world_pos - Game::camera_position;
+    return world_pos - Game::camera_diff;
 }
 
 Vector2D panScreenToWorld(const Vector2D& screen_pos) {
-    return screen_pos + Game::camera_position;
+    return screen_pos + Game::camera_diff;
 }
 
 // should only be used AFTER panning (i.e. after panWorldToScreen() => Pan first, Zoom Second)

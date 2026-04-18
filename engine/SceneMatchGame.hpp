@@ -10,6 +10,7 @@
 #include "SceneTypes.hpp"
 #include "Scene_utils.hpp"
 #include "MatchGameType.hpp"
+#include "ECS/MapThumbnailComponent.hpp"
 #include "networking/MessageTypes.h"
 #include "networking/Client.hpp"
 #include "networking/Server.hpp"
@@ -35,15 +36,14 @@ Mix_Chunk* sound_button = NULL;
 bool draw_grids = false;
 bool pressed_toggle_collision_mesh_crosshair = false;
 int toggle_collision_mesh_crosshair = -1;
-std::vector<Vector2D> hex_tile = { {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0} };
-Vector2D clicked_point;
-Vector2D converted_point;
 
 Map* map = nullptr;
 std::string map_name = "";
 std::pair<int, int> player_spawn = {};
 std::vector<std::pair<int, int>> spawn_positions = {};
 std::vector<std::vector<SDL_Color>> map_pixels_colors = {};
+
+MapThumbnailComponent* minimap = nullptr;
 
 
 // --------------------------- NETWORKING ------------------------
@@ -370,7 +370,7 @@ void setScene(
         LoadMapRender();
         Game::world_map_layout_width = this->map->world_layout_width;
         Game::world_map_layout_height = this->map->world_layout_height;
-        Game::camera_position = this->map->getWorldPosFromTileCoord(this->player_spawn.second, this->player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
+        Game::camera_diff = this->map->getWorldPosFromTileCoord(this->player_spawn.second, this->player_spawn.first) - Vector2D(Game::SCREEN_WIDTH>>1, Game::SCREEN_HEIGHT>>1);
 
         this->map->generateCollisionMesh( 1, Game::collision_mesh_1,  Game::collision_mesh_1_width,  Game::collision_mesh_1_height,  this->buildings);
         this->map->generateCollisionMesh( 4, Game::collision_mesh_4,  Game::collision_mesh_4_width,  Game::collision_mesh_4_height,  this->buildings);
@@ -387,6 +387,14 @@ void setScene(
         createUISimpleText("crosshair", 0, 0, "Crosshair: (-0000,-0000)");
         createUISimpleText("camera_zoom", 0, 30, "Camera zoom: 0.0");
 
+        const float minimap_width = Game::SCREEN_WIDTH/5.0f;
+        const float minimap_height = Game::SCREEN_HEIGHT/5.0f;
+
+        this->minimap = new MapThumbnailComponent(
+            map_pixels, 
+            Game::SCREEN_WIDTH - (minimap_width + 4), Game::SCREEN_HEIGHT - (minimap_height + 4), 
+            minimap_width, minimap_height
+        );
     } else {
         printf("Map failed to load.\n");
         this->change_to_scene = SceneType::MAIN_MENU;
@@ -688,7 +696,7 @@ void update() {
     Game::manager->update();
 
     // special case for camera
-    Game::camera_position = Game::camera_position + (Game::camera_velocity * Game::DEFAULT_SPEED * Game::FRAME_DELTA);
+    Game::camera_diff = Game::camera_diff + (Game::camera_velocity * Game::DEFAULT_SPEED * Game::FRAME_DELTA);
 
     for(int i=0; i<this->drones.size(); ++i) { this->drones[i]->getComponent<DroneComponent>().handleStaticCollisions(this->previous_drones_positions[i], this->tiles, this->buildings); }
     for(int i=0; i<this->drones.size(); ++i) { this->drones[i]->getComponent<DroneComponent>().handleDynamicCollisions(this->drones); }
@@ -927,8 +935,12 @@ void render() {
     TextureManager::DrawLine( line_right[0],  line_right[1], Game::default_text_color);
     TextureManager::DrawLine(   line_top[0],    line_top[1], Game::default_text_color);
     TextureManager::DrawLine(line_bottom[0], line_bottom[1], Game::default_text_color);
+
+    // minimap
+    this->minimap->draw();
 }
 void clean() {
+    if(this->minimap) { delete this->minimap; this->minimap = nullptr; }
     if(this->is_server) { destroyServer(); }
     if(this->is_client) { destroyClient(); }
     this->map = nullptr;

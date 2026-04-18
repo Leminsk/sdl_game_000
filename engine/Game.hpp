@@ -20,11 +20,11 @@ class Game {
         static std::mt19937 *RNG;
         static int SCREEN_WIDTH, SCREEN_HEIGHT;
         // camera
-        static Vector2D camera_position;
+        static Vector2D camera_diff; // how much the camera has been moved from the origin
         static Vector2D camera_velocity;
         static const float camera_speed;
         static float camera_zoom;
-        static Vector2D camera_focus;
+        static Vector2D camera_focus; // focus point for zoom
         static const float DEFAULT_SPEED;
 
         static uint64_t FRAME_COUNT;

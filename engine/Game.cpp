@@ -17,7 +17,7 @@ const int Game::DOUBLE_UNIT_SIZE = Game::UNIT_SIZE<<1;
 int Game::SCREEN_HEIGHT;
 int Game::SCREEN_WIDTH;
 
-Vector2D Game::camera_position;
+Vector2D Game::camera_diff;
 Vector2D Game::camera_velocity;
 const float Game::camera_speed = 5.0f;
 Vector2D Game::camera_focus;
@@ -194,7 +194,7 @@ void Game::init(
 
     Game::isRunning = true;
     
-    Game::camera_position = Vector2D(0,0);
+    Game::camera_diff = Vector2D(0,0);
     Game::camera_velocity = Vector2D(0,0);
     Game::camera_zoom = 1.0f;
 
