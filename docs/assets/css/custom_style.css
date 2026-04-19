@@ -28,7 +28,7 @@ body {
 .markdown-body .highlight .o {
   color: #abb2bf;
 }
-.markdown-body .highlight .p {
+.markdown-body .highlight .p, .markdown-body .highlight .nf {
   color: #61afef;
 }
 .markdown-body .highlight .mi, .markdown-body .highlight .mf {
