@@ -112,11 +112,6 @@ Entity& AddTileOnMap(int id, float width, int map_x, int map_y, std::vector<std:
         break;
         case TILE_BASE_SPAWN: {
             tile.addComponent<TileComponent>(world_x, world_y, width, width, id, this->plain_terrain_texture);
-            /*
-            TODO: 
-            - assign random color here or get it from somewhere
-            - deal with spawn collision like in the TILE_PLAYER case
-            */
             createBaseBuilding(
                 "base_"+std::to_string((int)convertSDLColorToMainColor(map_pixels[map_y][map_x])), 
                 world_x, world_y, width, map_pixels[map_y][map_x]
@@ -391,7 +386,10 @@ void setScene(
         const float minimap_height = Game::SCREEN_HEIGHT/5.0f;
 
         this->minimap = new MapThumbnailComponent(
-            map_pixels, 
+            &this->buildings,
+            &this->drones,
+            this->map_pixels_colors,
+            this->spawn_positions, 
             Game::SCREEN_WIDTH - (minimap_width + 4), Game::SCREEN_HEIGHT - (minimap_height + 4), 
             minimap_width, minimap_height
         );

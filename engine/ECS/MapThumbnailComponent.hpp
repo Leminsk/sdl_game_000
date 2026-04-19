@@ -17,6 +17,10 @@ bool use_texture = true;
 SDL_Color border_color = Game::default_text_color;
 SDL_Texture *map_texture = nullptr;
 
+// only for minimap
+std::vector<Entity*> *drones; 
+std::vector<Entity*> *buildings;
+
 void setObjects(float pos_x, float pos_y, float w, float h, const std::string& name) {
     this->origin_x = pos_x;
     this->origin_y = pos_y;
@@ -39,6 +43,33 @@ void setObjects(float pos_x, float pos_y, float w, float h, const std::string& n
         this->border_rect.y + this->border_rect.h + this->thumbnail_gap,
         Game::default_text_color, true
     );
+}
+
+SDL_FPoint convertWorldToMinimap(Vector2D& world_pos) {
+    return {
+        std::clamp(
+            (world_pos.x * this->minimap_proportion_width) + this->map_rect.x, 
+            this->map_rect.x, 
+            this->map_rect.x + this->map_rect.w
+        ),
+        std::clamp(
+            (world_pos.y * this->minimap_proportion_height) + this->map_rect.y, 
+            this->map_rect.y, 
+            this->map_rect.y + this->map_rect.h
+        )
+    };
+}
+
+void drawEntityToMinimap(Entity* e) {
+    TransformComponent& e_transform = e->getComponent<TransformComponent>();
+    SpriteComponent& e_sprite = e->getComponent<SpriteComponent>();
+    SDL_FPoint minimap_pos = this->convertWorldToMinimap(e_transform.position);
+    SDL_FRect e_draw_rect = { 
+        minimap_pos.x, minimap_pos.y, 
+        e_transform.width * this->minimap_proportion_width, 
+        e_transform.height * this->minimap_proportion_height 
+    };
+    TextureManager::Draw(e_sprite.texture, NULL, &e_draw_rect, e_sprite.rotation, e_sprite.spriteFlip, e_sprite.color_modulation);
 }
 
 public:
@@ -81,11 +112,23 @@ MapThumbnailComponent(const std::string& map_dir, const std::string& map_name, f
         throw std::runtime_error("Failed to get BMP pixels for MapThumbnail: " + file_path);
     }
 }
-MapThumbnailComponent(const std::vector<std::vector<SDL_Color>>& bmp_pixels, float pos_x, float pos_y, float width, float height) {
+MapThumbnailComponent(
+    std::vector<Entity*>* buildings, 
+    std::vector<Entity*>* drones, 
+    const std::vector<std::vector<SDL_Color>>& bmp_pixels, 
+    const std::vector<std::pair<int, int>>& spawn_positions,
+    float pos_x, float pos_y, float width, float height
+) {
+    this->buildings = buildings;
+    this->drones = drones;
     this->draw_camera = true;
     this->map_pixels = bmp_pixels;
     this->map_height = bmp_pixels.size();
     this->map_width = bmp_pixels[0].size();
+    // all base spawns are always PLAIN terrain, recolor it for minimap
+    for(const std::pair<int, int>& pair : spawn_positions) {
+        this->map_pixels[pair.first][pair.second] = COLORS_PLAIN;
+    }
     this->origin_x = pos_x;
     this->origin_y = pos_y;
     this->border_rect = { 
@@ -139,6 +182,8 @@ void draw() override {
                 TextureManager::DrawRect(&pixel_rect, this->map_pixels[y][x]);
             }
         }
+        for(Entity*& building_e : *this->buildings) { this->drawEntityToMinimap(building_e); }
+        for(Entity*& drone_e : *this->drones) { this->drawEntityToMinimap(drone_e); }
         /*
         get the camera world position
         scale it by the minimap proportions
@@ -148,13 +193,8 @@ void draw() override {
         screen_corners[1] = convertScreenToWorld({ static_cast<float>(Game::SCREEN_WIDTH),                                    0.0f });
         screen_corners[2] = convertScreenToWorld({ static_cast<float>(Game::SCREEN_WIDTH), static_cast<float>(Game::SCREEN_HEIGHT) });
         screen_corners[3] = convertScreenToWorld({                                   0.0f, static_cast<float>(Game::SCREEN_HEIGHT) });
-        SDL_FPoint p;
         for(int i=0; i<4; ++i) {
-            screen_corners[i].x = (screen_corners[i].x * this->minimap_proportion_width) + this->origin_x;
-            screen_corners[i].y = (screen_corners[i].y * this->minimap_proportion_height) + this->origin_y;
-            p.x = std::clamp(screen_corners[i].x, this->map_rect.x, this->map_rect.x+this->map_rect.w);
-            p.y = std::clamp(screen_corners[i].y, this->map_rect.y, this->map_rect.y+this->map_rect.h);
-            this->camera_points[i] = p;
+            this->camera_points[i] = this->convertWorldToMinimap(screen_corners[i]);
         }
         this->camera_points[4] = this->camera_points[0];
         TextureManager::DrawWireframe(this->camera_points, 5, COLORS_SPAWN);
