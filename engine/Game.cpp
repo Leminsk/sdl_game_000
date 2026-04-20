@@ -194,8 +194,8 @@ void Game::init(
 
     Game::isRunning = true;
     
-    Game::camera_diff = Vector2D(0,0);
-    Game::camera_velocity = Vector2D(0,0);
+    Game::camera_diff = Vector2D(0.0f,0.0f);
+    Game::camera_velocity = Vector2D(0.0f,0.0f);
     Game::camera_zoom = 1.0f;
 
     // Game::LIMIT_FPS = true;

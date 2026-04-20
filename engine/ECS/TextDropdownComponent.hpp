@@ -186,7 +186,7 @@ TextDropdownComponent(
             this->options[i]->destRect.x, this->options[i]->destRect.y, 
             32.0f, this->options[i]->destRect.h, 1.0f
         );
-        option_entity.addComponent<SpriteComponent>(Game::unit_tex, this->options_colors[i]);        
+        option_entity.addComponent<SpriteComponent>(Game::unit_tex, this->options_colors[i]);
         // don't add to any group since the draw cycle must be controlled from this Component
         this->options_entities[i] = &option_entity;
     }

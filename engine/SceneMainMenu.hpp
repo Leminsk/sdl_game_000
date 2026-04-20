@@ -23,6 +23,7 @@ Mix_Chunk* sound_button = nullptr;
 TextComponent* fps_text;
 
 SceneType change_to_scene = SceneType::NONE;
+std::vector<Entity*> background_elements; 
 
 SceneMainMenu(SDL_Event* e) { this->event = e; }
 ~SceneMainMenu() {}
@@ -32,6 +33,7 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
     this->music_main_menu = music;
     this->sound_button = sound;
     this->fps_text = fps;
+    this->background_elements = {};
     Game::match_game_type = MatchGameType::SINGLE_PLAYER;
 
     if(music_main_menu == nullptr) {
@@ -49,7 +51,9 @@ void setScene(SDL_Texture* plain_terrain, Mix_Music*& music, Mix_Chunk*& sound, 
     const int h = 64;
     for(int i=0; i<Game::SCREEN_HEIGHT; i+=h) {
         for(int j=0; j<Game::SCREEN_WIDTH; j+=w) {
-            createUIImage("menu_background-" + std::to_string(j) + ',' + std::to_string(i), this->plain_terrain_texture, j, i, w, h);
+            this->background_elements.push_back(
+                createUIImage("menu_background-" + std::to_string(j) + ',' + std::to_string(i), this->plain_terrain_texture, j, i, w, h)
+            );
         }
     }
     createUIButton(
@@ -181,6 +185,11 @@ void render() {
     for(auto& pr_ui : this->pr_ui_elements) { pr_ui->draw(); }
 }
 void clean() {
+    for(Entity*& e : this->background_elements) { 
+        if(e != nullptr) { e->destroy(); e = nullptr; }
+    }
+    this->background_elements.clear();
+    this->background_elements.shrink_to_fit();
     Game::manager->clearEntities();
 }
 };

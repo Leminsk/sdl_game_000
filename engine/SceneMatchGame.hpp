@@ -406,16 +406,18 @@ void handleMouse(SDL_MouseButtonEvent& b) {
     Vector2D world_pos = convertScreenToWorld(Vector2D(b.x, b.y));
     switch(b.button) {
         case SDL_BUTTON_LEFT: {
-            std::cout << "MOUSE BUTTON LEFT: " << world_pos << '\n'; 
             DroneComponent* drone;
-            for(auto& dr : this->drones) {
-                float r = dr->getComponent<CircleCollider>().radius;
-                drone = &dr->getComponent<DroneComponent>();
-                if(Distance(drone->getPosition(), world_pos) <= r*r && drone->color_type == this->PLAYER_COLOR) {
-                    std::cout << dr->getIdentifier() << " selected\n";
-                    drone->selected = true;
-                } else {
-                    drone->selected = false;
+            bool used_minimap = this->minimap->handleLeftMouseDown(b.x, b.y);
+            if(!used_minimap) {
+                for(auto& dr : this->drones) {
+                    float r = dr->getComponent<CircleCollider>().radius;
+                    drone = &dr->getComponent<DroneComponent>();
+                    if(Distance(drone->getPosition(), world_pos) <= r*r && drone->color_type == this->PLAYER_COLOR) {
+                        std::cout << dr->getIdentifier() << " selected\n";
+                        drone->selected = true;
+                    } else {
+                        drone->selected = false;
+                    }
                 }
             }
         } break;
@@ -433,7 +435,8 @@ void handleMouse(SDL_MouseButtonEvent& b) {
         } break;
 
         case SDL_BUTTON_RIGHT: {
-            std::cout << "MOUSE BUTTON RIGHT: " << world_pos << '\n';
+            bool used_minimap; // maybe delete later, was using for debugging
+            this->minimap->handleRightMouseDown(b.x, b.y, used_minimap, world_pos);
             DroneComponent* drone;
             for(auto& dr : this->drones) {
                 drone = &dr->getComponent<DroneComponent>();
@@ -714,6 +717,7 @@ void update() {
             "Camera zoom: " + format_decimal(Game::camera_zoom, 1, 1, false)
         );
     }
+    this->minimap->update();
 }
 void render() {
     for(auto& t : this->tiles) { t->draw(); }

@@ -4,6 +4,7 @@
 #include "../utils.hpp"
 #include "../Colors.hpp"
 #include "../TextureManager.hpp"
+#include "Colliders/Collision.hpp"
 #include "ECS.hpp"
 #include "TextComponent.hpp"
 
@@ -45,18 +46,31 @@ void setObjects(float pos_x, float pos_y, float w, float h, const std::string& n
     );
 }
 
-SDL_FPoint convertWorldToMinimap(Vector2D& world_pos) {
+SDL_FPoint convertWorldToMinimap(Vector2D& world_pos, bool clamp=true) {
+    if(clamp) {
+        return {
+            std::clamp(
+                (world_pos.x * this->minimap_proportion_width) + this->map_rect.x, 
+                this->map_rect.x, 
+                this->map_rect.x + this->map_rect.w
+            ),
+            std::clamp(
+                (world_pos.y * this->minimap_proportion_height) + this->map_rect.y, 
+                this->map_rect.y, 
+                this->map_rect.y + this->map_rect.h
+            )
+        };
+    } else {
+        return {
+            (world_pos.x * this->minimap_proportion_width) + this->map_rect.x,
+            (world_pos.y * this->minimap_proportion_height) + this->map_rect.y
+        };
+    }
+}
+Vector2D convertMinimapToWorld(float x, float y) {
     return {
-        std::clamp(
-            (world_pos.x * this->minimap_proportion_width) + this->map_rect.x, 
-            this->map_rect.x, 
-            this->map_rect.x + this->map_rect.w
-        ),
-        std::clamp(
-            (world_pos.y * this->minimap_proportion_height) + this->map_rect.y, 
-            this->map_rect.y, 
-            this->map_rect.y + this->map_rect.h
-        )
+        (x - this->map_rect.x) / this->minimap_proportion_width,
+        (y - this->map_rect.y) / this->minimap_proportion_height
     };
 }
 
@@ -161,6 +175,50 @@ MapThumbnailComponent(
     }
 }
 
+/**
+ * moves the camera to center where the player clicked, returns false if minimap was not clicked 
+ * `bx`: button x coordinate
+ * `by`: button y coordinate
+ */
+bool handleLeftMouseDown(float bx, float by) {
+    if(Collision::pointInRect(
+        bx, by, 
+        this->map_rect.x, this->map_rect.y,
+        this->map_rect.w, this->map_rect.h
+    )) {
+        Vector2D world_top_left     = convertScreenToWorld({ 0.0f, 0.0f });
+        Vector2D world_bottom_right = convertScreenToWorld({ static_cast<float>(Game::SCREEN_WIDTH), static_cast<float>(Game::SCREEN_HEIGHT) });
+        Vector2D half_vector = { 
+            (world_bottom_right.x - world_top_left.x) / 2.0f, 
+            (world_bottom_right.y - world_top_left.y) / 2.0f 
+        };
+        // camera_diff is always at x1.0 zoom scale, scale back the difference by the current zoom
+        half_vector = half_vector * Game::camera_zoom;
+        Vector2D world_button_pos = this->convertMinimapToWorld(bx, by);
+        Game::camera_diff = world_button_pos - half_vector;
+        return true;
+    }
+    return false;
+}
+/**
+ * if clicked, converts the position clicked to world coordinates
+ * `bx`: button x coordinate
+ * `by`: button y coordinate
+ * `out_clicked`: output variable, `true` if clicked inside minimap, `false` otherwise
+ * `out_world_pos`: output variable, the world position equivalent of where (bx,by) would be, unaltered if (bx,by) is not inside minimap
+ */
+void handleRightMouseDown(float bx, float by, bool& out_clicked, Vector2D& out_world_pos) {
+    if(Collision::pointInRect(
+        bx, by, 
+        this->map_rect.x, this->map_rect.y,
+        this->map_rect.w, this->map_rect.h
+    )) {
+        out_clicked = true;
+        out_world_pos = this->convertMinimapToWorld(bx, by);
+    }
+    out_clicked = false;
+}
+
 void init() override {
     if(!this->draw_camera) {
         this->map_title->init();
@@ -168,7 +226,12 @@ void init() override {
     }    
 }
 void update() override {
-    
+    if(this->draw_camera) {
+        int x, y;
+        if(SDL_GetMouseState(&x, &y) & SDL_BUTTON_LMASK) {
+            this->handleLeftMouseDown(static_cast<float>(x), static_cast<float>(y));
+        }
+    }
 }
 void draw() override {
     if(this->draw_camera) {
